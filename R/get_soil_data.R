@@ -1,3 +1,50 @@
+#' Get SoilGrids interpolated profiles from country-specific DSSAT files
+#' 
+#' Data obtained from Harvard Dataverse publication
+#' DOI: ####
+#' 
+#' @export
+#' 
+#' @param ##
+#' 
+#' @importFrom countrycode countrycode
+#' @importFrom
+#' 
+
+library(tidygeocoder)
+library(countrycode)
+library(DSSAT)
+library(dplyr)
+lat <- 49.378
+lon <- 10.12
+soil_path <- "C:/DSSAT48/SoilGrids/dataverse_files/SoilGrids-for-DSSAT-10km v1.0 (by country)"
+
+
+get_soilGrids <- function(lat, lon, soil_path) {
+  
+  # Find location
+  coords <- data.frame(x = lon, y = lat)  
+  addr <- reverse_geocode(coords, long = x, lat = y, method = 'osm',
+                          full_results = TRUE, quiet = TRUE)
+  cc <- toupper(addr$country_code)
+  
+  filename <- paste0(soil_path, "/", cc, ".SOL")
+  
+  sg_cc <- read_sol(filename)  # TODO: files as package data OR API call
+  
+  profile <- sg_cc %>%
+    mutate(LAT_diff = LAT - coords$y,
+           LON_diff = LONG - coords$x) %>%
+    mutate(dd = abs(LAT_diff) + abs(LON_diff)) %>%
+    filter(dd == min(dd)) %>%
+    select(-c(LAT_diff, LON_diff, dd))
+  
+  return(profile)
+}
+
+
+
+
 #' Download Soil Grids interpolation soil data for a given set of coordinates
 #' 
 #' ###
