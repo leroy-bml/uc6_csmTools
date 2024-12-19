@@ -1,3 +1,12 @@
+library(DSSAT)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(parallel)
+library(stringr)
+library(glue)
+
+
 #' ######
 #' 
 #' @param crop
@@ -126,6 +135,10 @@ add_treatment <- function(filex, args = list()) {
 #' @return 
 
 filex <- read_filex("C:/DSSAT48/Wheat/KSAS8101.WHX")
+filex$`SIMULATION CONTROLS`$SMODEL <- "WHAPS"
+write_filex(filex, "C:/DSSAT48/Wheat/KSAS8101.WHX")
+filex <- read_filex("C:/DSSAT48/Wheat/KSAS8101.WHX")
+
 section <- "irrigation"
 args <- list(EFIR = 1, IDATE = c("1981-05-26","1981-06-24"), IRVAL = c(50,50))
 #args <- list(FEDATE = c("1981-05-26","1981-06-24"), FMCD = "FE041", FACD = "AP001", FAMN = 120, FAMP = 0, FAMK = 0, FAMC = 0, FDEP = 1)
@@ -235,3 +248,203 @@ disable_stress <- function(filex, stress = c("irrigation","nitrogen")){
 
 
 disable_stress(filex)
+
+
+#' ######
+#' 
+#' 
+
+write_gluebatch <- function(...){
+  
+  # if(is.null(dir_out)){
+  #   dir_out <- "C:/DSSAT48/GLWork"
+  #   message("Output directory not specified. Setting to default C:/DSSAT48/GLWork")
+  # }
+  
+  # Make batch table
+  batch_tbl <- data.frame(FILEX = filex,
+                          TRTNO = trtno,
+                          RP = rp,
+                          SQ = sq,
+                          OP = op,
+                          CO = co)
+
+  header <- c('%-92s', rep('%7s',5)) %>%  # fixed columns widths
+    sprintf(c('@FILEX','TRTNO','RP','SQ','OP','CO')) %>%  # column headers
+    str_c(collapse = '') %>%  # collapse into a single column header line
+    c(paste0('$BATCH(CULTIVAR):', crop_code, ingeno, " ", cultivar), "", .)  # add batch file header label
+  
+  column_output <- batch_tbl %>%
+    mutate(FILEX = sprintf('%-92s', FILEX)) %>%   # expand filex name to full width
+    mutate_at(vars(-FILEX), ~sprintf('%7i', .)) %>%  # write out all other columns
+    glue_data('{FILEX}{TRTNO}{RP}{SQ}{OP}{CO}')  # combine columns into character vector
+  
+  batch_output <- c(header, column_output)  # combine header lines and column data
+  batch_name <- paste0(cultivar, ".", sprintf("%2s", crop_code), "C")  # set cultivar batch file name
+  batch_path <- paste0(dir_out, "/", batch_name)
+
+  write(batch_output, file = batch_path)  # write batch_output to file
+  
+  return(batch_name)
+}
+
+
+#' ######
+#' 
+#' 
+#' 
+
+write_gluectrl <- function(model, ...){
+
+  controls <- data.frame(
+    Variable =
+      c("CultivarBatchFile","ModelID","EcotypeCalibration","GLUED","OutputD","DSSATD","GLUEFlag","NumberOfModelRun","Cores","GenotypeD"),
+    Value =
+      c(batchfile, model, ecocal, dir_glue, dir_out, dir_dssat, flag, reps, cores, dir_genotype)
+  )
+
+  filepath <- paste0(dir_glue, "/SimulationControl.csv")
+  write.csv(controls, filepath, row.names = FALSE)
+  
+  return(invisible(controls))
+}
+
+#' Run GLUE
+#' 
+#' 
+#' 
+
+calibrate_genparams <- function(filex, cultivar, trtno,
+                                pars = c("phenology","growth"),
+                                model = NULL,
+                                reps = 3, cores = NULL,
+                                calibrate_ecotype = FALSE,
+                                dir_glue, dir_out, dir_dssat, dir_genotype,
+                                overwrite = FALSE,
+                                ...){
+  
+  models <- get_model_list()
+  crops <- get_crop_list()
+  
+  # Validate the model argument
+  model_list <- unique(models[[1]])
+  if (!is.null(model) && !(model %in% model_list)) {
+    stop("Invalid model input. Please specify a model from the following list: ", paste(model_list, collapse = ", "))
+  }
+  
+  # Load file X
+  # TODO: distinct naming between actual files (filex) and file tables in R
+  filex_tables <- read_filex(filex)  # read file x
+  cultivars <- filex_tables$CULTIVARS
+  crop_code <- cultivars[cultivars$CNAME == cultivar]$CR
+  crop <- crops[crops$`@CDE` == crop_code,]$DESCRIPTION
+  ingeno <- cultivars[cultivars$CNAME == cultivar]$INGENO
+  
+  # Write GLUE batch file
+  batchfile <- write_gluebatch(rp = 1, sq = 0, op = 0, co = 0) #TODO: figure out what these do...
+  
+  # Set GLUE flag
+  flag <- switch( 
+    toString(pars),
+    "phenology, growth" = 1,
+    "phenology" = 2,
+    "phenology" = 3,
+    stop("Invalid parameter type")
+  )
+  
+  # Set model
+  model <- if (is.null(model)) {
+    if (!is.na(filex$`SIMULATION CONTROLS`$SMODEL) || filex$`SIMULATION CONTROLS`$SMODEL != -99) {
+      filex$`SIMULATION CONTROLS`$SMODEL
+    } else {
+      stop("Invalid model input. Please specify a model implemented into DSSAT.")
+    }
+  } else {
+    model
+  }
+  version <- DSSAT:::get_dssat_version() ; print(version)
+  model_ver <- paste0(model, sprintf("%03d", as.numeric(version))) ; print(model_ver)
+  
+  # Set input: calibrate ecotype
+  ecocal <- if (calibrate_ecotype) "Y" else "N"
+  
+  # Set input: number of cores
+  cores <- if (is.null(cores)) detectCores()/2 else cores
+  
+  # Write GLUE control files
+  write_gluectrl(model = model_ver, batchfile, ecocal, dir_glue, dir_out, dir_dssat, flag, reps, cores, dir_genotype) 
+  
+  print(dir_genotype)
+  # Run GLUE
+  oldwd <- getwd()
+  on.exit(setwd(oldwd))  # ensure the working directory is reset
+  # TODO: include file check for running the simulations
+  setwd(dir_glue)
+  system("Rscript GLUE.r")
+  
+  # Format output
+  genfile <- paste0(model_ver, ".CUL")
+  genpath <- file.path(dir_genotype, genfile)
+  outpath <- file.path(dir_out, genfile)
+  
+  gen <- read_cul(genpath)  # original cultivar file
+  fit <- read_cul(outpath)  # new cultivar file
+  
+  # Write results
+  if(overwrite){
+    backup_dir <- file.path(dir_genotype, crop, "BackUp")
+    backup_path <- file.path(backup_dir, genfile)
+    
+    if(!dir.exists(backup_dir)){
+      dir.create(backup_dir, recursive = TRUE)
+    }
+    write_cul(gen, backup_path)
+    write_cul(fit, genpath)  # overwrite cultivar files in the original location
+    message(sprintf("Calibration results written in %s.\nOriginal cultivar file backed-up in %s.", genpath, backup_path))
+  }
+  
+  out <- dplyr::filter(fit, VRNAME == cultivar)  # output the fitted parameters for visualization
+  
+  return(out)
+}
+
+
+#' TMP: test
+#' 
+
+filex <- "C:/DSSAT48/Wheat/KSAS8101.WHX"
+cultivar <- "NEWTON"
+trtno <- 6
+model <- "WHAPS"
+dir_glue <- "C:/DSSAT48/Tools/GLUE"
+dir_out <- "C:/DSSAT48/GLWork"
+dir_dssat <- "C:/DSSAT48"
+dir_genotype <- "C:/DSSAT48/Genotype"
+reps = 3
+cores = 6
+
+tmp <- calibrate_genpars(filex, cultivar, trtno, pars = "phenology",
+                         model, reps, cores, calibrate_ecotype = FALSE, dir_glue, dir_out, dir_dssat, dir_genotype,
+                         overwrite = FALSE)
+
+#TODO: new cultivar (not in original CUL file; set default params and MIN/MAX = default temporarily)
+# sequence phenology: (1) VSEN, PPSEN; (2) P5 [FIXED; DEFAULT IF NOT MEASURED: PHINT and P1]
+# sequence growth: (1) GRNO, (2) MXFIL [FIXED; DEFAULT IF NOT MEASURED: STMMX, SLAP1]
+
+defaults_sa <- data.frame(
+  type = c("winter wheat", "spring wheat"),
+  expno = c(".", "."),
+  `ECO#` = c("DFAULT", "DEFAULT"),
+  VSEN = c(4,2),
+  PPSEN = c(4,2),
+  P1 = c(400,400),
+  P5 = c(700,700),
+  PHINT = c(110,110),
+  GRNO = c(25,25),
+  MXFIL = c(2,2),
+  STMMX = c(1,1),
+  SLAP1 = c(300,300)
+)
+
+#TODO: select params to be fitted
+#TODO: copy key files in GLUE directory if not present
