@@ -79,8 +79,6 @@ get_soilGrids_dataverse <- function(dir = tempdir()) {
 #' @export
 #' 
 
-get_soilGrids_profile(lat = lat, lon = lon)
-
 get_soilGrids_profile <- function(lat, lon, dir = tempdir()) {
   
   # Get Soil Grids DSSAT profiles by country
@@ -107,10 +105,22 @@ get_soilGrids_profile <- function(lat, lon, dir = tempdir()) {
     select(-LAT_diff, -LON_diff, -dd) %>%
     as_DSSAT_tbl()
   
+  attr(profile, "comments") <-
+    c(
+      "Soil profile generated using ISRIC SoilGrid1km (see Han et al. [2015] 10.1016/j.envsoft.2019.05.012)",
+      paste(
+        "Data extracted from the Harvard Dataverse (10.7910/DVN/1PEEY0) on", Sys.Date(), "using csmTools"
+      )
+    )
+  
   return(profile)
 }
 
-
-# TODO: comments (cf. weather)
 # TODO: XY in metadata rather than data?
 # TODO: Get soil profiles for multiple locations are downloaded (id)
+
+# test---
+
+tmp <- get_soilGrids_profile(lat = lat, lon = lon)
+write_sol(tmp, "TMP.SOL", append = FALSE)
+
