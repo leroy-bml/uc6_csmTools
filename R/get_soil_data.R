@@ -1,48 +1,114 @@
-#' Get SoilGrids interpolated profiles from country-specific DSSAT files
+#' Get SoilGrids DSSAT soil profiles published by Han et al., 2015, https://doi.org/10.7910/DVN/1PEEY0
 #' 
-#' Data obtained from Harvard Dataverse publication
-#' DOI: ####
+#' The function first controls whether the dataset already exists in the specified directory 
+#' 
+#' @param dir a character vector specifying the target directory to save the data (default tempdir)
+#' 
+#' @importFrom dataverse dataset_files get_file
+#' 
+#' @export
+#'
+
+get_soilGrids_dataverse <- function(dir = tempdir()) {
+  
+  # Get metadata of the dataverse Soil Grids data publication (Han et al. 2015)
+  metadata <- dataset_files(
+    dataset = "10.7910/DVN/1PEEY0",
+    server  = "dataverse.harvard.edu"
+  )
+  
+  by_country <- lapply(metadata, function(x) grepl("by country", x$dataFile$filename))
+  ind <- which(unlist(by_country))  # identify the file containing the soil profiles
+  filename <- metadata[[ind]]$dataFile$filename  # get the file name
+  
+  zip_file <- file.path(dir, filename)  # zip file path
+  unzip_dir <- file.path(dir, sub(".zip", "", filename))  # unzipped directory
+  unzip_dir <- suppressWarnings(
+    normalizePath(unzip_dir)
+  )
+  
+  if (!dir.exists(unzip_dir)) {
+    
+    if (!file.exists(zip_file)) {
+      
+      message("Downloading soil profiles...")
+      file <- get_file(
+        file = filename,
+        dataset = "10.7910/DVN/1PEEY0",
+        server  = "dataverse.harvard.edu"
+      )
+      
+      writeBin(file, zip_file)  # save the zip file in specified directory
+      rm(file)  # remove file from environment
+      
+      if (dir == tempdir()) {
+        outmsg <- paste("The downloaded SoilGrids profiles are in temp directory", 
+                        dir, 
+                        "as 'dir' is unspecified", 
+                        sep = "\n")
+      } else {
+        outmsg <- paste("The downloaded SoilGrids profiles are in", 
+                        dir, 
+                        sep = "\n")
+      }
+    } else {
+      outmsg <- paste("SoilGrids profiles were located in", dir, sep = "\n")
+    }
+    
+    message("Extracting soil profiles...")
+    unzip(zip_file, exdir = dir)  # extract the profiles
+  } else {
+    outmsg <- paste("SoilGrids profiles were located in", dir, sep = "\n")
+  }
+  
+  message(outmsg)
+  return(unzip_dir)
+}
+
+#' Get SoilGrids DSSAT soil profile for a specific location
+#' 
+#' 
+#' @param lat numeric; target latitude in decimal degrees
+#' @param lon numeric; target longitude in decimal degrees
+#' @param dir a character vector specifying the directory where the data is located or should be saved
+#' 
+#' @importFrom tidygeocoder reverse_geocode
+#' @importFrom DSSAT read_sol as_DSSAT_tbl
+#' @importFrom dplyr mutate filter select
 #' 
 #' @export
 #' 
-#' @param ##
-#' 
-#' @importFrom countrycode countrycode
-#' @importFrom
-#' 
 
-library(tidygeocoder)
-library(countrycode)
-library(DSSAT)
-library(dplyr)
-lat <- 49.378
-lon <- 10.12
-soil_path <- "C:/DSSAT48/SoilGrids/dataverse_files/SoilGrids-for-DSSAT-10km v1.0 (by country)"
+get_soilGrids_profile(lat = lat, lon = lon)
 
-
-get_soilGrids <- function(lat, lon, soil_path) {
+get_soilGrids_profile <- function(lat, lon, dir = tempdir()) {
   
-  # Find location
-  coords <- data.frame(x = lon, y = lat)  
-  addr <- reverse_geocode(coords, long = x, lat = y, method = 'osm',
-                          full_results = TRUE, quiet = TRUE)
-  cc <- toupper(addr$country_code)
+  # Get Soil Grids DSSAT profiles by country
+  soil_dir <- get_soilGrids_dataverse(dir = dir)
   
-  filename <- paste0(soil_path, "/", cc, ".SOL")
+  # Retrieve the country matching the target coordinates
+  coords <- data.frame(x = lon, y = lat)
+  message("Retrieving country...")
+  addr <- reverse_geocode(coords, long = x, lat = y, method = 'osm', full_results = TRUE, quiet = TRUE)
+  cc <- toupper(addr$country_code)  # get country code (ISO-###)
   
-  sg_cc <- read_sol(filename)  # TODO: files as package data OR API call
+  # Read soil profiles for the target country
+  message("Loading soil profiles...")
+  profilename <- paste0(cc, ".SOL")
+  profilename <- file.path(soil_dir, profilename)
+  sg_cc <- read_sol(profilename)
   
+  # Filter out target profile
   profile <- sg_cc %>%
     mutate(LAT_diff = LAT - coords$y,
-           LON_diff = LONG - coords$x) %>%
-    mutate(dd = abs(LAT_diff) + abs(LON_diff)) %>%
+           LON_diff = LONG - coords$x,
+           dd = abs(LAT_diff) + abs(LON_diff)) %>%
     filter(dd == min(dd)) %>%
-    select(-c(LAT_diff, LON_diff, dd))
+    select(-LAT_diff, -LON_diff, -dd) %>%
+    as_DSSAT_tbl()
   
   return(profile)
 }
-
-
 
 
 #' Download Soil Grids interpolation soil data for a given set of coordinates
@@ -65,7 +131,7 @@ get_soilGrids <- function(lat, lon, soil_path) {
 #' 
 
 
-download_sg <- function(metadata = NULL, lat = NULL, lon = NULL, src = "isric"){
+get_soilGrids_raw <- function(metadata = NULL, lat = NULL, lon = NULL, src = "isric"){
   
   if (is.null(metadata)){
     if(length(lat)!=length(lon)) {
@@ -103,7 +169,6 @@ download_sg <- function(metadata = NULL, lat = NULL, lon = NULL, src = "isric"){
   
   return(horizons)
 }
-
 
 
 #' Format DWD weather data into a specified data standard
@@ -177,7 +242,7 @@ format_soil <- function(data, lookup) {  # only works with provided metadata
       SOIL_ID = paste0(substr(ins, 1, 2), substr(toupper(SITE), 1, 2), format(Sys.time(), "%Y"), SOIL_NR)
     ) %>%
     select(SOIL_ID, SOIL_SOURCE, SITE, COUNTRY, DESCRIPTION, SOIL_DEPTH, SOIL_LAT, SOIL_LONG, SMHB, SMPX, SMKE)
-
+  
   # 
   out <- list(SOL_Surface = header, SOL_Layers = sol_data)
   return(out)
