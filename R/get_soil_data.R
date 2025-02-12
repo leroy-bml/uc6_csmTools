@@ -68,8 +68,8 @@ get_soilGrids_dataverse <- function(dir = tempdir()) {
 #' Get SoilGrids DSSAT soil profile for a specific location
 #' 
 #' 
-#' @param lat numeric; target latitude in decimal degrees
-#' @param lon numeric; target longitude in decimal degrees
+#' @param lat a number vector; target latitude(s) in decimal degrees
+#' @param lon a number vector; target longitude(s) in decimal degrees
 #' @param dir a character vector specifying the directory where the data is located or should be saved
 #' 
 #' @importFrom tidygeocoder reverse_geocode
@@ -94,33 +94,44 @@ get_soilGrids_profile <- function(lat, lon, dir = tempdir()) {
   message("Loading soil profiles...")
   profilename <- paste0(cc, ".SOL")
   profilename <- file.path(soil_dir, profilename)
-  sg_cc <- read_sol(profilename)
+  sg_cc <- lapply(profilename, read_sol)
   
   # Filter out target profile
-  profile <- sg_cc %>%
-    mutate(LAT_diff = LAT - coords$y,
-           LON_diff = LONG - coords$x,
-           dd = abs(LAT_diff) + abs(LON_diff)) %>%
-    filter(dd == min(dd)) %>%
-    select(-LAT_diff, -LON_diff, -dd) %>%
-    as_DSSAT_tbl()
+  profiles <- list()
+  for (i in 1:length(sg_cc)){
+    profiles[[i]] <- sg_cc[[i]] %>%
+      mutate(LAT_diff = LAT - coords[i,]$y,
+             LON_diff = LONG - coords[i,]$x,
+             dd = abs(LAT_diff) + abs(LON_diff)) %>%
+      filter(dd == min(dd)) %>%
+      filter(row_number() == 1) %>% # arbitrary filtering for cases when multiple profile match distance
+      select(-LAT_diff, -LON_diff, -dd) %>%
+      as_DSSAT_tbl()
+  }
   
-  attr(profile, "comments") <-
-    c(
-      "Soil profile generated using ISRIC SoilGrid1km (see Han et al. [2015] 10.1016/j.envsoft.2019.05.012)",
-      paste(
-        "Data extracted from the Harvard Dataverse (10.7910/DVN/1PEEY0) on", Sys.Date(), "using csmTools"
+  profiles <- lapply(profiles, function(df){
+    attr(df, "comments") <-
+      c(
+        "Soil profile generated using ISRIC SoilGrid1km (see Han et al. [2015] 10.1016/j.envsoft.2019.05.012)",
+        paste(
+          "Data extracted from the Harvard Dataverse (10.7910/DVN/1PEEY0) on", Sys.Date(), "using csmTools"
+        )
       )
-    )
+    return(df)
+  })
   
-  return(profile)
+  if (length(profiles)>1){
+    return(profiles)
+  } else {
+    return(profiles[[1]])
+  }
 }
 
 # TODO: XY in metadata rather than data?
-# TODO: Get soil profiles for multiple locations are downloaded (id)
 
 # test---
 
-tmp <- get_soilGrids_profile(lat = lat, lon = lon)
+tmp <- get_soilGrids_profile(lat = 47, lon = 10)
+tmp
 write_sol(tmp, "TMP.SOL", append = FALSE)
 
