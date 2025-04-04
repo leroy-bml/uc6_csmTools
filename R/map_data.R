@@ -84,35 +84,39 @@ make_code_lookup <- function(vec){
 
 map_headers <- function(df, map, direction = c("to_icasa", "from_icasa")) {
   
-  # df <- template_icasa$INITIAL_CONDITIONS
+  # out <- list()
+  # for (i in 1:length(template_icasa)){
+  
+  # df <- template_icasa[[i]]
   # map <- load_map(map_path)
   # map <- map[map$dataModel == output_model & map$icasa_header_short %in% colnames(df),]
   # direction <- "from_icasa"
   
-  
   mapped_cols <- c()  # empty vector to store mapped column names = column in both data models, whether same-named of different
   
+  # Determine which data model is the input/output
   if (direction == "to_icasa"){
     map <- map %>% rename(header_in = header, header_out = icasa_header_short)
   } else if (direction == "from_icasa"){
     map <- map %>% rename(header_in = icasa_header_short, header_out = header)
   }
-    
+  
   for (i in seq_along(colnames(df))) {
-
+    
     matches <- which(map$header_in == colnames(df)[i])  # get index of matches
     
     if (length(matches) > 0) {
       for (j in seq_along(matches)) {
-
+        
         match_index <- matches[j]
         if (is.na(map$header_in[match_index]) | map$header_out[match_index] == "") {
           next
         }
+        
         # Only map headers if they are not identical in input and output models (i.e., as in some cases in ICASA-DSSAT)
         if (map$header_in[match_index] != map$header_out[match_index]){
           mapped_cols <- c(mapped_cols, colnames(df)[i])
-          new_col_nm <-map$header_out[match_index]
+          new_col_nm <- map$header_out[match_index]
           df[[new_col_nm]] <- df[[colnames(df)[i]]]  # add mapped column as a new column
         } else {
           mapped_cols <- c(mapped_cols, colnames(df)[i])
@@ -122,11 +126,14 @@ map_headers <- function(df, map, direction = c("to_icasa", "from_icasa")) {
       }
     }
   }
-
+  
   df <- df[ , !(colnames(df) %in% mapped_cols)]  # remove the original columns after mapping
   colnames(df) <- gsub("_2", "", colnames(df))  # remove temporary suffixes used to preserve column order
   
   out <- list(data = df, mapped = mapped_cols)
+  
+  #}
+  
   return(out)
 } 
 
@@ -214,6 +221,8 @@ convert_unit <- function(x, u1, u2){
 
 convert_units <- function(df, metadata = NULL, map, direction) {
   
+  direction = "from_icasa"  # tmp
+  
   if (direction == "to_icasa"){ # !!run only after mapping headers!
     map <- map %>% rename(header_in = icasa_header_short, header_out = header, unit_in = unit, unit_out = icasa_unit)  
   } else if (direction == "from_icasa"){
@@ -223,22 +232,25 @@ convert_units <- function(df, metadata = NULL, map, direction) {
   # Convert units by checking variable sequentially
   # TODO: check error when colname is not in input data model (may happen in 2-step mapping, e.g., bonares->icasa->dssat)
   for (i in seq_along(colnames(df))) {
-    
-    for (j in 1:nrow(map)) {
+    print(colnames(df)[i])
+    if(nrow(map) > 0){
       
-      if (map$unit_in[j] == "not_set") {
-        if (!is.null(metadata)) {
-          map$unit_in[j] <- metadata$unitOfMeasurement_symbol  # retrieve unit in metadata if "not_set" (for sensors)
-        } else {
-          map$unit_in[j] <- ""
+      for (j in 1:nrow(map)) {
+        
+        if (map$unit_in[j] == "not_set") {
+          if (!is.null(metadata)) {
+            map$unit_in[j] <- metadata$unitOfMeasurement_symbol  # retrieve unit in metadata if "not_set" (for sensors)
+          } else {
+            map$unit_in[j] <- ""
+          }
         }
-      }
-      
-      if (colnames(df)[i] == map$header_in[j]){
-        if (is.na(map$header_in[j]) | map$unit_out[j] %in% c("","date","code","text","yyyy")) {
-          next
+        
+        if (colnames(df)[i] == map$header_in[j]){
+          if (is.na(map$header_in[j]) | map$unit_out[j] %in% c("","date","code","text","yyyy")) {
+            next
+          }
+          df[[i]] <- convert_unit(df[[i]], map$unit_in[j], map$unit_out[j])
         }
-        df[[i]] <- convert_unit(df[[i]], map$unit_in[j], map$unit_out[j])
       }
     }
   }
@@ -298,7 +310,15 @@ apply_function <- function(var, fun, args, df) {
 # TODO: fun_headers, complete missing funs in the map
 transform_data <- function(df, map, ...) {
   
-  if(all(is.na(map$fun_values) | sapply(map$fun_values, is.null) | map$fun_values == "")){
+  if (nrow(map) == 0 || length(map$fun_values) == 0) {
+    return(df)  # If there are no rows, return df immediately
+  }
+  
+  if(all(is.na(map$fun_values) |  ##TODO: check if all conditions required
+         sapply(map$fun_values, is.null) | 
+         map$fun_values == ""
+         )
+     ){
     return(df)
   }
   
@@ -348,7 +368,26 @@ transform_data <- function(df, map, ...) {
 map_data <- function(df, input_model, output_model, map, keep_unmapped = TRUE, col_exempt = NULL){
   
   # TODO: workaround to skip dataframes with no single match in the output model [currently fails]
+  
+  # df <- tmp[[22]]
+  # input_model = "icasa"
+  # output_model = "dssat"
+  # map = load_map(map_path)
+  # keep_unmapped = FALSE
+  # col_exempt <- NULL
+  # 
+  # for (i in seq_along(template_icasa)) {
+  #   df <- template_icasa[[i]]
+  # 
+  #   data_mapped <- mapping_sequence(df, map)  # map data table
+  #   if(!is.null(metadata)){
+  #     attr(data_mapped, "metadata") <- mapping_sequence(metadata, map)  # map metadata table
+  #   }
+  #   
+  #   print(paste(i, names(template_icasa)[i]))
+  # }
 
+  
   metadata <- attributes(df)$metadata  # store metadata
 
   # Perform the mapping sequence (i.e., headers -> codes -> units -> transformations)
@@ -368,8 +407,8 @@ map_data <- function(df, input_model, output_model, map, keep_unmapped = TRUE, c
       map <- map[map$dataModel == output_model & map$icasa_header_short %in% colnames(df),]
       headers <- map_headers(df, map, "from_icasa")  # map headers
       df <- headers$data
-      mapped_cols <- unique(headers$mapped)  # TODO: CHECK WHY NULL?
-      df <- map_codes(df, map, "from_icasa")  # map codes ## TODO: CHECK, PRODUCES ERROR!
+      mapped_cols <- unique(headers$mapped)
+      df <- map_codes(df, map, "from_icasa")
       df <- convert_units(df, metadata, map, "from_icasa")  # convert units
     } else {
       df0 <- df  # store original data
@@ -379,7 +418,7 @@ map_data <- function(df, input_model, output_model, map, keep_unmapped = TRUE, c
       df_icasa <- headers$data
       mapped_cols <- unique(headers$mapped)
       df_icasa <- map_codes(df_icasa, map_icasa, "to_icasa")  # map codes
-      df_icasa <- convert_units(df_icasa, map_icasa, "to_icasa")  # convert units  #! METADATA ARG? TOTEST
+      df_icasa <- convert_units(df_icasa, metadata = NULL, map_icasa, "to_icasa")  # convert units  #! METADATA ARG? TOTEST
       df_icasa <- transform_data(df_icasa, map_icasa)  # apply transformations
       ### TODO: test
       df <- map_headers(df_icasa, map, "from_icasa")
@@ -406,165 +445,3 @@ map_data <- function(df, input_model, output_model, map, keep_unmapped = TRUE, c
   return(data_mapped)
 }
 
-
-
-#' Format metadata for different data models
-#' 
-#' ###
-#' 
-#' 
-
-fmt_metadata <- function(data, model = c("icasa", "dssat"), section = c("general", "experiment", "management", "soil", "weather")){
-  
-  if (model == "dssat"){
-    if (section == "weather"){
-      
-      metadata <- attr(data, "metadata")
-      if (is.null(metadata)){
-        message("Metadata table not found.")
-        return(data)
-      }
-      
-      coords <- data.frame(x = mean(metadata$LONG), y = mean(metadata$LAT))  # retrieve coordinates
-      addr <- reverse_geocode(coords, long = x, lat = y, method = 'osm', full_results = TRUE, quiet = TRUE)  # find location name
-      year <- year(data$DATE[1])  # retrieve year
-      wst_id <- toupper(paste0(addr$country_code, abbreviate(addr$town, minlength = 2L)))  # make weather station id (DSSAT format)
-      suppressMessages({elev <- get_elev_point(coords, prj = 4326, src = "aws")})
-      
-      attr(data, "station_metadata") <-
-        data.frame(INSI = wst_id,
-                   LAT = coords$y,
-                   LONG = coords$x,
-                   ELEV = elev$elevation,
-                   TAV = data %>%
-                     summarise(TAV = mean((TMAX + TMIN)/2, na.rm = TRUE)) %>%
-                     pull(TAV),
-                   AMP = data %>%
-                     mutate(mo = month(DATE)) %>%
-                     group_by(mo) %>%
-                     summarise(mo_TAV = mean((TMAX + TMIN)/2, na.rm = TRUE)) %>%
-                     summarise(AMP = (max(mo_TAV)-min(mo_TAV))/2) %>%
-                     pull(AMP),
-                   REFHT = 2,  # document in device/sensor metadata? Would need text mining workflow
-                   WNDHT = NA_real_  # document in device/sensor metadata?
-        )
-      
-      # Top elements
-      attr(data, "location") <- toupper(paste(addr$town, addr$state, addr$country, sep = ", "))  # title
-      attr(data, "comments") <- list("Sensor metadata: ###", paste0("Dataset generated with csmTools on ", Sys.Date())) ### add sensor/ppty metadata
-      attr(data, "filename") <- paste0(wst_id, substr(year, 3, 4), "01", ".WTH")  # file name
-      attributes(data)$metadata <- NULL  # remove old format
-    }
-    ## TODO: ADD ICASA METADATA / OTHER DATA SECTIONS
-    if (section == "management"){
-      
-      metadata <- data$GENERAL
-      
-      coords <- data.frame(x = mean(data$FIELDS$XCRD), y = mean(data$FIELDS$YCRD))  # retrieve coordinates
-      addr <- reverse_geocode(coords, long = x, lat = y, method = 'osm', full_results = TRUE, quiet = TRUE)  # find location name
-      year <- year(data$HARVEST[nrow(data$HARVEST),]$HDATE)  # retrieve year
-      crop <- data$CULTIVARS$CR
-      suppressMessages({elev <- get_elev_point(coords, prj = 4326, src = "aws")})  # retrieve elevation
-      
-      metadata <- metadata %>%
-        mutate(ADDRESS = paste(INSTITUTION, addr$town, addr$state, addr$country, sep = ", "),  # TODO: add more elements in template!
-               PEOPLE = paste0(LAST_NAME, ", ", FIRST_NAME, " ", MID_INITIAL),  # TODO: handle missing initials (no NA)
-               SITE = paste0(data$FIELDS$FLNAME, ", ", addr$town, ", ", addr$state, ", ", addr$country, "; ", 
-                             coords$x, "; ", coords$y, "; ", elev$elevation))
-      metadata <- concatenate_per_group(metadata)
-      
-      data$GENERAL <- metadata
-      
-      # TODO: autofill experimental design if not done + fix mapping EXP.DETAILS
-      filename <- toupper(
-        paste0(
-          strict_abbreviate("Technische Universität München"),  # TODO: fetch leading/unique institute in metadata
-          strict_abbreviate(addr$town),  # site
-          substr(year, 3, 4),  # year
-          "01",  # TODO: figure out how to find experiment ID
-          ".", "WH", "X"  # TODO: file extension + fix code mapping for CROPS
-        )
-      )
-      field_id <- toupper(  # TODO: handle multiple fields
-        paste0(
-          strict_abbreviate("Technische Universität München"),
-          strict_abbreviate(addr$town),
-          sprintf("%04d", data$FIELDS$L)
-          )
-      )
-      attr(data, "experiment") <- toupper(paste0(filename, ", ", metadata$EXP.DETAILS, ", ", addr$town, ", ", addr$country, ", ", "3C*4F" ))
-      attr(data, "file_name") <- filename
-      attr(data, "field_id") <- field_id
-      attr(data, "comments") <- NULL ##
-    }
-    if (section == "soil"){
-      
-      metadata <- attr(data, "metadata")
-      if (is.null(metadata)){
-        message("Metadata table not found.")
-        return(data)
-      }
-      
-      coords <- data.frame(x = mean(metadata$LONG), y = mean(metadata$LAT))  # retrieve coordinates
-      addr <- reverse_geocode(coords, long = x, lat = y, method = 'osm', full_results = TRUE, quiet = TRUE)  # find location name
-      institute <- "Technische Universität München"  # TODO: add to metadata
-      year <- 2023  # TODO: add to metadata
-      soil_nr <- "0001"  # TODO: figure out based on whether institute SOL file exists (if no==>0001, if yes, n+1)
-      soil_id <- toupper(
-        paste0(
-          strict_abbreviate(institute),  # institute
-          strict_abbreviate(addr$town),  # site
-          substr(year, 3, 4),  # year
-          soil_nr)
-      )
-      
-      metadata <- metadata %>%
-        mutate(PEDON = soil_id,  # TODO: add more elements in template!
-               SOURCE = "SoilGrids", # TODO: attr(data, "soil_source") kept in mapping
-               TEXTURE = NA,  # TODO: function to estimate texture based on profile data
-               DEPTH = max(data$SLB),
-               DESCRIPTION = NA,  # TODO: in fetch metadata
-               SITE = addr$town,
-               COUNTRY = addr$country,
-               SMHB = "IB001", SMPX = "IB001", SMKE = "IB001")
-      
-      data <- list(SOIL_METADATA = metadata, SOIL_PROFILE_LAYERS = data)
-      
-      # TODO: autofill experimental design if not done + fix mapping EXP.DETAILS
-      filename <- paste0(strict_abbreviate(institute), ".SOL")
-      attr(data, "title") <- toupper(paste0(institute, ", ", addr$town, ", ", addr$state, ", ", addr$country))
-      attr(data, "file_name") <- filename
-      attr(data, "comments") <- NULL ##
-      
-    }
-    
-    
-    return(data)
-  }
-}
-
-# # TODO: add_property_mapping <- function(name, unit, icasa = list(), agg_funs = list())
-concatenate_per_group <- function(df) {
-
-  constant_cols <- df %>%
-    summarise(across(everything(), ~ n_distinct(.) == 1)) %>% 
-    select_if(~ .) %>%
-    colnames()
-  
-  other_cols <- setdiff(colnames(df), constant_cols)
-  
-  out <- df %>% 
-    group_by(across(all_of(constant_cols))) %>%
-    summarise(across(all_of(other_cols), ~ paste(., collapse = ", ")), .groups = 'drop')
-  
-  return(out)
-}
-
-
-strict_abbreviate <- function(string, minlength = 2) {
-  abbr <- abbreviate(string, minlength = minlength, strict = TRUE)
-  if (nchar(abbr) > minlength) {
-    abbr <- substr(abbr, 1, minlength)
-  }
-  return(abbr)
-}
