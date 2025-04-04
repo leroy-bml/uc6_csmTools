@@ -309,6 +309,37 @@ write_gluectrl <- function(model, ...){
   return(invisible(controls))
 }
 
+#' ######
+#' 
+#' 
+#' 
+
+check_glue_files <- function(...){
+  
+  sys <- Sys.info()
+  os <- sys[["sysname"]]
+  
+  reqs <- switch(
+    os,
+    "Windows" = c("MODEL.ERR","SIMULATION.CDE","DSSATPRO.v48","DETAIL.CDE"),
+    "Linux" = c("MODEL.ERR","SIMULATION.CDE","DSSATPRO.v48","DSSATPRO.L48","DETAIL.CDE"),
+    "Darwin" = c("MODEL.ERR","SIMULATION.CDE","DSSATPRO.v48","DETAIL.CDE")  # not tested
+  )
+
+  dssat_paths <- sapply(reqs, function(x) file.path(dir_dssat, x))
+  glue_paths <- sapply(reqs, function(x) file.path(dir_glue, x))
+  
+  for (i in seq_along(glue_paths)){
+    if(!file.exists(glue_paths[i])){
+      file.copy(dssat_paths[i], glue_paths[i])
+    }
+  }
+}
+  
+  
+  
+
+
 #' Run GLUE
 #' 
 #' 
@@ -323,8 +354,8 @@ calibrate_genparams <- function(filex, cultivar, trtno,
                                 overwrite = FALSE,
                                 ...){
   
-  models <- get_model_list()
-  crops <- get_crop_list()
+  models <- get_dssat_terms("models")
+  crops <- get_dssat_terms("crops")
   
   # Validate the model argument
   model_list <- unique(models[[1]])
@@ -369,18 +400,19 @@ calibrate_genparams <- function(filex, cultivar, trtno,
   ecocal <- if (calibrate_ecotype) "Y" else "N"
   
   # Set input: number of cores
-  cores <- if (is.null(cores)) detectCores()/2 else cores
+  cores <- if (is.null(cores)) round(detectCores()/2, 0) else cores
   
   # Write GLUE control files
   write_gluectrl(model = model_ver, batchfile, ecocal, dir_glue, dir_out, dir_dssat, flag, reps, cores, dir_genotype) 
   
   print(dir_genotype)
-  # Run GLUE
+  
   oldwd <- getwd()
-  on.exit(setwd(oldwd))  # ensure the working directory is reset
-  # TODO: include file check for running the simulations
-  setwd(dir_glue)
-  system("Rscript GLUE.r")
+  on.exit(setwd(oldwd))  # ensure the working directory is reset on exit
+  setwd(dir_glue)  # set work directory to GLUE directory
+  
+  check_glue_files()  # check if all required files are present in GLUE dir (if not, copied from DSSAT dir)
+  system("Rscript GLUE.r")  # run GLUE
   
   # Format output
   genfile <- paste0(model_ver, ".CUL")
