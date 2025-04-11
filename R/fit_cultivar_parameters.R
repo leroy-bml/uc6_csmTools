@@ -1,10 +1,10 @@
-library(DSSAT)
-library(dplyr)
-library(tidyr)
-library(ggplot2)
-library(parallel)
-library(stringr)
-library(glue)
+get_xfile_sec <- function(xtables, sec_name){
+  
+  index <- which(grepl(sec_name, names(xtables)))
+  tbl <- if(length(index) > 0) xtables[[index]] else NULL
+  
+  return(tbl)
+}
 
 
 #' ######
@@ -70,23 +70,6 @@ set_class <- function(df, classes) {
 #' ######
 #' 
 #' @param trdata
-#' @param R
-#' @param O
-#' @param C
-#' @param TNAME
-#' @param CU
-#' @param FL
-#' @param SA
-#' @param IC
-#' @param MP
-#' @param MI
-#' @param MF
-#' @param MR
-#' @param MC
-#' @param MT
-#' @param ME
-#' @param MH
-#' @param SM
 #' 
 #' @importFrom dplyr "%>%" mutate
 #' @importFrom tibble add_row
@@ -94,14 +77,14 @@ set_class <- function(df, classes) {
 #' @return 
 #'
 
-args <- list(TNAME = "N saturation", MF = 5)
-
 add_treatment <- function(filex, args = list()) {
   
   trt <- filex[[which(startsWith(names(filex), "TREATMENT"))]]
   
+  # Keep the last row as default
   new_row <- trt[nrow(trt),]
-  new_row[[1]] <- max(trt[1]) + 1  # set new row primary key
+  # Set new row primary key
+  new_row[[1]] <- max(trt[1]) + 1
   
   for (col in names(args)) {
     if (col %in% colnames(trt)) {
@@ -134,29 +117,29 @@ add_treatment <- function(filex, args = list()) {
 #' 
 #' @return 
 
-filex <- read_filex("C:/DSSAT48/Wheat/KSAS8101.WHX")
-filex$`SIMULATION CONTROLS`$SMODEL <- "WHAPS"
-write_filex(filex, "C:/DSSAT48/Wheat/KSAS8101.WHX")
-filex <- read_filex("C:/DSSAT48/Wheat/KSAS8101.WHX")
-
-section <- "irrigation"
-args <- list(EFIR = 1, IDATE = c("1981-05-26","1981-06-24"), IRVAL = c(50,50))
+# TODO: TEST handle composite section (initial_conditions, irrigation); class list for collapsed vars
+#section <- "irrigation"
+#args <- list(EFIR = 1, IDATE = c("1981-05-26","1981-06-24"), IRVAL = c(50,50))
 #args <- list(FEDATE = c("1981-05-26","1981-06-24"), FMCD = "FE041", FACD = "AP001", FAMN = 120, FAMP = 0, FAMK = 0, FAMC = 0, FDEP = 1)
+#add_management(filex = filex, section = "irrigation", args = args)
 
-add_management(filex = filex, section = "irrigation", args = args)
-
-# TODO: handle composite section (initial_conditions, irrigation); class list for collapsed vars
 add_management <- function(filex,
                            section = c("initial_conditions","planting","tillage","irrigation",
-                                       "fertilizer","organic_amendment","chemicals","harvest"),
+                                       "fertilizer","organic_amendment","chemicals","harvest",
+                                       "simulation_controls"),
                            args = list()) {
+  
+  filex = filex_tables  #tmp
+  section = "simulation_controls"  #tmp
+  args = list(WATER = "Y", IRRIG = "A")  #tmp
+  
   
   # Match management type to corresponding file X section
   input_nm <- toupper(substr(section, 1, 5))
-  sections_pref <- sapply(names(filex), function(x) substr(x, 1, 5))
+  sections_pref <- sapply(names(filex_tables), function(x) substr(x, 1, 5))
   matches <- sapply(sections_pref, function(x) identical(input_nm, x))
   
-  if (!section_name %in% sections_pref) {
+  if (!input_nm %in% sections_pref) {
     stop(paste(section, "is not a valid file X section"))
   }
   
@@ -224,30 +207,46 @@ add_management <- function(filex,
 #' @return 
 #' 
 
-disable_stress <- function(filex, stress = c("irrigation","nitrogen")){
+
+disable_stress <- function(xfile, stress = c("water", "nitrogen")) {
   
-  if("irrigation" %in% stress){
-    filex[["SIMULATION CONTROLS"]]$IRRIG <- "A"
-  } 
+  xfile_out <- xfile  # Initialize output
   
-  if("nitrogen" %in% stress){
-    # Set N saturation fertilizer regime
-    max_n <- list(FDATE = c("1981-10-29","1982-03-24","1981-06-10"),
-                  FMCD = rep("FE041", 3), FACD = rep("AP001",3 ), FDEP = 1,
-                  FAMN = 120, FAMP = 0, FAMK = 0, FAMC = 0, FAMO = 0)
-    filex_n <- add_management(filex, section = "fertilizer", args = max_n)
+  if ("water" %in% stress) {
+    sm <- get_xfile_sec(xfile, "SIMULATION")
+    sm <- sm[max(nrow(sm), 1), ]  # Keep last row if multiple levels exist
+    sm_list <- lapply(sm, identity)
+    sm_list$WATER <- "Y" 
+    sm_list$IRRIG <- "A"
     
-    max_n_trt <- list(TNAME = "N saturation", MF = 5)
-    filex <- add_treatment(filex_n, args = max_n_trt)
+    xfile_out <- add_management(xfile_out, section = "simulation_controls", args = sm_list)
+    
+    sm_index <- max(get_xfile_sec(xfile_out, "SIMULATION")[1])
   }
   
-  #TODO: add control and iteration until threshold
+  if ("nitrogen" %in% stress) {
+    fe_list <- list(
+      FDATE = c("1981-10-29", "1982-03-24", "1981-06-10"),
+      FMCD = rep("FE041", 3), FACD = rep("AP001", 3), FDEP = 1,
+      FAMN = 120, FAMP = 0, FAMK = 0, FAMC = 0, FAMO = 0
+    )
+    
+    xfile_out <- add_management(xfile_out, section = "fertilizer", args = fe_list)
+    
+    fe_index <- max(get_xfile_sec(xfile_out, "FERTILIZER")[1])
+  }
   
-  return(filex)
-} 
-
-
-disable_stress(filex)
+  if (identical(sort(stress), c("nitrogen", "water"))) {
+    attrs <- list(TNAME = "Auto-irrigation + N saturation", SM = sm_index, MF = fe_index)
+  } else if ("water" %in% stress) {
+    attrs <- list(TNAME = "Auto-irrigation", SM = sm_index)
+  } else if ("nitrogen" %in% stress) {
+    attrs <- list(TNAME = "N saturation", MF = fe_index)
+  }
+  
+  out <- add_treatment(xfile_out, args = attrs)
+  return(out)
+}
 
 
 #' ######
@@ -354,129 +353,254 @@ calibrate_genparams <- function(filex, cultivar, trtno,
                                 overwrite = FALSE,
                                 ...){
   
-  models <- get_dssat_terms("models")
-  crops <- get_dssat_terms("crops")
-  
-  # Validate the model argument
-  model_list <- unique(models[[1]])
-  if (!is.null(model) && !(model %in% model_list)) {
-    stop("Invalid model input. Please specify a model from the following list: ", paste(model_list, collapse = ", "))
-  }
-  
-  # Load file X
-  # TODO: distinct naming between actual files (filex) and file tables in R
-  filex_tables <- read_filex(filex)  # read file x
-  cultivars <- filex_tables$CULTIVARS
-  crop_code <- cultivars[cultivars$CNAME == cultivar]$CR
-  crop <- crops[crops$`@CDE` == crop_code,]$DESCRIPTION
-  ingeno <- cultivars[cultivars$CNAME == cultivar]$INGENO
-  
-  # Write GLUE batch file
-  batchfile <- write_gluebatch(rp = 1, sq = 0, op = 0, co = 0) #TODO: figure out what these do...
-  
-  # Set GLUE flag
-  flag <- switch( 
-    toString(pars),
-    "phenology, growth" = 1,
-    "phenology" = 2,
-    "phenology" = 3,
-    stop("Invalid parameter type")
-  )
-  
-  # Set model
-  model <- if (is.null(model)) {
-    if (!is.na(filex$`SIMULATION CONTROLS`$SMODEL) || filex$`SIMULATION CONTROLS`$SMODEL != -99) {
-      filex$`SIMULATION CONTROLS`$SMODEL
-    } else {
-      stop("Invalid model input. Please specify a model implemented into DSSAT.")
-    }
-  } else {
-    model
-  }
-  version <- DSSAT:::get_dssat_version() ; print(version)
-  model_ver <- paste0(model, sprintf("%03d", as.numeric(version))) ; print(model_ver)
-  
-  # Set input: calibrate ecotype
-  ecocal <- if (calibrate_ecotype) "Y" else "N"
-  
-  # Set input: number of cores
-  cores <- if (is.null(cores)) round(detectCores()/2, 0) else cores
-  
-  # Write GLUE control files
-  write_gluectrl(model = model_ver, batchfile, ecocal, dir_glue, dir_out, dir_dssat, flag, reps, cores, dir_genotype) 
-  
-  print(dir_genotype)
-  
-  oldwd <- getwd()
-  on.exit(setwd(oldwd))  # ensure the working directory is reset on exit
-  setwd(dir_glue)  # set work directory to GLUE directory
-  
-  check_glue_files()  # check if all required files are present in GLUE dir (if not, copied from DSSAT dir)
-  system("Rscript GLUE.r")  # run GLUE
-  
-  # Format output
-  genfile <- paste0(model_ver, ".CUL")
-  genpath <- file.path(dir_genotype, genfile)
-  outpath <- file.path(dir_out, genfile)
-  
-  gen <- read_cul(genpath)  # original cultivar file
-  fit <- read_cul(outpath)  # new cultivar file
-  
-  # Write results
-  if(overwrite){
-    backup_dir <- file.path(dir_genotype, crop, "BackUp")
-    backup_path <- file.path(backup_dir, genfile)
+  setup_calibration <- function(...){
     
+    # TMP: args
+    filex <- "C:/DSSAT48/Wheat/KSAS8101.WHX"
+    cultivar <- "NEWTON"
+    trtno <- 6
+    model <- "WHAPS"
+    dir_glue <- "C:/DSSAT48/Tools/GLUE"
+    dir_out <- "C:/DSSAT48/GLWork"
+    dir_dssat <- "C:/DSSAT48"
+    dir_genotype <- "C:/DSSAT48/Genotype"
+    reps = 3
+    cores = 6
+    
+    ###------------ Default directories -------------------------------------
+    ### TODO
+    
+    ###------------ Retrieve, load, and backup input files ------------------
+    
+    # Load file X
+    filex_tables <- read_filex(filex)
+    xfile_nm <- basename(filex)
+    
+    # Retrieve focal cultivar file based on model input (retrieve from file X if NULL)
+    identify_model <- function(filex_tables, model){
+      
+      # Import DSSAT dict to control input data annotation
+      models <- get_dssat_terms("models")
+      
+      # Validate model input annotation
+      models_short <- unique(models[[1]])
+      if (!is.null(model) && !(model %in% models_short)) {
+        
+        if (!is.na(filex_tables$`SIMULATION CONTROLS`$SMODEL) || filex_tables$`SIMULATION CONTROLS`$SMODEL != -99) {
+          model <- filex_tables$`SIMULATION CONTROLS`$SMODEL
+        } else {
+          stop("Error: invalid model. Please specify a model currently implemented in DSSAT: ", paste(models_short, collapse = ", "))
+        }
+      }
+      
+      version <- DSSAT:::get_dssat_version()  #TODO: workflow with DSSAT.CSM not set in options
+      cfile_nm <- paste0(model, sprintf("%03d", as.numeric(version)))
+      
+      out <- c(model, cfile_nm)
+      
+      return(out)
+    } #!!FUN
+    model <- identify_model(filex_tables, model)[1]
+    
+    # Load file CUL
+    cfile_nm <- identify_model(filex_tables, model)[2]
+    cfile_nm <- paste0(cfile_nm, ".CUL")  # Append extension
+    cfile_path <- file.path(dir_genotype, cfile_nm)
+    cfile_tables <- read_cul(cfile_path)
+    
+    # Create backup directory
+    dir_date <- format(Sys.Date(), "%Y%m%d")
+    backup_dir <- file.path(dir_dssat, "0_BackUp", dir_date)
     if(!dir.exists(backup_dir)){
       dir.create(backup_dir, recursive = TRUE)
     }
-    write_cul(gen, backup_path)
-    write_cul(fit, genpath)  # overwrite cultivar files in the original location
-    message(sprintf("Calibration results written in %s.\nOriginal cultivar file backed-up in %s.", genpath, backup_path))
+    
+    # Backup X and C files
+    cfile_backup <- file.path(backup_dir, cfile_nm)
+    xfile_backup <- file.path(backup_dir, xfile_nm)
+    write_cul(cfile_tables, file_name = cfile_backup)
+    write_filex(filex_tables, xfile_backup)
+    
+    message(sprintf("Original files backed-up in %s.", backup_dir))
+    
+    
+    ###------------ Retrieve crop code and cultivar identifier --------------
+    
+    cuTable <- filex_tables$CULTIVARS  # Cultivar table
+    
+    ingeno <- cuTable[cuTable$CNAME == cultivar]$INGENO  # Cultivar Identifier
+    crop_code <- cuTable[cuTable$CNAME == cultivar]$CR  # Crop code
+    
+    # Retrieve crop full name
+    crop_nms <- suppressWarnings(get_dssat_terms("crops"))
+    crop <- crop_nms[crop_nms$`@CDE` == crop_code,]$DESCRIPTION  # Crop name
+    
+    
+    ###------------ Set treatment level for calibration ---------------------
+    
+    
+    # TROUBLESHOOT
+    ### filex_tables BOTH FE and IR
+    ### BACKUP tmp <- filex_tables
+    ### CHANGE TO NOTHING #filex_tables <- filex_tables[!grepl("FERTILIZER|IRRIGATION", names(filex_tables))]
+    ### CHANGE TO FE ONLY #filex_tables <- filex_tables[grepl("FERTILIZER", names(filex_tables))]
+    ### CHANGE TO IR ONLY #filex_tables <- filex_tables[grepl("IRRIGATION", names(filex_tables))]
+    
+    #trtno <- NULL  #tmp TEST ALL POSSIBILITIES AND TROUBLESHOOT
+    
+    if (is.null(trtno)) {
+      
+      feTable <- get_xfile_sec(filex_tables, "FERTILIZER")  # TODO: include OM table too + NITRO/WATER TO Y
+      irTable <- get_xfile_sec(filex_tables, "IRRIGATION")
+      haTable <- get_xfile_sec(filex_tables, "HARVEST")  # TODO: add to disable_stress new method
+      
+      # Find the highest nitrogen application
+      if (!is.null(feTable)){
+        
+        feMax <- feTable %>%
+          group_by(.[1]) %>%
+          summarise(FAMN = sum(FAMN)) %>%
+          slice_max(FAMN) %>%
+          pull(1)
+      } else {
+        feMax = 0
+      }
+
+      # Find the highest irrigation amount
+      if (!is.null(irTable)){
+        irMax <- irTable %>%
+          unnest(cols = c(IDATE, IROP, IRVAL)) %>%
+          group_by(.[1]) %>%
+          summarise(IRVAL = sum(IRVAL)) %>%
+          slice_max(IRVAL) %>%
+          pull(1)
+      } else {
+        irMax = 0
+      }
+      
+      # Define stress types based on the presence/absence of nitrogen and water management
+      stress_types <- c()
+      
+      if (is.null(feTable)) stress_types <- c(stress_types, "nitrogen")
+      if (is.null(irTable)) stress_types <- c(stress_types, "water")
+      
+      # 1- Drop stress in new treatment if irrigation or fertilization were applied
+      if (length(stress_types) > 0) {
+        filex_tables <- disable_stress(filex_tables, stress = stress_types)
+      }
+      
+      trtMat <- get_xfile_sec(filex_tables, "TREATMENT")
+      trtno <- max(trtMat[1])
+      
+      # Set treatment number to the highest fertilization level if fertilization was applied
+      if (!is.null(feTable)) trtMat[trtno,]$MF <- feMax
+      # Set treatment number to the highest irrigation level if irrigation was applied
+      if (!is.null(irTable)) trtMat[trtno,]$MI <- irMax
+      
+      # 2- Both fertilization and irrigation applied: find treatment number with both max values
+      if (!is.null(feTable) & !is.null(irTable)) {
+        trtno <- trtMat[[which(trtMat$MF == feMax & trtMat$MI == irMax), 1]]
+        if (length(trtno) > 1) trtno <- max(trtno)
+      }
+      
+      # Update treatment matrix in xtables accordingly
+      filex_tables[grepl("TREATMENT", names(filex_tables))][[1]] <- trtMat
+    }
+    
+    
+    ###------------ Write batch files for calibration -----------------------
+    
+    # Write GLUE batch file
+    batchfile <- write_gluebatch(filex_tables, trtno, rp = 1, sq = 0, op = 0, co = 0) #TODO: figure out what these do...
+    
+    # Set GLUE flag
+    flag <- switch( 
+      toString(pars),
+      "phenology, growth" = 1,
+      "phenology" = 2,
+      "phenology" = 3,
+      stop("Invalid parameter type")
+    )
+    
+    # Set input: calibrate ecotype
+    ecocal <- if (calibrate_ecotype) "Y" else "N"
+    
+    # Set input: number of cores
+    cores <- if (is.null(cores)) round(detectCores()/2, 0) else cores
+    
+    # Write GLUE control files
+    write_gluectrl(model = cfile_nm, batchfile, ecocal, dir_glue, dir_out, dir_dssat, flag, reps, cores, dir_genotype) 
+    
+    
+    ###------------ Set bounds for genetic parameters -----------------------
+    #TODO
+    
+    genpars_set_bounds <- function(){
+      
+      cfile_tables 
+      #### BACKUPo
+      
+      # Customized bounds for calibration
+      defaults <- data.frame(
+        method = "sa_nwheat",
+        type = c("winter wheat", "spring wheat"),
+        VSEN = c(4,2),
+        PPSEN = c(4,2),
+        P1 = c(400,400),
+        P5 = c(700,700),
+        PHINT = c(110,110),
+        GRNO = c(25,25),
+        MXFIL = c(2,2),
+        STMMX = c(1,1),
+        SLAP1 = c(300,300)
+      )
+      
+      
+    }
+  } 
+  
+  
+  #### TO TEST
+  
+  run_calibration <- function(method = "glue", ...){
+    
+    # Ensure the working directory is reset on exit
+    oldwd <- getwd()
+    on.exit(setwd(oldwd))
+    # Set work directory to GLUE directory
+    setwd(dir_glue)
+    
+    # Check if all required files are present in GLUE dir (if not, copied from DSSAT dir)
+    check_glue_files()
+    # Run GLUE
+    system("Rscript GLUE.r")
+    
+    # Format output
+    genpath <- file.path(dir_genotype, cfile_nm)  # original path
+    outpath <- file.path(dir_out, cfile_nm)
+    cfile_fit <- read_cul(outpath)  # new cultivar file  TODO: check if single rec or full file
+    
+    # Write results
+    write_cul(cfile_fit, genpath)  # overwrite cultivar files in the original location
+    message(sprintf("Calibration results written in %s.", genpath))
+    
+    # Output the fitted parameters for visualization
+    out <- dplyr::filter(fit, VRNAME == cultivar)  
+    
+    return(out)
   }
   
-  out <- dplyr::filter(fit, VRNAME == cultivar)  # output the fitted parameters for visualization
   
-  return(out)
+
 }
 
 
-#' TMP: test
-#' 
+##### TMP CALL
 
-filex <- "C:/DSSAT48/Wheat/KSAS8101.WHX"
-cultivar <- "NEWTON"
-trtno <- 6
-model <- "WHAPS"
-dir_glue <- "C:/DSSAT48/Tools/GLUE"
-dir_out <- "C:/DSSAT48/GLWork"
-dir_dssat <- "C:/DSSAT48"
-dir_genotype <- "C:/DSSAT48/Genotype"
-reps = 3
-cores = 6
-
-tmp <- calibrate_genpars(filex, cultivar, trtno, pars = "phenology",
-                         model, reps, cores, calibrate_ecotype = FALSE, dir_glue, dir_out, dir_dssat, dir_genotype,
-                         overwrite = FALSE)
-
+#tmp <- calibrate_genpars(filex, cultivar, trtno, pars = "phenology",
+#                         model, reps, cores, calibrate_ecotype = FALSE, dir_glue, dir_out, dir_dssat, dir_genotype,
+#                         overwrite = FALSE)
+#
 #TODO: new cultivar (not in original CUL file; set default params and MIN/MAX = default temporarily)
 # sequence phenology: (1) VSEN, PPSEN; (2) P5 [FIXED; DEFAULT IF NOT MEASURED: PHINT and P1]
 # sequence growth: (1) GRNO, (2) MXFIL [FIXED; DEFAULT IF NOT MEASURED: STMMX, SLAP1]
-
-defaults_sa <- data.frame(
-  type = c("winter wheat", "spring wheat"),
-  expno = c(".", "."),
-  `ECO#` = c("DFAULT", "DEFAULT"),
-  VSEN = c(4,2),
-  PPSEN = c(4,2),
-  P1 = c(400,400),
-  P5 = c(700,700),
-  PHINT = c(110,110),
-  GRNO = c(25,25),
-  MXFIL = c(2,2),
-  STMMX = c(1,1),
-  SLAP1 = c(300,300)
-)
-
-#TODO: select params to be fitted
-#TODO: copy key files in GLUE directory if not present
