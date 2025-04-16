@@ -271,7 +271,7 @@ write_gluectrl <- function(cfilename, batchname, ...){
 #' 
 #' 
 
-check_glue_files <- function(...){
+check_glue_files <- function(dir_dssat, dir_glue){
   
   sys <- Sys.info()
   os <- sys[["sysname"]]
@@ -638,11 +638,12 @@ calibrate <- function(xfile, cultivar, model = NULL, trtno = NULL,
   run_calibration <- function(controls, method = "glue", ...){
     
     # Set required directories
+    model <- controls[controls$Variable == "ModelID", "Value"]
     dir_dssat <- controls[controls$Variable == "DSSATD", "Value"]
     dir_glue <- controls[controls$Variable == "GLUED", "Value"]
     dir_genotype <- controls[controls$Variable == "GenotypeD", "Value"]
     dir_out <- controls[controls$Variable == "OutputD", "Value"]
-    cfilename <- basename(controls[controls$Variable == "ModelID", "Value"])
+    cfilename <- paste0(model, ".CUL")
 
     # Ensure the working directory is reset on exit
     oldwd <- getwd()
@@ -651,7 +652,7 @@ calibrate <- function(xfile, cultivar, model = NULL, trtno = NULL,
     setwd(dir_glue)
     
     # Check if all required files are present in GLUE dir (if not, copied from DSSAT dir)
-    check_glue_files()  # TODO: CHECK IF DIRS IN!!!
+    check_glue_files(dir_dssat, dir_glue)
     # Run GLUE
     system("Rscript GLUE.r")
     
@@ -670,7 +671,7 @@ calibrate <- function(xfile, cultivar, model = NULL, trtno = NULL,
     return(out)
   }
   
-  glue_out <- run_calibration(controls = calibration_controls, method = "glue")
+  glue_out <- run_calibration(controls, method = "glue")
   
   return(glue_out)
 }
@@ -684,14 +685,14 @@ calibrate <- function(xfile, cultivar, model = NULL, trtno = NULL,
 # model <- "WHAPS"
 # minbound <- list(P1 = 400, P5 = 700, PHINT = 110, STMMX = 1, SLAP1 = 300)
 # maxbound <- list(P1 = 400, P5 = 700, PHINT = 110, STMMX = 1, SLAP1 = 300)
-# reps = 3 
+# reps = 3
 # cores = 6
 # # rtno <- 6
 # # dir_glue <- "C:/DSSAT48/Tools/GLUE"
 # # dir_out <- "C:/DSSAT48/GLWork"
 # # dir_dssat <- "C:/DSSAT48"
 # # dir_genotype <- "C:/DSSAT48/Genotype"
-
+# 
 # tmp <- calibrate(xfile, cultivar, model, minbound = minbound, maxbound = maxbound, reps = 3, cores = 6)
 
 #TODO: testnew cultivar (not in original CUL file; set default params and MIN/MAX = default temporarily)
