@@ -251,19 +251,19 @@ write_gluebatch <- function(xfile, trtno, rp, sq, op, co, ...){
 #' 
 #' 
 
-write_gluectrl <- function(model, ...){
+write_gluectrl <- function(cfilename, batchname, ...){
 
   controls <- data.frame(
     Variable =
       c("CultivarBatchFile","ModelID","EcotypeCalibration","GLUED","OutputD","DSSATD","GLUEFlag","NumberOfModelRun","Cores","GenotypeD"),
     Value =
-      c(batchfile, model, ecocal, dir_glue, dir_out, dir_dssat, flag, reps, cores, dir_genotype)
+      c(batchname, cfilename, ecocal, dir_glue, dir_out, dir_dssat, flag, reps, cores, dir_genotype)
   )
 
   filepath <- paste0(dir_glue, "/SimulationControl.csv")
   write.csv(controls, filepath, row.names = FALSE)
   
-  return(invisible(controls))
+  return(controls)
 }
 
 #' ######
@@ -364,12 +364,12 @@ disable_stress <- function(xtables, stress = c("water", "nitrogen")) {
 #' @return 
 #' 
 
-calibrate_gen_pars <- function(xfile, cultivar, model = NULL, trtno = NULL,
-                               pars = c("phenology","growth"), method = "glue", minbound = list(), maxbound = list(), calibrate_ecotype = FALSE,
-                               reps = 3, cores = NULL,
-                               dir_glue = NULL, dir_out = NULL, dir_dssat = NULL, dir_genotype = NULL,
-                               overwrite = FALSE,
-                               ...){
+calibrate <- function(xfile, cultivar, model = NULL, trtno = NULL,
+                      pars = c("phenology","growth"), method = "glue", minbound = list(), maxbound = list(), calibrate_ecotype = FALSE,
+                      reps = 3, cores = NULL,
+                      dir_glue = NULL, dir_out = NULL, dir_dssat = NULL, dir_genotype = NULL,
+                      overwrite = FALSE,
+                      ...){
   
   setup_calibration <- function(...){
     
@@ -464,8 +464,8 @@ calibrate_gen_pars <- function(xfile, cultivar, model = NULL, trtno = NULL,
     model <- identify_model(xtables, model)[1]
     
     # Load file CUL
-    cfilename <- identify_model(xtables, model)[2]
-    cfilename <- paste0(cfilename, ".CUL")  # Append extension
+    modelvers <- identify_model(xtables, model)[2]
+    cfilename <- paste0(modelvers, ".CUL")  # Append extension
     cfile <- file.path(dir_genotype, cfilename)
     ctable <- read_cul(cfile)
     
@@ -608,7 +608,7 @@ calibrate_gen_pars <- function(xfile, cultivar, model = NULL, trtno = NULL,
     ###------------ Write batch files for calibration -----------------------
     
     # Write GLUE batch file
-    batchfile <- write_gluebatch(xfile, trtno, rp = 1, sq = 0, op = 0, co = 0) #TODO: figure out what these do...
+    batchname <- write_gluebatch(xfile, trtno, rp = 1, sq = 0, op = 0, co = 0) #TODO: figure out what these do...
     
     # Set GLUE flag
     flag <- switch( 
@@ -626,16 +626,24 @@ calibrate_gen_pars <- function(xfile, cultivar, model = NULL, trtno = NULL,
     cores <- if (is.null(cores)) round(detectCores()/2, 0) else cores
     
     # Write GLUE control files
-    write_gluectrl(model = cfilename, batchfile, ecocal, dir_glue, dir_out, dir_dssat, flag, reps, cores, dir_genotype)
+    controls <- write_gluectrl(modelvers, batchname, ecocal,
+                               dir_glue, dir_out, dir_dssat, flag, reps, cores, dir_genotype)
     
-    return(invisible())  #TODO: return report (location of different files, all params)
+    return(controls)
   } 
   
-  setup_calibration()
-  
+  controls <- setup_calibration()
+
   # Run GLUE
-  run_calibration <- function(method = "glue", ...){
+  run_calibration <- function(controls, method = "glue", ...){
     
+    # Set required directories
+    dir_dssat <- controls[controls$Variable == "DSSATD", "Value"]
+    dir_glue <- controls[controls$Variable == "GLUED", "Value"]
+    dir_genotype <- controls[controls$Variable == "GenotypeD", "Value"]
+    dir_out <- controls[controls$Variable == "OutputD", "Value"]
+    cfilename <- basename(controls[controls$Variable == "ModelID", "Value"])
+
     # Ensure the working directory is reset on exit
     oldwd <- getwd()
     on.exit(setwd(oldwd))
@@ -643,7 +651,7 @@ calibrate_gen_pars <- function(xfile, cultivar, model = NULL, trtno = NULL,
     setwd(dir_glue)
     
     # Check if all required files are present in GLUE dir (if not, copied from DSSAT dir)
-    check_glue_files()
+    check_glue_files()  # TODO: CHECK IF DIRS IN!!!
     # Run GLUE
     system("Rscript GLUE.r")
     
@@ -657,34 +665,35 @@ calibrate_gen_pars <- function(xfile, cultivar, model = NULL, trtno = NULL,
     message(sprintf("Calibration results written in %s.", genpath))
     
     # Output the fitted parameters for visualization
-    out <- dplyr::filter(fit, VRNAME == cultivar)  
+    out <- dplyr::filter(cfile_fit, VRNAME == cultivar)  
     
     return(out)
   }
   
-  glue_out <- run_calibration(method = "glue")
+  glue_out <- run_calibration(controls = calibration_controls, method = "glue")
   
   return(glue_out)
 }
 
-##### TMP CALL
+###---- TEST ----
 
-# TMP: args
-options(DSSAT.CSM = "C:\\DSSAT48\\DSCSM048.EXE")
-xfile <- "C:/DSSAT48/Wheat/KSAS8101.WHX"
-#xtables <- read_filex("C:/DSSAT48/Wheat/KSAS8101.WHX")
-cultivar <- "NEWTON"
-model <- "WHAPS"
-minbound <- list(P1 = 400, P5 = 700, PHINT = 110, STMMX = 1, SLAP1 = 300)
-maxbound <- list(P1 = 400, P5 = 700, PHINT = 110, STMMX = 1, SLAP1 = 300)
-reps = 3
-cores = 6
-# trtno <- 6
-# dir_glue <- "C:/DSSAT48/Tools/GLUE"
-# dir_out <- "C:/DSSAT48/GLWork"
-# dir_dssat <- "C:/DSSAT48"
-# dir_genotype <- "C:/DSSAT48/Genotype"
+# options(DSSAT.CSM = "C:\\DSSAT48\\DSCSM048.EXE")
+# xfile <- "C:/DSSAT48/Wheat/KSAS8101.WHX"
+# # xtables <- read_filex("C:/DSSAT48/Wheat/KSAS8101.WHX")
+# cultivar <- "NEWTON"
+# model <- "WHAPS"
+# minbound <- list(P1 = 400, P5 = 700, PHINT = 110, STMMX = 1, SLAP1 = 300)
+# maxbound <- list(P1 = 400, P5 = 700, PHINT = 110, STMMX = 1, SLAP1 = 300)
+# reps = 3 
+# cores = 6
+# # rtno <- 6
+# # dir_glue <- "C:/DSSAT48/Tools/GLUE"
+# # dir_out <- "C:/DSSAT48/GLWork"
+# # dir_dssat <- "C:/DSSAT48"
+# # dir_genotype <- "C:/DSSAT48/Genotype"
 
-#TODO: new cultivar (not in original CUL file; set default params and MIN/MAX = default temporarily)
+# tmp <- calibrate(xfile, cultivar, model, minbound = minbound, maxbound = maxbound, reps = 3, cores = 6)
+
+#TODO: testnew cultivar (not in original CUL file; set default params and MIN/MAX = default temporarily)
 # sequence phenology: (1) VSEN, PPSEN; (2) P5 [FIXED; DEFAULT IF NOT MEASURED: PHINT and P1]
 # sequence growth: (1) GRNO, (2) MXFIL [FIXED; DEFAULT IF NOT MEASURED: STMMX, SLAP1]
