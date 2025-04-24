@@ -539,14 +539,18 @@ split_experiments <- function(ls) {
     # Identify profile and station IDs for each experiment
     profile_id <- exp_dfs_split[[i]]$FIELDS[[fcts[["sol"]]]]
     station_id <- exp_dfs_split[[i]]$FIELDS[[fcts[["wth"]]]]
-    
+
     sol_split[[i]] <- lapply(env_dfs, function(df) {
       if (nrow(df) == 0) {
         return(df)  # Return empty df unchanged
       } else {
-        return(df[rowSums(df == profile_id, na.rm = TRUE) > 0, , drop = FALSE])
+        # Keep only rows containing any value in profile_id
+        matched_rows <- rowSums(Reduce(`|`, lapply(profile_id, function(x) df == x), accumulate = FALSE), na.rm = TRUE) > 0
+        df_sub <- df[matched_rows, , drop = FALSE]
+        return(df_sub)
       }
     })
+    
     sol_split[[i]] <- Filter(function(df) nrow(df) > 0, sol_split[[i]])  # Remove empty dataframes
     
     wth_split[[i]] <- lapply(env_dfs, function(df) {
