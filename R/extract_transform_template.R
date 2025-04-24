@@ -802,7 +802,7 @@ remap <- function(dataset, input_model = "icasa", output_model = "dssat"){
 
 # NB: fails when applied to the mapped dataset with unmapped variables kept, due to duplicate name in multiple table (ELEV.x, ELEV.y)
 split_experiments <- function(ls) {
-
+  
   # Set the splitting factor (IDs) for each data type (experiment, soil, weather)
   if(all(grepl("^[A-Z_]+$", colnames(ls[[1]])))){
     fcts <- c(exp = "EID", sol = "SOIL_SUBSET", wth = "WTH_SUBSET")
@@ -826,10 +826,22 @@ split_experiments <- function(ls) {
     profile_id <- exp_dfs_split[[i]]$FIELDS[[fcts[["sol"]]]]
     station_id <- exp_dfs_split[[i]]$FIELDS[[fcts[["wth"]]]]
     
-    # Split soil/weather data based on the presence of the profile/station ID in the dataframes
-    sol_split[[i]] <- lapply(env_dfs, function(df) df[rowSums(df == profile_id, na.rm = TRUE) > 0, , drop = FALSE])
+    sol_split[[i]] <- lapply(env_dfs, function(df) {
+      if (nrow(df) == 0) {
+        return(df)  # Return empty df unchanged
+      } else {
+        return(df[rowSums(df == profile_id, na.rm = TRUE) > 0, , drop = FALSE])
+      }
+    })
     sol_split[[i]] <- Filter(function(df) nrow(df) > 0, sol_split[[i]])  # Remove empty dataframes
-    wth_split[[i]] <- lapply(env_dfs, function(df) df[rowSums(df == station_id, na.rm = TRUE) > 0, , drop = FALSE])
+    
+    wth_split[[i]] <- lapply(env_dfs, function(df) {
+      if (nrow(df) == 0) {
+        return(df)  # Return empty df unchanged
+      } else {
+        return(df[rowSums(df == station_id, na.rm = TRUE) > 0, , drop = FALSE])
+      }
+    })
     wth_split[[i]] <- Filter(function(df) nrow(df) > 0, wth_split[[i]])  # Remove empty dataframes
     
     # Append data when it exists
