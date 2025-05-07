@@ -24,70 +24,310 @@
 #' @importFrom lubridate as_date ymd leap_year
 #' 
 
+# dataset = dataset_dssat  # tmp
+# data_model = "dssat"  #tmp
+# tmp <- estimate_phenology(dataset_dssat)
+# TODO: testing...crop calendar results seem off!!?...
 
-estimate_phenology <- function(sdata, wdata, crop, lat, lon, year, irrigated = FALSE){
+estimate_phenology <- function(dataset, data_model = "dssat"){
   
-  # Apply filters
-  sdata <- sdata %>% filter(Year == year) ; sdata$MDAT <- ymd(sdata$MDAT)
-  wdata <- wdata %>% filter(Year == year)
-  irrigated <- ifelse(irrigated, "Irrigated", "Rainfed")  # TODO: add irrigation = TRUE
+  # if (data_model == "dssat"){
+  #   
+  # }
   
-  # Calculate monthly climate
-  d_temp <- matrix(wdata$TMEAN, nrow = 1) # string daily mean temperature; matrix with nyears rows and days cols
-  d_prec <- matrix(wdata$RAIN, nrow = 1) # string daily sum precip
+  xtables <- dataset[["X"]]
+  atables <- dataset[["A"]]
+  # TODO: find if Zadoks/BBCH/### and convert to stages in atables (only used in calibration)
+  ttables <- dataset[["T"]]
+  wdata <- dataset[["WTH"]]
   
-  mclim <- calcMonthlyClimate(lat = lat, temp = d_temp, prec = d_prec, syear = year, eyear = year,
-                              incl_feb29 = leap_year(year)) 
+  # Break down data sections
+  cuSec <- xtables[["CULTIVARS"]]
+  irSec <- xtables[["IRRIGATIONS"]]
+  plSec <- xtables[["PLANTING_DETAILS"]]
+  haSec <- xtables[["HARVEST"]]
+  
+  # Retrieve crop and crop parameters
+  crop_in <- unique(cuSec[["CR"]])
+  # TODO: distinguish between winter and spring wheat?
+  crop <- case_when(crop_in == "WH" ~ "Winter_Wheat",
+                    #crop_in == "WH" ~ "Spring_Wheat",
+                    crop_in == "MZ" ~ "Maize",
+                    crop_in == "RI" ~ "Rice",
+                    crop_in == "SG" ~ "Sorghum",
+                    crop_in == "SB" ~ "Soybean",
+                    TRUE ~ NA_character_)
+  if(is.na(crop)) stop(paste("No crop calendar available for", data_model, "crop:", crop_in))
+  
+  # Retrieve growing season
+  plDate <- plSec[["PDATE"]]
+  haDate <- haSec[["HDATE"]]
+  gsYear <- year(haDate)  # TODO: get without haDate (might be missing)
+  
 
-  for (i in 1:nrow(sdata)){
+  # Check if anthesis dates are already in summary data
+  aDate <- c()
+  if (!is.null(atables[["ADAT"]])) {
     
-    if (is.na(sdata$MDAT[i])) {
-      
-      if (grepl("WHT|WH|wheat|Wheat|BAR|BA|Barley|barley", crop)) {
-        
-        # TODO: check sowing date to separate spring and winter crops (same crop codes)
-        calendar <- calcCropCalendars(lon = lon, lat = lat, mclimate = mclim, crop = "Winter_Wheat")
-        calendar <- calendar[calendar$irrigation == irrigated,]
-        
-        mdat <- as_date(paste0(year, "-01-01")) + calendar$maturity_doy - 1 +
-          sample(-3:3, 1, replace = TRUE)  # add some random variation
-        adat <- as_date(mdat) - round(rnorm(1, mean = 40, sd = 5))  # WHT
-        
-        sdata$MDAT[i] <- as_date(mdat)
-        sdata$ADAT[i] <- adat  # for loop coerces to vector, convert to date after
-        
-      } else if (grepl("MAZ|MZ|Maize|maize", crop)) {
-        
-        calendar <- calcCropCalendars(lon = lon, lat = lat, mclimate = mclim, crop = "Maize")
-        calendar <- calendar[calendar$irrigation == irrigated,]
-        
-        mdat <- as_date(paste0(year, "-01-01")) + calendar$maturity_doy - 1 +
-          sample(-3:3, 1, replace = TRUE)  # add some random variation
-        adat <- as_date(mdat) - round(rnorm(1, mean = 50, sd = 5))  # MAZ
-        
-        sdata$MDAT[i] <- as_date(mdat)
-        sdata$ADAT[i] <- adat  # for loop coerces to vector, convert to date after
-        
-      } else {
-        
-        sdata$MDAT[i] <- NA
-        sdata$ADAT[i] <- NA
-      }
-      
-    } else {
-      
-      mdat <- as_date(sdata$MDAT[i])
-      adat <- as_date(mdat) - round(rnorm(1, mean = 40, sd = 5))
-
-      sdata$MDAT[i] <- as_date(mdat)
-      sdata$ADAT[i] <- adat  # for loop coerces to vector, convert to date after
-
+    response_adat <- readline("Anthesis dates found in file A. Do you want to overwrite them? (Y/N): ")
+    if (toupper(response_adat) != "Y") {
+      aDate <- atables[["ADAT"]]
     }
   }
   
-  # Convert back to date format
-  sdata$MDAT <- as_date(sdata$MDAT)
-  sdata$ADAT <- as_date(sdata$ADAT)
+  # Check if maturity dates are already in summary data
+  mDate <- c()
+  if (!is.null(atables[["MDAT"]])) {
+    
+    response_mdat <- readline("Maturity dates found in file A. Do you want to overwrite them? (Y/N): ")
+    if (toupper(response_mdat) != "Y") {
+      mDate <- atables[["MDAT"]]
+    }
+  }
   
-  return(sdata)
+  # Check if growth stage dates are already in summary data
+  if (!is.null(ttables[["DCCD"]])) {
+    
+    # TODO: handle cases when very low granularity
+    if (length(aDate) == 0) {
+      # Anthesis: Zadok's stage 65
+      aDate <- ttables[which.min(abs(ttables$DCCD - 65)), "DATE"]
+      message("Anthesis date retrieved from time-series data (Zadoks scale)")
+    }
+
+    # Maturity: Zadok's stage 95 (!!CHECK)
+    if (length(mDate) == 0) {
+      # Anthesis: Zadok's stage 65
+      mDate <- ttables[which.min(abs(ttables$DCCD - 95)), "DATE"]
+      message("Maturity date retrieved from time-series data (Zadoks scale)")
+    }
+    
+  } else if (!is.null(ttables[["GSTD"]])) {
+    
+    # TODO: (Placeholder) Figure out DSSAT annotation for GSTD
+    
+  }
+  
+  if (length(mDate) == 0) {
+    
+    if (!is.na(haDate)) {
+      # If harvest is available, base estimate per crop
+      
+      hdoy <- yday(haDate)
+      # TODO: add more DSSAT crops
+      # Source: cropCalendars::getCropParam(crops = "all")
+      mdoy <- case_when(crop == "Winter_Wheat" ~ hdoy - 7,
+                        crop == "Spring_Wheat" ~ hdoy - 7,
+                        crop == "Maize" ~ hdoy - 21,
+                        crop == "Rice" ~  hdoy - 7,
+                        crop == "Sorghum" ~ hdoy,
+                        crop == "Soybean" ~ hdoy - 21,
+                        TRUE ~ NA_real_)
+      
+      } else {
+        
+        ###------------ Retrieve and format inputs ------------------------------
+        
+        # Crop parameters
+        cropPars <- getCropParam(crops = crop,
+                                 cropparam_file = system.file("extdata", "crop_parameters.csv",
+                                                              package = "cropCalendars", "mustWork" = TRUE)
+        )
+        
+        # Retrieve coordinates of weather station
+        # NB: assumed close to field; field coordinates not reliably documented in legacy data
+        lat <- attr(wdata, "GENERAL")$LAT
+        lon <- attr(wdata, "GENERAL")$LONG
+        
+        # Irrigated or rainfed
+        irrigated <- !is.null(irSec) || sum(irSec$IRVAL, na.rm = TRUE) > 0
+        
+        # Check timeframe: weather data must cover sowing and harvest year
+        
+        # Merge data frames if multiple years in weather data
+        if (is.list(wdata) && all(sapply(wdata, is.data.frame))) {
+          wdata <- do.call(rbind, wdata)
+        }
+        # TODO: Or by default, sowing + ### (check crop params)
+        
+        # tmp for testing only
+        wth_tmp <- wdata %>% mutate(DATE = paste0("22", substr(DATE, 3, 5)))
+        wth_tmp <- rbind(wdata, wth_tmp)
+        wdata <- wth_tmp  #tmp
+        wthNas <- check_weather_coverage(mngt = xtables, wth = wdata, period = "year")
+        
+        if (length(wthNas) != 0) {
+          stop("Phenology estimation could not be performed.n\
+         crop calendars requires complete daily weather for each calendar year in the growing season")
+        } else {
+          message("Estimating phenology with crop calendars...")
+        }
+        
+        ###------------ Calculate monthly weather -------------------------------
+        
+        # Breakdown dates from daily weather data
+        wdata$DATE <- parse_date_time(wdata$DATE, orders = c("Y-m-d", "y%j"))
+        wdata$YEAR <- year(wdata$DATE)
+        wdata$MONTH <- month(wdata$DATE)
+        wdata$DOY <- yday(wdata$DATE)  #replace by yday
+        
+        # Estimate mean temperature if missing
+        if (suppressWarnings(is.null(wdata$TMEAN))){
+          wdata$TMEAN <- rowMeans(wdata[, c("TMIN", "TMAX")], na.rm = TRUE)
+        }
+        
+        # Create input string with daily mean temperature; matrix with nyears rows and days cols
+        d_temp <- with(wdata, tapply(TMEAN, list(YEAR, DOY), mean, na.rm = TRUE))
+        # Create string with daily total rainfall
+        d_rain <- with(wdata, tapply(RAIN, list(YEAR, DOY), mean, na.rm = TRUE))
+        
+        # Calculate monthly climate
+        mclim <- calcMonthlyClimate(lat = lat,
+                                    temp = d_temp,
+                                    prec = d_rain,
+                                    syear = rownames(d_temp)[1],
+                                    eyear = rownames(d_temp)[2],
+                                    incl_feb29 = TRUE)
+        
+        ###------------ Calculate crop calendar ---------------------------------
+        
+        if (!is.na(plDate)) { 
+          # If harvest date is not provided, estimate it with crop calendar and fixed planting date
+          
+          # Calculate seasonality type
+          seasonality <- calcSeasonality(
+            monthly_temp = mclim$mtemp,
+            monthly_prec = mclim$mppet,
+            temp_min = 10
+          )
+          
+          # Find sowing season
+          plSeason <- calcSowingSeason(
+            sowing_date = plDate,
+            croppar = cropPars,
+            monthly_temp = mclim$mtemp,
+            monthly_ppet = mclim$mppet,
+            seasonality = seasonality,
+            lat = lat
+          )
+          
+          # Calculate harvest date
+          haRule  <- calcHarvestRule(
+            croppar = cropPars,
+            monthly_temp = mclim$mtemp,
+            monthly_ppet = mclim$mppet,
+            seasonality  = seasonality
+          )
+          
+          haVector <- calcHarvestDateVector(
+            croppar = cropPars,
+            sowing_date = yday(plDate),
+            sowing_season = plSeason,
+            monthly_temp = mclim$mtemp,
+            monthly_ppet = mclim$mppet,
+            monthly_ppet_diff = mclim$mppet_diff
+          )
+          
+          harvest <- calcHarvestDate(
+            croppar = cropPars,
+            monthly_temp = mclim$mtemp,
+            sowing_date = yday(plDate),
+            sowing_month = month(plDate),
+            sowing_season = plSeason,
+            seasonality = seasonality,
+            harvest_rule = haRule,
+            hd_vector = haVector
+          )
+          
+          # Extract maturity date based on whether crop was irrigated
+          mdoy <- ifelse(irrigated, harvest$hd_ir, harvest$hd_rf)
+          
+        } else if (is.na(plDate)) {
+          # If both planting and harvest date is not provided, estimate both with crop calendar
+          
+          calendar <- calcCropCalendars(lon = lon, lat = lat, mclimate = mclim, crop = crop)
+          warning("Crop calendars were used to estimate planting date, as it is missing from the data.", call. = FALSE) ##!!
+          
+          # Extract maturity date based on whether crop was irrigated
+          pdoy <- ifelse(irrigated,
+                         calendar[calendar$irrigation == "Irrigated",]$sowing_doy,
+                         calendar[calendar$irrigation == "Rainfed",]$sowing_doy)
+          mdoy <- ifelse(irrigated,
+                         calendar[calendar$irrigation == "Irrigated",]$maturity_doy,
+                         calendar[calendar$irrigation == "Rainfed",]$maturity_doy)
+          
+          # Format and append estimated planting date
+          if (is.na(plDate)) {
+            plDate <- as.Date(pdoy, origin = paste0(gsYear - 1, "-12-31"))
+          }
+        }
+      }
+    
+    # Format as date
+    mDate <- as.Date(mdoy, origin = paste0(gsYear - 1, "-12-31"))
+  }
+  
+  if (length(aDate) == 0){
+    
+    # Source: cropCalendars::getCropParam(crops = "all"
+    adoy <- case_when(crop == "Winter_Wheat" ~ mdoy - 40,
+                      crop == "Spring_Wheat" ~ mdoy - 40,
+                      crop == "Maize" ~ mdoy - 60,
+                      crop == "Rice" ~  mdoy - 40,
+                      crop == "Sorghum" ~ mdoy - 40,
+                      crop == "Soybean" ~ mdoy - 40,
+                      TRUE ~ NA_real_)
+    
+    # Format as date
+    aDate <- as.Date(adoy, origin = paste0(gsYear - 1, "-12-31"))
+  }
+
+  # Format output
+  atables[["ADAT"]] <- aDate
+  atables[["MDAT"]] <- mDate
+  plSec[["PDATE"]] <- plDate
+  xtables[["PLANTING_DETAILS"]] <- plSec
+  
+  dataset[["X"]] <- xtables
+  dataset[["A"]] <- atables
+  
+  return(dataset)
+}
+
+
+#'
+#'
+#'
+#'
+#'
+
+calcSowingSeason <- function(sowing_date, croppar, monthly_temp, monthly_ppet, seasonality, lat) {
+  
+  # Extract crop-specific temperature thresholds
+  basetemp_low <- croppar$basetemp.low
+  temp_fall <- croppar$temp_fall
+  temp_spring <- croppar$temp_spring
+  
+  # Identify coldest and warmest months
+  coldest_month <- which.min(monthly_temp)
+  warmest_month <- which.max(monthly_temp)
+  
+  # Convert sowing date to month and DOY
+  sowing_month <- month(sowing_date)
+  sowing_doy <- yday(sowing_date)
+  
+  # Determine sowing season based on climate
+  if (seasonality %in% c("TEMP", "TEMPPREC", "PRECTEMP", "PREC")) {
+    if (sowing_month < coldest_month) {
+      sowing_season <- "winter"
+    } else {
+      sowing_season <- "spring"
+    }
+  } else if (seasonality %in% c("PREC", "PRECTEMP")) {
+    sowing_season <- if (sowing_month %in% which(monthly_ppet > 0.5)) "wet season" else "dry season"
+  } else {
+    sowing_season <- "unknown"
+  }
+  
+  return(sowing_season)
 }
