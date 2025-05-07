@@ -26,10 +26,11 @@
 
 # dataset = dataset_dssat  # tmp
 # data_model = "dssat"  #tmp
-# tmp <- estimate_phenology(dataset_dssat)
-# TODO: testing...crop calendar results seem off!!?...
+# wheat_season = "winter"
+# tmp <- estimate_phenology(dataset_dssat, wheat_season = wheat_season)
+# # TODO: testing...crop calendar results seem off!!?...
 
-estimate_phenology <- function(dataset, data_model = "dssat"){
+estimate_phenology <- function(dataset, data_model = "dssat", wheat_season = NULL) {
   
   # if (data_model == "dssat"){
   #   
@@ -50,8 +51,8 @@ estimate_phenology <- function(dataset, data_model = "dssat"){
   # Retrieve crop and crop parameters
   crop_in <- unique(cuSec[["CR"]])
   # TODO: distinguish between winter and spring wheat?
-  crop <- case_when(crop_in == "WH" ~ "Winter_Wheat",
-                    #crop_in == "WH" ~ "Spring_Wheat",
+  crop <- case_when(crop_in == "WH" && wheat_season == "winter" ~ "Winter_Wheat",
+                    crop_in == "WH" && wheat_season == "spring" ~ "Spring_Wheat",
                     crop_in == "MZ" ~ "Maize",
                     crop_in == "RI" ~ "Rice",
                     crop_in == "SG" ~ "Sorghum",
