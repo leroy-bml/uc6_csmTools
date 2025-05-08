@@ -9,9 +9,22 @@
 #' @importFrom jsonlite fromJSON
 #'
 
-load_map <- function(path){  # TODO: integrate to package data
-  map <- read.csv(path)
+load_map <- function(path = NULL) {
+
+  # Use default dataset from package unless a custom path is specified
+  if (is.null(path)) {
+    #path <- system.file("extdata", "icasa_mappings.csv", package = "csmTools")
+    path <- "inst/extdata/icasa_mappings.csv"  #tmp; switch after package built
+  }
   
+  # Load the data
+  if (file.exists(path)) {
+    map <- read.csv(path)
+  } else {
+    stop("File not found: ", path)
+  }
+  
+  # Parse mapping functions
   parse_json <- function(x){
     if (x != "") {
       fromJSON(x)
