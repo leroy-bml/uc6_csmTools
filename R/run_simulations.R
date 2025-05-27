@@ -8,67 +8,6 @@
 #' @importFrom ###
 #'
 
-compile_model_dataset <-
-  function(framework = "dssat",
-           filex, filea = NULL, filet = NULL, file_cul = NULL, file_sol, file_wth,
-           write = FALSE, path = NULL,
-           args = list()){
-    
-    # Format files
-    filex <- build_filex(filex) # management
-    if(!is.null(filea[["SUMMARY"]])) filea <- build_filea(filea)  # observed summary
-    if(!is.null(filet[["TIME_SERIES"]])) filet <- build_filet(filet)  # observed time series
-    file_wth <- build_wth(file_wth)  # weather
-    #file_sol <- build_sol(file_sol)  # soil profile from SG incomplete; must be complete for sims
-    file_sol <- as_DSSAT_tbl(
-      read_sol(file_name = "./inst/extdata/SOIL.SOL", id_soil = "IB00000001")
-    ) 
-    attr(file_sol, "file_name") <-  "TU.SOL" # TODO: handle generic soils
-    if(!is.null(file_cul)) file_cul <- build_cul(file_cul)  # cultivars
-    
-    # Link all data sections
-    filex$FIELDS <- filex$FIELDS %>%
-      mutate(WSTA = attr(file_wth, "GENERAL")$INSI,
-             ID_SOIL = file_sol$PEDON)
-    
-    # Overwrite default with user-provided values
-    for (name in names(args)) {
-      if (name %in% names(filex$SIMULATION_CONTROLS)) {
-        filex$SIMULATION_CONTROLS[[name]] <- args[[name]]
-      }
-    }
-    
-    # Write DSSAT files
-    if (write == TRUE){
-      if (is.null(path)) {
-        message("Path not specified, saving in working directory.")
-        path <- getwd()
-      }
-      message(paste0(path, "/", attr(filex, "file_name")))
-      write_filex(filex, file_name = paste0(path, "/", attr(filex, "file_name")))  # management
-      if(!is.null(filea)) write_filea(filea, file_name = paste0(path, "/", attr(filea, "file_name")))  # observed summary
-      if(!is.null(filet)) write_filet(filet, file_name = paste0(path, "/", attr(filet, "file_name")))  # observed time series
-      write_wth2(file_wth, file_name = paste0(path, "/", attr(file_wth, "file_name")))  # weather
-      write_sol(file_sol, file_name = paste0(path, "/", attr(file_sol, "file_name")), append = FALSE)  # soil profile
-      if(!is.null(file_cul)) write_cul(file_cul, file_name = paste0(path, "/", attr(file_cul, "file_name")))  # cultivars
-    }
-    
-    # Output dataset
-    dataset <- list(X = filex, A = filea, `T` = filet, WTH = file_wth, SOL = file_sol, CUL = file_cul)
-    return(dataset)
-  }
-
-
-#' ###
-#' 
-#' 
-#' @param df ###
-#' 
-#' @return a data frame ###
-#' 
-#' @importFrom ###
-#'
-
 run_simulations <- function(dataset, framework = "dssat", dssat_dir = NULL, sim_dir = NULL, args = list()) {
   
   #
@@ -77,8 +16,7 @@ run_simulations <- function(dataset, framework = "dssat", dssat_dir = NULL, sim_
   filet <- dataset$`T`
   file_wth <- dataset$WTH
   file_sol <- dataset$SOL
-  sim_dir <- getwd()
-  #file_cul <- dataset$CUL
+  file_cul <- dataset$CUL
   
   # Specify the location of the DSSAT CSM executable (can be passed as environment variable) and the location of input/output files
   if (is.null(dssat_dir)) {
@@ -103,8 +41,7 @@ run_simulations <- function(dataset, framework = "dssat", dssat_dir = NULL, sim_
     options(DSSAT.CSM = paste0(Sys.getenv("HOME"), "/dssat/dscsm048")) # still hardcoded :(
     sim_dir <- paste0(Sys.getenv("HOME"), "/dssat/")
   }
-  #return(c(sim_dir, dssat_dir))
-  
+
   old_wd <- paste0(getwd(), "/") # trailing slash to avoid path issues
   setwd(sim_dir)
   
@@ -122,7 +59,7 @@ run_simulations <- function(dataset, framework = "dssat", dssat_dir = NULL, sim_
     min_date <- as.Date(min(all_dates))
     filex$SIMULATION_CONTROLS$SDATE <- format(min_date, "%y%j")
   }
-
+  
   # Write all files in adequte location
   write_filex(filex, file_name = attr(filex, "file_name"))  # management
   if(!is.null(filea)) write_filea(filea, file_name = attr(filea, "file_name"))  # observed summary
@@ -145,7 +82,7 @@ run_simulations <- function(dataset, framework = "dssat", dssat_dir = NULL, sim_
   
   # Simulations
   batch_tbl <- data.frame(
-    FILEX = rep(attr(filex, "file_name"), length(params$TRTNO)),
+    FILEX = rep(attr(filex, "file_name"), length(params$TRTNO)),  # TODO: retrieve filename is not associated as attr (read through regular filex call)
     TRTNO = params$TRTNO,
     RP = params$RP,
     SQ = params$SQ,
