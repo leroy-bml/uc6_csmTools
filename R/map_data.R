@@ -14,27 +14,220 @@ load_map <- function(path = NULL) {
   # Use default dataset from package unless a custom path is specified
   if (is.null(path)) {
     #path <- system.file("extdata", "icasa_mappings.csv", package = "csmTools")
-    path <- "inst/extdata/icasa_mappings.csv"  #tmp; switch after package built
+    path <- "inst/extdata/icasa_mappings.json"  #tmp; switch after package built
   }
   
   # Load the data
   if (file.exists(path)) {
-    map <- read.csv(path)
+    map <- read_json(path, simplifyVector = TRUE)  # TO APPEND NEW, NO SIMPLIFY
   } else {
     stop("File not found: ", path)
   }
   
-  # Parse mapping functions
-  parse_json <- function(x){
-    if (x != "") {
-      fromJSON(x)
-    }
-  }
-  map$fun_values <- lapply(map$fun_values, parse_json)
-  map$fun_values_args <- lapply(map$fun_values_args, parse_json)
-  
+  # # Parse functions
+  # parse_json <- function(x){
+  #   if (!is.na(x)) {
+  #     fromJSON(x)
+  #   } else {
+  #     NA
+  #   }
+  # }
+  # 
+  # # map$fun_header <- lapply(map$fun_header, parse_json)  #HOMOGENIZE?!!
+  # # map$fun_header_args <- lapply(map$fun_header_args, parse_json)
+  # map$fun_values <- lapply(map$fun_values, parse_json)
+  # map$fun_values_args <- lapply(map$fun_values_args, parse_json)
+
   return(map)
 }
+
+
+#'
+#'
+#'
+#'
+
+create_map <- function(dir = NULL) {
+  
+  # Define user data directory
+  if(is.null(dir)) {
+    dir <- file.path("~/.csmTools")
+    message("Custom data map created in user's home directory, as 'dir' is not specified.")
+    print(dir)
+  }
+  
+  # Ensure directory exists
+  if (!dir.exists(dir)) {
+    dir.create(dir, recursive = TRUE)
+  }
+  cstm_path <- file.path(dir, "custom_icasa_mappings.json")
+  #src_path <- system.file("extdata", "icasa_mappings.csv", package = "csmTools")
+  src_path <- "inst/extdata/icasa_mappings.json"  #tmp; switch after package built
+  
+  # Define full file path for storing user-modified data
+  if (!file.exists(cstm_path)) {
+    file.copy(src_path, cstm_path)
+  }
+  return(cstm_path)
+}
+
+
+#'
+#'
+#'
+#'
+#'
+
+make_mapping <- function(path = NULL,
+                         standard,
+                         section = NULL,
+                         header,
+                         code_mappings = list(),
+                         unit,
+                         description = NULL,
+                         section_icasa,
+                         header_icasa,
+                         fun_headers = NULL,
+                         fun_headers_args = list(),
+                         fun_values = NULL,
+                         fun_values_args = list(),
+                         write = TRUE) {
+  
+  
+  path = NULL
+  standard = "ogcAgrovoc"
+  section = NULL
+  header = "air_temperature"
+  code_mappings = list()
+  unit = "degrees_C"
+  description = NULL
+  section_icasa = "WEATHER_DAILY"
+  header_icasa = "TMAX"
+  fun_headers = NULL
+  fun_headers_args = list()
+  fun_values = funtmp
+  fun_values_args = list("W_DATE")
+  write = TRUE
+  
+  # Identify the ICASA structure of the mapped ICASA term
+  icasa_str <- load_map() %>%
+    select(template_section, starts_with("icasa_")) %>%
+    distinct()
+  icasa_str_rec <- icasa_str[which(icasa_str$template_section == section_icasa & icasa_str$icasa_header_short == header_icasa),]
+  
+  # Create the new record dynamically
+  new_record <- list(
+    dataModel = standard,
+    section = section,
+    header = header,
+    description = description,
+    unit = unit,
+    code_mappings = code_mappings,
+    fun_header = if (!is.null(fun_headers)) list(paste(deparse(fun_headers), collapse = "\n")) else NULL,
+    fun_header_args = fun_headers_args,
+    fun_values = if (!is.null(fun_values)) list(paste(deparse(fun_values), collapse = "\n")) else NULL,
+    fun_values_args = fun_values_args
+  )
+  new_record <- append(icasa_str_rec, new_record)
+  
+  # Reorder as map
+  map_str <- names(load_map())
+  map_str <- map_str[map_str %in% names(new_record)]
+  new_record <- new_record[match(map_str, names(new_record))]
+  new_record <- new_record[lapply(new_record, length) != 0]
+  
+  # Define user data directory
+  is_file <- function(path) {
+    # Checks if path contains a file extension
+    return(grepl("\\.[a-zA-Z0-9]+$", basename(path)))
+  }
+  if (!is.null(path)) {
+    if (is_file(path)) path <- dirname(path) else path <- path
+  }
+  path <- create_map(path)
+  
+  # Append to custom map
+  cst_map <- load_map(path)
+
+  ###------ FIGURE OUT ROUTINE, CLEANUP --------
+  
+  # Convert list to a dataframe while flattening any nested elements
+  new_row <- as.data.frame(lapply(new_record, function(x) if (is.list(x)) unlist(x) else x), stringsAsFactors = FALSE)
+  
+  # Ensure all missing columns are added as NA
+  missing_cols <- setdiff(names(cst_map), names(new_row))
+  new_row[missing_cols] <- NA
+  
+  # Append the row to cst_map
+  cst_map <- bind_rows(cst_map, new_row)
+  write_json(cst_map, "test.json", pretty = TRUE, auto_unbox = TRUE)
+  
+  
+  # Problem parsing
+  tmp <- cst_map %>% filter(!is.na(fun_values))
+  str2 <- tmp$fun_values[13]
+  eval(parse(text = unlist(str2)))
+  
+  ###-----------------------------
+  
+  
+  # Write into the custom map
+  if (write) {
+    create_map(dir = path)
+    write_json(cst_map, path, pretty = TRUE, auto_unbox = TRUE)
+    message(paste("Mapping written in user custom map at", path))
+  } 
+  
+
+  
+  
+  map_tmp3 <- read_json("submap2.json", simplifyVector = TRUE)
+  
+  
+  
+
+  map_tmp4 <- read.csv("submap.csv")
+  
+  map_tmp <- rbind(map_tmp, as.data.frame(new_record, stringsAsFactors = FALSE))
+  
+  
+  map_tmp1 <- map_tmp %>% add_row(new_record)
+
+  fun_headers_str <- paste0("[\"", paste(deparse(fun), collapse = " "), "\"]")
+  
+  # Manually fix spacing and formatting issues
+  fun_headers_str <- gsub("^function ", "function(", fun_headers_str)  # Ensure consistent function header format
+  fun_headers_str <- gsub("\\s+", " ", fun_headers_str)  # Remove extra spaces
+  fun_headers_str <- paste(fun_headers_str, collapse = " ")  # Collapse into one line
+  
+  # Format as final string
+  final_string <- paste0("[\"", fun_headers_str, "\"]")
+  
+  
+  
+  tmp <- "function(x, df, grp, threshold) { df <- aggregate(df[[x]] ~ df[[grp]], data = df, FUN = function(x) max(x, na.rm = TRUE))\n return(df) \n }"
+  eval(parse(text = tmp))
+
+  submap <- map %>% filter(icasa_header_short == "TMAX" & header == "air_temperature")
+  jsonmap <- toJSON(submap, pretty = TRUE)
+  write(jsonmap, "submap.json")
+
+  submap$fun_values <- sapply(submap$fun_values, toString)
+  submap$fun_values_args <- sapply(submap$fun_values_args, toString)
+  write.csv(submap, "submap.csv", row.names = FALSE)
+
+  submap2 <- read.csv("submap.csv")
+  
+  
+  submap2 <- read_json("submap.json", simplifyVector = TRUE)
+  tmp <- eval(parse(text = unlist(submap2$fun_values)))
+  
+}
+
+
+
+# tmp <- load_map()
+# tmp <- tmp %>% filter(!is.null(fun_values))
 
 
 #' Convert a mapping code list stored in a data frame as a string into a lookup table
@@ -101,7 +294,7 @@ map_headers <- function(df, map, direction = c("to_icasa", "from_icasa")) {
   # for (i in 1:length(template_icasa)){
   
   # df <- template_icasa[[i]]
-  # map <- load_map(map_path)
+  # map <- load_map()
   # map <- map[map$dataModel == output_model & map$icasa_header_short %in% colnames(df),]
   # direction <- "from_icasa"
   
@@ -133,7 +326,7 @@ map_headers <- function(df, map, direction = c("to_icasa", "from_icasa")) {
           df[[new_col_nm]] <- df[[colnames(df)[i]]]  # add mapped column as a new column
         } else {
           mapped_cols <- c(mapped_cols, colnames(df)[i])
-          new_col_nm <- paste0(map$header_out[match_index], "_2")
+          new_col_nm <- paste0(map$header_out[match_index], ".2")
           df[[new_col_nm]] <- df[[colnames(df)[i]]]  # duplicate columns to keep original order
         }
       }
@@ -141,7 +334,7 @@ map_headers <- function(df, map, direction = c("to_icasa", "from_icasa")) {
   }
   
   df <- df[ , !(colnames(df) %in% mapped_cols)]  # remove the original columns after mapping
-  colnames(df) <- gsub("_2", "", colnames(df))  # remove temporary suffixes used to preserve column order
+  colnames(df) <- gsub("\\.2", "", colnames(df))  # remove temporary suffixes used to preserve column order
   
   out <- list(data = df, mapped = mapped_cols)
   
@@ -382,12 +575,12 @@ map_data <- function(df, input_model, output_model, map, keep_unmapped = TRUE, c
   
   # TODO: workaround to skip dataframes with no single match in the output model [currently fails]
   
-  # df <- tmp[[22]]
+  # df <- rdata[[11]]
   # input_model = "icasa"
   # output_model = "dssat"
-  # map = load_map(map_path)
+  # map = load_map()
   # keep_unmapped = FALSE
-  # col_exempt <- NULL
+  # col_exempt <- "INST_NAME"
   # 
   # for (i in seq_along(template_icasa)) {
   #   df <- template_icasa[[i]]
