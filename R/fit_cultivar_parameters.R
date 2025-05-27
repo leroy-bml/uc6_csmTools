@@ -428,7 +428,7 @@ calibrate <- function(xfile, cultivar, model = NULL, trtno = NULL,
       }
     } else if (!dir.exists(dir_out)) {
       dir.create(dir_out)
-    }
+    }##
     
     
     ###------------ Retrieve, load, and backup input files ------------------
@@ -678,22 +678,7 @@ calibrate <- function(xfile, cultivar, model = NULL, trtno = NULL,
 
 ###---- TEST ----
 
-# options(DSSAT.CSM = "C:\\DSSAT48\\DSCSM048.EXE")
-# xfile <- "C:/DSSAT48/Wheat/KSAS8101.WHX"
-# # xtables <- read_filex("C:/DSSAT48/Wheat/KSAS8101.WHX")
-# cultivar <- "NEWTON"
-# model <- "WHAPS"
-# minbound <- list(P1 = 400, P5 = 700, PHINT = 110, STMMX = 1, SLAP1 = 300)
-# maxbound <- list(P1 = 400, P5 = 700, PHINT = 110, STMMX = 1, SLAP1 = 300)
-# reps = 3
-# cores = 6
-# # rtno <- 6
-# # dir_glue <- "C:/DSSAT48/Tools/GLUE"
-# # dir_out <- "C:/DSSAT48/GLWork"
-# # dir_dssat <- "C:/DSSAT48"
-# # dir_genotype <- "C:/DSSAT48/Genotype"
-# 
-# tmp <- calibrate(xfile, cultivar, model, minbound = minbound, maxbound = maxbound, reps = 3, cores = 6)
+
 
 #TODO: testnew cultivar (not in original CUL file; set default params and MIN/MAX = default temporarily)
 # sequence phenology: (1) VSEN, PPSEN; (2) P5 [FIXED; DEFAULT IF NOT MEASURED: PHINT and P1]
