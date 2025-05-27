@@ -124,3 +124,28 @@ attr_to_column <- function(df1, df2, attr_name){
   
   return(list(df1, df2))
 }  # Not used, could be deleted?
+
+
+#' Nest selected columns into single cells
+#' 
+#' This function is necessary to format composite management tables, such as INITIAL_CONDITIONS and IRRIGATION
+#' 
+#' @export
+#' 
+#' @param df a data frame to collapse
+#' @param cols a character vector of column names to collapse
+#' 
+#' @return a data frame where the specified rows have been collapsed into single rows based on all unique combinations of the remaining columns
+#' 
+#' @importFrom dplyr "%>%" group_by summarise across
+#' @importFrom tidyr all_of
+#'
+
+collapse_cols <- function(df, cols) {
+  
+  grp_cols <- setdiff(colnames(df), cols)
+  
+  df %>%
+    group_by_at(grp_cols) %>%
+    summarise(across(all_of(cols), ~ list(.x)), .groups = "drop")
+}
