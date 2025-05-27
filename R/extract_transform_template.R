@@ -99,6 +99,8 @@ get_template_codes <- function(wb){
 #' 
 
 extract_template <- function(path, exp_id = NA_character_, headers = c("short", "long")){
+   
+  #path = template_path  #tmp
   
   # Load workbook and set name criterion for sheets to be loaded (capitalized sheet names)
   wb <- suppressWarnings(wb_load(path))
@@ -108,7 +110,9 @@ extract_template <- function(path, exp_id = NA_character_, headers = c("short", 
   # Extract all sections and section names
   dfs <- list()
   for (i in 1:length(nms_data)){
-    df <- wb_to_df(wb, sheet = nms_data[i], startRow = 4)
+    df <- suppressWarnings(
+      wb_to_df(wb, sheet = nms_data[i], startRow = 4, detect_dates = TRUE)
+    )
     #attr(df, "section") <- nms_data[i]
     df <- drop_artefacts(df)
     
@@ -117,7 +121,9 @@ extract_template <- function(path, exp_id = NA_character_, headers = c("short", 
   }
 
   # Map template dropdown list descriptions into ICASA codes
-  codes <- get_template_codes(wb)
+  codes <- suppressWarnings(
+    get_template_codes(wb)
+  )
   dfs <- lapply(dfs, function(df){ desc_to_codes(df, codes) })
   
   # Delete empty dataframes
@@ -128,7 +134,13 @@ extract_template <- function(path, exp_id = NA_character_, headers = c("short", 
   # Replace treatment names by treatment number in the treatment matrix
   dfs <- format_envmod_tbl(dfs)
   dfs <- format_treatment_str(dfs)
-  dfs <- format_metadata(dfs, data_model = "icasa")
+  
+  # Replace null events (e.g., "rainfed" irrigation input)
+  dfs <- format_events(dfs, "FERTILIZERS", "fertilizer_level", "fert_applied", "FERTILIZER_APPLICS")
+  dfs <- format_events(dfs, "IRRIGATIONS", "irrigation_level", "irrig_applied", "IRRIGATION_APPLICATIONS")
+  
+  # Format metadata
+  dfs <- structure_metadata(dfs, data_model = "icasa")
   
   # Map column headers to short format if applicable
   # TODO: extensive testing (e.g., no provenance sheets or empty)
@@ -170,7 +182,10 @@ extract_template <- function(path, exp_id = NA_character_, headers = c("short", 
 #'
 
 icasa_long_to_short <- function(df, section, dict, keep_unmapped = TRUE){
-
+  
+  # section <- "SOIL_METADATA"  #tmp
+  # df <- dfs[["SOIL_METADATA"]]  #tmp
+  
   # Generate mapping vector for the focal section
   subset <- dict[dict$Sheet == section,]
   rename_vector <- setNames(subset$Code_Query, subset$var_name)
@@ -314,6 +329,60 @@ format_envmod_tbl <- function(ls){
 #' ###
 #' 
 #' 
+  
+format_events <- function(ls, type, head_key, applied_key, applics_key) {
+  
+  if (type %in% names(ls)) {
+    head <- ls[[type]]
+    applics <- ls[[applics_key]]
+    treatments <- ls[["TREATMENTS"]]
+    
+    no_app_id <- head[head[[applied_key]] == "N", head_key]
+    
+    if (length(no_app_id) > 0) {
+      
+      # Update header levels
+      head <- head %>%
+        mutate(old_level = !!sym(head_key)) %>%
+        mutate(!!sym(head_key) := ifelse(!!sym(head_key) == no_app_id, 0, !!sym(head_key))) %>%
+        arrange(!!sym(head_key)) %>%
+        group_by(old_level) %>%
+        mutate(!!sym(head_key) := cur_group_id() - 1) %>%
+        ungroup()
+      
+      # Update application events
+      if (!is.null(applics)) {
+        applics <- applics %>%
+          left_join(head %>% select(all_of(head_key), old_level), by = setNames("old_level", head_key)) %>%
+          mutate(!!sym(head_key) := coalesce(.data[[paste0(head_key, ".y")]], .data[[head_key]])) %>%
+          select(-all_of(paste0(head_key, ".y"))) %>%
+          filter(.data[[head_key]] > 0)
+      }
+      
+      # Update treatment matrix
+      treatments <- treatments %>%
+        left_join(head %>% select(all_of(head_key), old_level), by = setNames("old_level", head_key)) %>%
+        mutate(!!sym(head_key) := coalesce(.data[[paste0(head_key, ".y")]], .data[[head_key]])) %>%
+        select(-all_of(paste0(head_key, ".y")))
+      
+      # Clean header
+      head <- head %>%
+        filter(.data[[head_key]] > 0) %>%
+        select(-old_level)
+      
+      ls[[type]] <- head
+      ls[[applics_key]] <- applics
+      ls[["TREATMENTS"]] <- treatments
+    }
+  }
+  
+  return(ls)
+}
+
+
+#' ###
+#' 
+#' 
 #' @param df ###
 #' 
 #' @return a data frame ###
@@ -412,9 +481,7 @@ reshape_to_model_dssat <- function(vector, map, input_model = "icasa", output_mo
   
   # NB: temporary approach; later integrate to a generic melt-explode-map sequence
   
-  map <- load_map( # TODO: make internal data object
-    "C:/Users/bmlle/Documents/0_DATA/TUM/HEF/FAIRagro/2-UseCases/UC6_IntegratedModeling/Workflows/csmTools/data/icasa_mappings.csv"
-  ) %>%
+  map <- load_map() %>%
     filter(dataModel == output_model) %>%
     select(template_section, section) %>%
     distinct()
@@ -476,35 +543,45 @@ combine_dual_tier <- function(ls) {
 
 remap <- function(dataset, input_model = "icasa", output_model = "dssat"){
   
-  # dataset <- uc6_icasa   #tmp
-  # input_model = "icasa"  #tmp
-  # output_model = "dssat"  #tmp
+  # # Map data within target section
+  # if (is.data.frame(dataset)) {
+  #   
+  #   map <- load_map()
+  #   fdata <- map_data(dataset, input_model, output_model, map = map,
+  #                     keep_unmapped = FALSE,  col_exempt = c("INST_NAME", "WST_NAME"))
+  #       
+  # }
   
   # Reshape to data model (ICASA -> DSSAT)
   rdata <- format_observed_data(dataset)  # All measured data into SUMMARY and TIME_SERIES tables
   names(rdata) <- reshape_to_model_dssat(vector = names(rdata))  # Rename sections #TMP
   
-  # Map data within target section
   mdata <- list()
   for (i in 1:length(rdata)){
     
+    #i = 12
+    
     sec <- names(rdata)[i]
-    map <- load_map(map_path)   # FIX definition
+    map <- load_map() 
     sub <- map %>% filter(section %in% sec)
     
-    mdata[[i]] <- map_data(rdata[[i]], input_model, output_model, map = sub, keep_unmapped = FALSE, col_exempt = NULL)
+    # TODO: solve problem, bug when SUMMARY only contains TRNO
+    mdata[[i]] <- map_data(rdata[[i]], input_model, output_model, map = sub,
+                           # Keep institute name for DSSAT file metadata
+                           keep_unmapped = FALSE, col_exempt = c("INST_NAME", "WST_NAME"))  #TODO: add FLL1;2;3 and revert mapping?
     names(mdata)[i] <- sec
   }
   
   # Combine dual tier sections (header + events/layers)
   fdata <- combine_dual_tier(mdata)
   
+  # Structure metadata as DSSAT files
+  fdata <- structure_metadata(fdata, data_model = "dssat")
   
   return(fdata)
 }
 
 
-#' ###
 #' 
 #' 
 #' @param df ###
@@ -516,6 +593,9 @@ remap <- function(dataset, input_model = "icasa", output_model = "dssat"){
 
 # NB: fails when applied to the mapped dataset with unmapped variables kept, due to duplicate name in multiple table (ELEV.x, ELEV.y)
 split_experiments <- function(ls) {
+  
+  #ls <- dfs  #tmp
+  
   
   # Set the splitting factor (IDs) for each data type (experiment, soil, weather)
   if(all(grepl("^[A-Z_]+$", colnames(ls[[1]])))){
@@ -535,32 +615,41 @@ split_experiments <- function(ls) {
   sol_split <- wth_split <- c()
   
   for (i in 1:length(exp_dfs_split)){
-    
+
     # Identify profile and station IDs for each experiment
     profile_id <- exp_dfs_split[[i]]$FIELDS[[fcts[["sol"]]]]
     station_id <- exp_dfs_split[[i]]$FIELDS[[fcts[["wth"]]]]
-
+    
+    
+    # Keep only soil data records containing the profile ID
     sol_split[[i]] <- lapply(env_dfs, function(df) {
-      if (nrow(df) == 0) {
-        return(df)  # Return empty df unchanged
+      
+      matched_col <- which(sapply(df, function(col) any(col %in% profile_id)))
+      
+      if (all(!is.na(profile_id)) && length(matched_col) > 0) {
+        df %>% filter(df[[matched_col]] %in% profile_id)
       } else {
-        # Keep only rows containing any value in profile_id
-        matched_rows <- rowSums(Reduce(`|`, lapply(profile_id, function(x) df == x), accumulate = FALSE), na.rm = TRUE) > 0
-        df_sub <- df[matched_rows, , drop = FALSE]
-        return(df_sub)
+        df <- NULL
       }
     })
     
-    sol_split[[i]] <- Filter(function(df) nrow(df) > 0, sol_split[[i]])  # Remove empty dataframes
+    # Remove empty dataframes
+    sol_split[[i]] <- Filter(Negate(is.null), sol_split[[i]])
     
+    # Keep only weather data records containing the station ID
     wth_split[[i]] <- lapply(env_dfs, function(df) {
-      if (nrow(df) == 0) {
-        return(df)  # Return empty df unchanged
+      
+      matched_col <- which(sapply(df, function(col) any(col %in% station_id)))
+      
+      if (all(!is.na(station_id)) && length(matched_col) > 0) {
+        df %>% filter(df[[matched_col]] %in% station_id)
       } else {
-        return(df[rowSums(df == station_id, na.rm = TRUE) > 0, , drop = FALSE])
+        df <- NULL
       }
     })
-    wth_split[[i]] <- Filter(function(df) nrow(df) > 0, wth_split[[i]])  # Remove empty dataframes
+    
+    # Remove empty dataframes
+    wth_split[[i]] <- Filter(Negate(is.null), wth_split[[i]])
     
     # Append data when it exists
     if (length(sol_split[[i]]) > 0 || length(wth_split[[i]]) > 0) {
