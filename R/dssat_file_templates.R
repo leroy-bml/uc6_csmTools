@@ -325,7 +325,7 @@ WEATHER_template <-
 # File A template ---------------------------------------------------------
 
 # v_fmt_filea <- c(
-#   TRTNO = "%6.0f", ADAT = "%6s", BWAH = "%6.0f",
+#   TRNO = "%6.0f", ADAT = "%6s", BWAH = "%6.0f",
 #   #CHTA = "##%6.0f", CNAA = "%##6.0f",
 #   CNAM = "%6.1f",
 #   #CWAA = "%##6.0f",
@@ -346,12 +346,12 @@ WEATHER_template <-
 
 
 v_fmt_filea <- c(
-  TRTNO = "%6.0f", ADAT = "%6s", BWAH = "%6.0f",
+  TRNO = "%6.0f", ADAT = "%6s", BWAH = "%6.0f",
   CHTA = "##%6.0f", CNAA = "%6.0f",
   CNAM = "%6.1f",
   CWAA = "%6.0f",
   CWAH = "%6.0f",  # to confirm
-  CWAM = "%6.0f", `GN%M` = "%6.2f", GNAM = "%6.1f", `H#AM` = "%6.0f", `H#UM` = "%6.0f", HDAT = "%6s",
+  CWAM = "%6.0f", GWAM = "%6.0f", `GN%M` = "%6.2f", GNAM = "%6.1f", `H#AM` = "%6.0f", `H#UM` = "%6.0f", HDAT = "%6s",
   HWAHF = "%6.0f",  # to confirm
   HIAM = "%6.0f",
   HWAH = "%6.0f", HWAM = "%6.0f", HWUM = "%6.1f",  # to confirm
@@ -370,7 +370,7 @@ v_fmt_filea <- c(
 # File A template ---------------------------------------------------------
 
 # v_fmt_filet <- c(
-#   DATE = "%6s", TRTNO = "%6.0f",
+#   TRNO = "%6.0f", DATE = "%6s",
 #   CDAD = "%6.0f",
 #   #CHTD = "%##6.0f", `CN%D` = "%##6.0f", CNAD = "%##6.0f", CWAD = "%##6.0f", CWID = "%##6.0f",
 #   #`G#AD` = "##%6.0f", `GN%D` = "%##6.0f", GNAD = "%##6.0f", `GP%D` = "%##6.0f", GPAD = "%##6.0f", GWAD = "%##6.0f",
@@ -388,7 +388,7 @@ v_fmt_filea <- c(
 # )
 
 v_fmt_filet <- c(
-  DATE = "%6s", TRTNO = "%6.0f",
+  TRNO = "%6.0f", DATE = "%6s",
   CDAD = "%6.0f",
   CHTD = "%6.0f", `CN%D` = "%6.0f", CNAD = "%6.0f", CWAD = "%6.0f", CWID = "%6.0f",
   `G#AD` = "%6.0f", `GN%D` = "%6.0f", GNAD = "%6.0f", `GP%D` = "%6.0f", GPAD = "%6.0f", GWAD = "%6.0f",
