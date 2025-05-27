@@ -156,30 +156,6 @@ format_table <- function(df, template) {
   return(as_DSSAT_tbl(out))
 }
 
-#' Nest selected columns into single cells
-#' 
-#' This function is necessary to format composite management tables, such as INITIAL_CONDITIONS and IRRIGATION
-#' 
-#' @export
-#' 
-#' @param df a data frame to collapse
-#' @param cols a character vector of column names to collapse
-#' 
-#' @return a data frame where the specified rows have been collapsed into single rows based on all unique combinations of the remaining columns
-#' 
-#' @importFrom dplyr "%>%" group_by summarise across
-#' @importFrom tidyr all_of
-#'
-
-collapse_cols <- function(df, cols) {
-  
-  grp_cols <- setdiff(colnames(df), cols)
-  
-  df %>%
-    group_by_at(grp_cols) %>%
-    summarise(across(all_of(cols), ~ list(.x)), .groups = "drop")
-}
-
 
 #' Format crop management data as DSSAT input tables
 #' 
@@ -196,15 +172,16 @@ collapse_cols <- function(df, cols) {
 
 # Assemble File X
 build_filex <- function(ls, title = NULL, site_code = NA_character_) {
-  
-  metadata <- attributes(ls)
-  ls <- ls[!grepl("WEATHER|SOIL|OBSERVED", names(ls))]
+
+  filex <- ls[["MANAGEMENT"]]
+  metadata <- attributes(filex)  #!! check for integration
   
   # Apply the template format to each section
-  sec_nms <- sort(names(ls))
-  filex <- mapply(format_table, ls[sec_nms], FILEX_template[sec_nms], SIMPLIFY = FALSE)
+  sec_nms <- sort(names(filex))
+  filex <- mapply(format_table, filex[sec_nms], FILEX_template[sec_nms], SIMPLIFY = FALSE)
   
   # Set default values for missing parameters in treatments matrix
+  # TODO: transfer as variable parametrization!
   filex[["TREATMENTS"]] <- filex[["TREATMENTS"]] %>%
     mutate(R = ifelse(is.na(R), 1, R),  # default to 1
            O = ifelse(is.na(O), 0, O),  # default to 0
@@ -212,10 +189,7 @@ build_filex <- function(ls, title = NULL, site_code = NA_character_) {
            SM = ifelse(is.na(SM), 1, SM),  # default to 1  ##REDUNDANT
     ) %>%  
     mutate(across(where(is.numeric), ~ifelse(is.na(.x), 0, .x)))  # exception is simulation controls
-  
-  # Set field ID if missing
-  if (is.na(filex$FIELDS$ID_FIELD)) filex$FIELDS$ID_FIELD <-metadata$field_id
-  
+
   # Check requirements for writing file X
   required_sections <- c("TREATMENTS","CULTIVARS","FIELDS","PLANTING_DETAILS")
   
@@ -243,7 +217,7 @@ build_filex <- function(ls, title = NULL, site_code = NA_character_) {
   # Transfer attributes
   attr(filex, "experiment") <- metadata$experiment
   attr(filex, "file_name") <- metadata$file_name
-  attr(filex, "comments") <- list(paste0("File generated on ", Sys.Date(), " with csmTools"), metadata$comments)
+  attr(filex, "comments") <- metadata$comments
 
   return(filex)
 }
@@ -264,32 +238,16 @@ build_filex <- function(ls, title = NULL, site_code = NA_character_) {
 #'
 
 build_filea <- function(ls, title = NULL, site_code = NA_character_) {
-  
-  ls <- template_dssat
-  
-  if ("SUMMARY" %in% names(ls)) {
-    
-    #year <- unique(ls[["SUMMARY"]]$Year)
-    
-    filea <- ls[["SUMMARY"]] %>%
-      #select(-Year) %>%
-      mutate(across(where(is.Date), ~ format(as.Date(.x), "%y%j"))) %>%
-      arrange(TRTNO) %>%
-      select(-N) %>%  # temp workaround to delete duplicate TRTNO in map (N in TREATMENTS). Fix by handling mapping by section.
-      as_DSSAT_tbl()
 
-    # Set atributes for file export
-    attr(filea, "v_fmt") <- v_fmt_filea[names(v_fmt_filea) %in% names(filea)]
-    attr(filea, "experiment") <- attr(ls, "experiment")
-
-    extension <- paste0(unique(ls[["CULTIVARS"]]$CR), "A")
-    attr(filea, "file_name") <- sub("(\\.).*", paste0("\\1", extension), attr(ls, "file_name"))
-    attr(filea, "comments") <- paste0("File generated on ", Sys.Date(), " with csmTools")
-
-  } else {
+  if (!"SUMMARY" %in% names(ls)) return(NULL)
     
-    filea <- NULL
-  }
+  filea <- ls[["SUMMARY"]] %>%
+    # Format date as DSSAT format
+    mutate(across(where(is.Date), ~ format(as.Date(.x), "%y%j"))) %>%
+    arrange(TRNO) %>%
+    as_DSSAT_tbl() %>%
+    # Set formatting attributes for writing files (DSSAT libraries)
+    {attr(., "v_fmt") <- v_fmt_filea[names(v_fmt_filea) %in% names(.)]; .}
   
   return(filea)
 }
@@ -308,31 +266,21 @@ build_filea <- function(ls, title = NULL, site_code = NA_character_) {
 #' @importFrom DSSAT as_DSSAT_tbl
 #'
 
+
 build_filet <- function(ls, title = NULL, site_code = NA_character_) {
   
-  if ("TIME_SERIES" %in% names(ls)) {
-    
-    #year <- unique(ls[["TIME_SERIES"]]$Year)
-    
-    filet <- ls[["TIME_SERIES"]] %>%
-      #select(-Year) %>%
-      mutate(DATE = format(as.Date(DATE), "%y%j")) %>%
-      arrange(TRTNO, DATE) %>%
-      select(-N) %>%  # temp workaround to delete duplicate TRTNO in map (N in TREATMENTS). Fix by handling mapping by section.
-      as_DSSAT_tbl()
-    
-    # Set atributes for file export
-    attr(filet, "v_fmt") <- v_fmt_filet[names(v_fmt_filet) %in% names(filet)]  # print formats
-    attr(filet, "experiment") <- title  # file title (1st row)
-    
-    extension <- paste0(unique(ls[["CULTIVARS"]]$CR), "T")
-    attr(filea, "file_name") <- sub("(\\.).*", paste0("\\1", extension), attr(ls, "file_name"))
-    attr(filet, "comments") <- paste0("File generated on ", Sys.Date(), " with csmTools")
-    
-  } else {
-    
-    filet <- NULL
-  }
+  #ls <- data_dssat  #tmp
+  
+  if (!"TIME_SERIES" %in% names(ls)) return(NULL)
+  
+  filet <- ls[["TIME_SERIES"]] %>%
+    # Format date as DSSAT format
+    mutate(DATE = format(as.Date(DATE), "%y%j")) %>%
+    arrange(TRNO, DATE) %>%
+    #select(-N) %>%  # temp workaround to delete duplicate TRTNO in map (N in TREATMENTS). Fix by handling mapping by section.
+    as_DSSAT_tbl() %>%
+    # Set formatting attributes for writing files (DSSAT libraries)
+    {attr(., "v_fmt") <- v_fmt_filet[names(v_fmt_filet) %in% names(.)]; .}
   
   return(filet)
 }
@@ -351,26 +299,18 @@ build_filet <- function(ls, title = NULL, site_code = NA_character_) {
 
 build_sol <- function(ls) {
   
-  attr <- attributes(ls)
+  #ls <- data_dssat
   
-  data <- ls[["SOIL_PROFILE_LAYERS"]]
-  header <- ls[["SOIL_METADATA"]]
+  # Apply template format for DSSAT file writing
+  sol <- ls[["SOIL"]]
+  filesol <- format_table(sol, SOIL_template)
   
-  header_dups <- header %>%
-    slice(1) %>%
-    replicate(nrow(data), ., simplify = FALSE) %>%
-    bind_rows()
-  
-  data <- bind_cols(header_dups, data)
-  
-  # Apply the template format for daily weather data
-  sol <- format_table(data, SOIL_template)
-  
-  attr(sol, "title") <- attr$title
-  attr(sol, "comments") <- attr$comments
-  attr(sol, "file_name") <- attr$file_name
-  
-  return(sol)
+  metadata <- attributes(sol)
+  attr(filesol, "title") <- metadata$title
+  attr(filesol, "file_name") <- metadata$file_name
+  attr(filesol, "comments") <- metadata$comments
+
+  return(filesol)
 }
 
 
@@ -389,12 +329,12 @@ build_sol <- function(ls) {
 #' @importFrom DSSAT as_DSSAT_tbl
 #'
 
-build_wth <- function(df) {
+build_wth <- function(ls) {
   
-  attr <- attributes(df)
-  
-  # Apply the template format for daily weather data
-  wth <- format_table(df, WEATHER_template) %>% mutate(DATE = format(as.Date(DATE), "%y%j"))
+  # Apply template format for DSSAT file writing
+  wth <- ls[["WEATHER"]]
+  filewth <- format_table(wth, WEATHER_template) %>%
+    mutate(DATE = format(as.Date(DATE), "%y%j"))
   
   # Corrected print formats (temp workaround for date formatting issue with write_wth)
   wth_fmt <- c(DATE = "%5s",  # instead of %7s
@@ -404,13 +344,16 @@ build_wth <- function(df) {
   #wth <- as.data.frame(mapply(function(x, y) sprintf(y, x), wth, wth_fmt))
   
   # Set metadata as attributes
-  attr(wth, "v_fmt") <- wth_fmt  # corrected print formats
-  attr(wth, "GENERAL") <- attr(df, "station_metadata")
-  attr(wth, "location") <- attr$location
-  attr(wth, "comments") <- attr$comments
-  attr(wth, "file_name") <- attr$filename
+  metadata <- attributes(wth)
+  metadata$station_metadata <- format_table(metadata$station_metadata, WEATHER_header_template)
   
-  return(wth)
+  attr(filewth, "v_fmt") <- wth_fmt  # corrected print formats
+  attr(filewth, "GENERAL") <- metadata$station_metadata
+  attr(filewth, "location") <- metadata$location
+  attr(filewth, "comments") <- metadata$comments
+  attr(filewth, "file_name") <- metadata$file_name
+  
+  return(filewth)
 }
 
 
@@ -439,22 +382,75 @@ write_wth2 <- function(wth, file_name) {
 #' 
 #' @importFrom purrr walk
 #' 
-write_dssat <- function(ls, path = getwd()) {
+
+write_dssat <- function(ls, sol_append = TRUE, path = getwd()) {
   
   # Write functions (from DSSAT package)
-  write_funcs <- list(
-    FILEX = write_filex,
-    FILEA = write_filea,
-    FILET = write_filet,
-    SOL = write_sol,
-    WTH = write_wth2
+  write_funs <- list(
+    filex = write_filex,
+    filea = write_filea,
+    filet = write_filet,
+    filesol = write_sol,
+    filewth = write_wth2
   )
   
-  walk(names(write_funcs), ~{
+  walk(names(write_funs), ~{
     if (!is.null(ls[[.]])) {
-      write_funcs[[.]](ls[[.]], file_name = paste0(path, "/", attr(ls[[.]], "file_name")))
-    } else if (. %in% c("filex", "wth", "sol")) {
+      print(names(ls[[.]]))
+      
+      # Add append = FALSE only for write_sol
+      if (. == "filesol") {
+        write_funs[[.]](ls[[.]], file_name = paste0(path, "/", attr(ls[[.]], "file_name")), append = sol_append)
+      } else {
+        write_funs[[.]](ls[[.]], file_name = paste0(path, "/", attr(ls[[.]], "file_name")))
+      }
+      
+    } else if (. %in% c("filex", "filewth", "filesol")) {
       warning(paste0("Required ", ., " file is missing."))
     }
   })
 }
+
+#' ###
+#' 
+#' 
+#' @param df ###
+#' 
+#' @return a data frame ###
+#' 
+#' @importFrom ###
+#'
+
+compile_model_dataset <-
+  function(dataset, framework = "dssat",
+           write = FALSE, sol_append = TRUE, path = getwd(), args = list()) {
+    
+    
+    # Format files
+    filex <- build_filex(dataset) # management
+    if(!is.null(dataset[["SUMMARY"]])) filea <- build_filea(dataset) else filea <- NULL  # observed summary
+    if(!is.null(dataset[["TIME_SERIES"]])) filet <- build_filet(dataset) else filet <- NULL  # observed time series
+    filesol <- build_sol(dataset)  # soil profile
+    filewth <- build_wth(dataset)  # weather
+    
+    # Set simulation controls (overwrite default with provided values)
+    for (name in names(args)) {
+      if (name %in% names(filex$SIMULATION_CONTROLS)) {
+        filex$SIMULATION_CONTROLS[[name]] <- args[[name]]
+      }
+    }
+    
+    # TODO: Fetch cultivar file
+    #if(!is.null(file_cul)) file_cul <- build_cul(file_cul)  # TODO: fetch cultivar file
+    
+    # Output dataset
+    dataset <- list(filex = filex, filea = filea, filet = filet, filesol = filesol, filewth = filewth)
+    #return(dataset)
+    
+    # Write DSSAT files
+    if (write == TRUE){
+      write_dssat(dataset, sol_append = sol_append, path)
+      message(paste("DSSAT data files written in", path))
+    }
+    return(dataset)
+  }
