@@ -109,29 +109,76 @@ get_soilGrids_profile <- function(lat, lon, dir = tempdir()) {
       as_DSSAT_tbl()
   }
   
-  profiles <- lapply(profiles, function(df){
-    attr(df, "comments") <-
+  # Reshape and map to ICASA format
+  prov_metadata <- profile_metadata <- layer_data <- list()
+  
+  for (i in 1:length(profiles)) {
+    
+    # Unnest layer data
+    profile_full <- profiles[[i]] %>% unnest(everything())
+    
+    # Identify metadata, profile metadata and layer data attributes
+    data_map <- load_map()
+    
+    prov_attr <- data_map %>%
+      filter(dataModel == "dssat" & template_section == "SOIL_METADATA") %>%
+      pull(header)
+    
+    profile_attr <- data_map %>%
+      filter(dataModel == "dssat" & template_section == "SOIL_PROFILES") %>%
+      pull(header)
+    
+    layers_attr <- data_map %>%
+      filter(dataModel == "dssat" & template_section == "SOIL_PROFILE_LAYERS") %>%
+      pull(header)
+    
+    # Split sections
+    prov_metadata[[i]] <- profile_full[names(profile_full) %in% prov_attr] %>% distinct()
+    profile_metadata[[i]] <- profile_full[names(profile_full) %in% profile_attr] %>% distinct()
+    layer_data[[i]] <- profile_full[names(profile_full) %in% layers_attr]
+    
+    # Map to ICASA
+    prov_metadata[[i]] <- map_data(prov_metadata[[i]], input_model = "dssat", output_model = "icasa",
+                                   map = data_map, keep_unmapped = FALSE)
+    profile_metadata[[i]] <- map_data(profile_metadata[[i]], input_model = "dssat", output_model = "icasa",
+                                      map = data_map, keep_unmapped = FALSE)
+    layer_data[[i]] <- map_data(layer_data[[i]], input_model = "dssat", output_model = "icasa",
+                                map = data_map, keep_unmapped = FALSE)
+    
+    # Add ISRIC as institution
+    prov_metadata[[i]]$INST_NAME <- "ISRIC"
+  }
+  
+  # Format output
+  out <- list(SOIL_METADATA = prov_metadata,
+              SOIL_PROFILES = profile_metadata,
+              SOIL_PROFILE_LAYERS = layer_data)
+  
+  # Attach comment on data provenance
+  attr(out, "comments") <-
       c(
         "Soil profile generated using ISRIC SoilGrid1km (see Han et al. [2015] 10.1016/j.envsoft.2019.05.012)",
         paste(
           "Data extracted from the Harvard Dataverse (10.7910/DVN/1PEEY0) on", Sys.Date(), "using csmTools"
         )
       )
-    return(df)
+  
+  out <- lapply(out, function(ls) {
+    if (length(ls)>1){
+      return(ls)
+    } else {
+      return(ls[[1]])
+    }
   })
   
-  if (length(profiles)>1){
-    return(profiles)
-  } else {
-    return(profiles[[1]])
-  }
+  return(out)
 }
 
 # TODO: XY in metadata rather than data?
 
 # test---
 
-tmp <- get_soilGrids_profile(lat = 47, lon = 10)
-tmp
-write_sol(tmp, "TMP.SOL", append = FALSE)
+#tmp <- get_soilGrids_profile(lat = 52.53998, lon = 5.56189)
+
+
 
