@@ -19,6 +19,13 @@
 #' 
 
 tag_data_type <- function(db, years_col, plots_col, plots_len, max_events = 8) {
+
+  # db = DATA_tbls
+  # years_col = "Year"
+  # plots_col = "Plot_id"
+  # plots_len = PLOTS_n
+  # max_events = 8
+  
   
   # Tag tables independent of plots as "other" as both management and observed data are tied to the plots
   db_desc <- lapply(db, function(df){
@@ -35,14 +42,20 @@ tag_data_type <- function(db, years_col, plots_col, plots_len, max_events = 8) {
 
   db_tag <- lapply(db, function(df){
     
+    df <- db[[9]]  #tmp
+    pkey <- get_pkeys(df, alternates = FALSE)
+    
     tag <- df %>%
+      select(-all_of(c(plots_col, pkey))) %>%
+      distinct() %>%
       group_by_at(years_col) %>%
       # Calculate mean number of rows (i.e., unique data) per year
       # If it is consistently low across years (i.e., < max_events), then it is tagged as management data
-      summarise(n = n_distinct(across(-all_of(c(get_pkeys(df, alternates = FALSE), plots_col)))), .groups = "drop") %>%
-      summarise(n = mean(n)) %>%
+      summarise(n = n()) %>%
+      #summarise(n = n_distinct(across(-all_of(c(get_pkeys(df, alternates = FALSE), plots_col)))), .groups = "drop") %>%
+      #summarise(n = mean(n)) %>%
       mutate(tag = ifelse(n <= max_events, "management", "observed")) %>%
-      pull(tag)
+      pull(unique(tag))
     
     df$tag <- tag  
     
@@ -51,10 +64,16 @@ tag_data_type <- function(db, years_col, plots_col, plots_len, max_events = 8) {
     # taken per year. This may change across years.
     if ("observed" %in% df$tag) {
       
+      plots_yr <- data.frame(
+        Year = as.numeric(names(plots_len)),
+        length = unname(plots_len)
+      )
+      
       obs_tag <- df %>%
         group_by_at(years_col) %>%
         summarise(n = n()) %>%
-        mutate(obs_cat = ifelse(n <= plots_len, "observed_summary", "observed_timeseries")) %>%
+        left_join(plots_yr, by = "Year") %>%
+        mutate(obs_cat = ifelse(n <= length, "observed_summary", "observed_timeseries")) %>%
         ungroup() %>%
         select(-n)
       
