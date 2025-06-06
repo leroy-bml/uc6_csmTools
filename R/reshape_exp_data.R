@@ -266,60 +266,56 @@ reshape_exp_data <- function(db, metadata, mother_tbl) {
                                    years_col = "Year",
                                    plots_col = "Plot_id",
                                    plots_len = PLOTS_n,
-                                   max_events = 8)
-  # TODO: >2 date vars? 
-  
+                                   max_mods = mean(TREATMENTS_n, na.rm = TRUE))
+  # TODO: >2 date vars?
+
   # Separate management and observed data
   data_cats <- sapply(DATA_tbls_ident, function(df) attr(df, "category"))
-  
+
   MNGT_ipt <- DATA_tbls_ident[["management"]]
   DOBS_suma_ipt <- DATA_tbls_ident[["observed_summary"]]
   DOBS_tser_ipt <- DATA_tbls_ident[["observed_timeseries"]] ## some years summary, other timeseries
   ATTR_ipt <- DATA_tbls_ident[["other"]]
   
   
-  MNGT_ipt <- DATA_tbls[names(DATA_tbls) %in%
-                          c("AUSSAAT", "BEREGNUNG", "BODENBEARBEITUNG", "ERNTE", "PFLANZENSCHUTZ", "DUENGUNG")]
-  
-  
   # Format fields table -----------------------------------------------------
   
   
   # Define FIELDS ID
-  PLOTS_all_ids <- get_pkeys(PLOTS_tbl, alternates = TRUE)
-  FIELDS_cols <- setdiff(colnames(PLOTS_tbl), c(PLOTS_all_ids, std_str_names))
-  
-  # Make field table
-  FIELDS_tbl <- PLOTS_tbl %>%
-    group_by_at(FIELDS_cols) %>%
-    mutate(FL_ID = cur_group_id()) %>% ungroup() %>%
-    relocate(FL_ID, .before = everything()) 
-  
-  FIELDS <- FIELDS_tbl %>%
-    select(FL_ID, all_of(FIELDS_cols)) %>%
-    distinct()
-  
-  # Check if spatial data is in the table using bounding box data
-  for (col_name in colnames(FIELDS)) { ##!! is not fool proof?
-    
-    if (all(FIELDS[[col_name]] == metadata$longitude)) {  #! currently does not handle multi-sites
-      names(FIELDS)[names(FIELDS) == col_name] <- "FL_LON"
-    }
-    
-    if (all(FIELDS[[col_name]] == metadata$latitude)) {
-      names(FIELDS)[names(FIELDS) == col_name] <- "FL_LAT"
-    }
-  }
-  
-  # If not in table, replace by the mean of the bounding box x and y boundaries
-  # Whether this is accurate depends on how the bouding box is defined, and only if there is one field
-  if(!"FL_LON" %in% names(FIELDS)){
-    FIELDS[["FL_LON"]] = metadata$longitude
-  }
-  
-  if(!"FL_LAT" %in% names(FIELDS)){
-    FIELDS[["FL_LAT"]] = metadata$latitude
-  }
+  # PLOTS_all_ids <- get_pkeys(PLOTS_tbl, alternates = TRUE)
+  # FIELDS_cols <- setdiff(colnames(PLOTS_tbl), c(PLOTS_all_ids, std_str_names))
+  # 
+  # # Make field table
+  # FIELDS_tbl <- PLOTS_tbl %>%
+  #   group_by_at(FIELDS_cols) %>%
+  #   mutate(FL_ID = cur_group_id()) %>% ungroup() %>%
+  #   relocate(FL_ID, .before = everything()) 
+  # 
+  # FIELDS <- FIELDS_tbl %>%
+  #   select(FL_ID, all_of(FIELDS_cols)) %>%
+  #   distinct()
+  # 
+  # # Check if spatial data is in the table using bounding box data
+  # for (col_name in colnames(FIELDS)) { ##!! is not fool proof?
+  #   
+  #   if (all(FIELDS[[col_name]] == metadata$longitude)) {  #! currently does not handle multi-sites
+  #     names(FIELDS)[names(FIELDS) == col_name] <- "FL_LON"
+  #   }
+  #   
+  #   if (all(FIELDS[[col_name]] == metadata$latitude)) {
+  #     names(FIELDS)[names(FIELDS) == col_name] <- "FL_LAT"
+  #   }
+  # }
+  # 
+  # # If not in table, replace by the mean of the bounding box x and y boundaries
+  # # Whether this is accurate depends on how the bouding box is defined, and only if there is one field
+  # if(!"FL_LON" %in% names(FIELDS)){
+  #   FIELDS[["FL_LON"]] = metadata$longitude
+  # }
+  # 
+  # if(!"FL_LAT" %in% names(FIELDS)){
+  #   FIELDS[["FL_LAT"]] = metadata$latitude
+  # }
   
   
   
