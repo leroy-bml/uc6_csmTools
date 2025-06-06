@@ -10,10 +10,10 @@
 #' 
 
 
-is_date <- function(x) {
+is_date <- function(x, dssat_fmt = FALSE) {
   
   # Convert all dates in DSSAT format %Y%j into usable formats
-  if (is.integer(x) & all(nchar(as.character(x)) == 5)) {
+  if (dssat_fmt & is.integer(x) & all(nchar(as.character(x)) == 5)) {
     
     x <- format(as.Date(as.character(x), format = "%y%j"), "%Y-%m-%d")
   }
@@ -21,7 +21,7 @@ is_date <- function(x) {
   # If some values do not deparse (warning message), return NA (prevent parsing of 5 digits+ numericals)
   dates <- tryCatch(
     {
-      parse_date_time(x, orders = c("Ymd", "mdY", "dmy", "ymd", "mdy"))
+      parse_date_time(as.character(x), orders = c("Ymd", "mdY", "dmy", "ymd", "mdy"))
     },
     warning = function(w){
       return(NA)
