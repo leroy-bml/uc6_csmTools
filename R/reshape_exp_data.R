@@ -19,56 +19,107 @@
 #' @importFrom countrycode countrycode
 #'
 
+# tmp load data
+db_files <- list.files(path = "./inst/extdata/lte_muencheberg/0_raw/", pattern = "\\.csv$")
+db_paths <- sapply(db_files, function(x){ paste0("./inst/extdata/lte_muencheberg/0_raw/", x) })
+db_list <- lapply(db_paths, function(x) { file <- read.csv(x, fileEncoding = "UTF-8") })
+# TODO: check best encoding, iso-8859-1 vs. latin1 vs. UTF-8
+
+# Simplify names
+# names(db_list) <- str_extract(names(db_list), "(?<=_)[^_]+$") # cut names after version number
+# names(db_list) <- gsub("_V[0-9]+_[0-9]+_", "", names(db_list)) # drop version number
+find_common_prefix <- function(strings) {
+  common_prefix <- strings[1]
+  for (str in strings) {
+    while (!startsWith(str, common_prefix) && nchar(common_prefix) > 0) {
+      common_prefix <- substr(common_prefix, 1, nchar(common_prefix) - 1)
+    }
+  }
+  return(common_prefix)
+}
+prefix <- find_common_prefix(names(db_list))
+names(db_list) <- sub(paste0("^", prefix), "", names(db_list))
+names(db_list) <- sub("\\..*$", "", names(db_list)) # drop file extension
+
+##--
+
 reshape_exp_data <- function(db, metadata, mother_tbl) {
+  
+  
+  
+  
   
   # Identify the components of the experimental design ----------------------
   
+  mother_tbl <- db_list[["VERSUCHSAUFBAU"]]  #tmp
+  db <- db_list  #tmp
   
-  DESIGN <- mother_tbl
-  DESIGN_tbl_nm <- get_df_name(db, DESIGN)
+  DESIGN_tbl <- mother_tbl
+  DESIGN_tbl_nm <- get_df_name(db, DESIGN_tbl)
   
   # Find year column across the data
-  multiyear <- if(metadata$start_date != metadata$status) {
-    TRUE
-  } else {
-    FALSE
-  }
-  
+  # multiyear <- if(metadata$start_date != metadata$status) {
+  #   TRUE
+  # } else {
+  #   FALSE
+  # }
+
   # Identify years column name and number
-  YEARS_id <- get_years_col(DESIGN,
-                            start = metadata$start_date, 
-                            end = metadata$status)
-  YEARS_n <- length(unique(DESIGN[[YEARS_id]])) # number of years in data
+  YEARS_nm <- "Versuchsjahr"
+  YEARS_id <- unique(DESIGN_tbl[[YEARS_nm]])
+  YEARS_n <- length(YEARS_id) 
+  
+  # YEARS_id <- get_years_col(DESIGN,
+  #                           start = metadata$start_date,
+  #                           end = metadata$status)
+  # YEARS_n <- length(unique(DESIGN[[YEARS_nm]])) # number of years in data
   
   # Identify plots number, column names and data table
-  PLOTS_n <- if (is.na(metadata$number_plots)){  
-    nrow(DESIGN) / YEARS_n
-  } else {
-    as.numeric(metadata$number_plots)
+  # PLOTS_n <- if (is.na(metadata$number_plots)){  
+  #   nrow(DESIGN) / YEARS_n
+  # } else {
+  #   as.numeric(metadata$number_plots)
+  # }
+  distinct_per_year <- function(col, df, yr = "Year") {
+    tapply(df[[col]], df[[yr]], function(x) length(unique(x)))
   }
-  PLOTS_id <- apply(DESIGN, 2, function(x) length(unique(x)))
-  PLOTS_id <- names(PLOTS_id[PLOTS_id == PLOTS_n])
-  PLOTS_tbl <- get_tbl(db, PLOTS_id)
+  
+  PLOTS_nm <- "Parzelle_ID"
+  PLOTS_id <- unique(DESIGN_tbl[[PLOTS_nm]])
+  PLOTS_n <- distinct_per_year(PLOTS_nm, DESIGN_tbl, YEARS_nm) 
+  PLOTS_tbl <- get_tbl(db, PLOTS_nm)
+
+  # PLOTS_id <- apply(DESIGN, 2, function(x) length(unique(x)))
+  # PLOTS_id <- names(PLOTS_id[PLOTS_id == PLOTS_n])
+  # PLOTS_tbl <- get_tbl(db, PLOTS_id)
   
   # Identify repliates number and column name
-  REPS_n <- if (is.na(metadata$replication)) {
-    get_treatments_col(DESIGN, YEARS_id, PLOTS_id)[[2]]
-  } else {
-    as.numeric(metadata$replication)
-  }
-  REPS_id <- names(PLOTS_tbl)[sapply(PLOTS_tbl, function(x) length(unique(x))) == REPS_n] #!!
+  TREATMENTS_nm <- "Pruefglied_ID"
+  TREATMENTS_id <- unique(DESIGN_tbl[[TREATMENTS_nm]])
+  TREATMENTS_n <- distinct_per_year(TREATMENTS_nm, DESIGN_tbl, YEARS_nm) 
+  TREATMENTS_tbl <- get_tbl(db, TREATMENTS_nm)
+  # TREATMENTS_n <- PLOTS_n / REPS_n  # Can also exploit design metadata
+  # TREATMENTS_id <- get_treatments_col(DESIGN, YEARS_id, PLOTS_id)[[1]]
+  # TREATMENTS_tbl <- get_tbl(db, TREATMENTS_id)
   
-  # Identify plots number, column names and data table
-  TREATMENTS_n <- PLOTS_n / REPS_n  # Can also exploit design metadata
-  TREATMENTS_id <- get_treatments_col(DESIGN, YEARS_id, PLOTS_id)[[1]]
-  TREATMENTS_tbl <- get_tbl(db, TREATMENTS_id)
+  # DESIGN_tbl %>%
+  #   group_by(Versuchsjahr) %>%
+  #   summarise(across(everything(), n_distinct)) %>%
+  #   mutate(across(-c(Versuchsjahr, Parzelle_ID), ~ Parzelle_ID / .))
+
+  REPS_n <- PLOTS_n / TREATMENTS_n
+  DESIGN_tbl <- DESIGN_tbl %>%
+    group_by(Versuchsjahr, !!sym(TREATMENTS_nm)) %>%
+    mutate(Rep_no = n())
+  REPS_nm <- "Rep_no"
   
-  
-  
+  # Update design table in dataset
+  db[["VERSUCHSAUFBAU"]] <- DESIGN_tbl
+
   # Give standard name to design variables ----------------------------------
   
   
-  raw_str_names <- c(YEARS_id, PLOTS_id, TREATMENTS_id, REPS_id)
+  raw_str_names <- c(YEARS_nm, PLOTS_nm, TREATMENTS_nm, REPS_nm)
   std_str_names <- c("Year", "Plot_id", "Treatment_id", "Rep_no")
   
   for (i in seq_along(db)) {
@@ -88,7 +139,7 @@ reshape_exp_data <- function(db, metadata, mother_tbl) {
   db <- lapply(db, function(df){
     df <- as.data.frame(
       lapply(df, function(x){
-        if(is_date(x)){
+        if(is_date(x, dssat_fmt = FALSE)){
           format(parse_date_time(x, orders = c("Ymd", "mdY", "dmy", "ymd", "mdy")), "%Y-%m-%d")
         } else {
           x
@@ -108,7 +159,7 @@ reshape_exp_data <- function(db, metadata, mother_tbl) {
   names(date_cols) <- gsub("^[^.]*\\.","", names(date_cols))
   date_cols <- names(date_cols[date_cols])
   
-  # Find join keys that are note dates
+  # Find join keys that are not dates
   all_pkeys <- unlist(lapply(db, function(df) get_pkeys(df, alternates = FALSE)), use.names = FALSE)  # primary keys
   
   all_jkeys <- all_cols[all_cols %in% c(all_pkeys, std_str_names) & !all_cols %in% date_cols]  # exclude dates
@@ -140,7 +191,7 @@ reshape_exp_data <- function(db, metadata, mother_tbl) {
                list(TREATMENTS = TREATMENTS_tbl, PLOTS = PLOTS_tbl),
                type = "child-parent",
                drop_keys = FALSE)[[1]] %>%
-    select(any_of(std_str_names), Faktor1_Stufe_ID, Faktor2_Stufe_ID)  #!!
+    select(any_of(std_str_names), matches("(?i)Faktor"))  #!!
   
   
   # Identify and join related tables ----------------------------------------
@@ -156,7 +207,7 @@ reshape_exp_data <- function(db, metadata, mother_tbl) {
   
   # Identify data tables: tables with link to the design tabes
   has_design_link <- sapply(other_tbls, function(df){
-    has_link(df, DESIGN_str, subset = c("Year", "Plot_id", "Treatment_id"))
+    has_link(df, DESIGN_str, subset = c("Year", "Plot_id", "Treatment_id", "Faktor_id"))
   })
   DATA_tbls <- other_tbls[has_design_link]
   
@@ -226,6 +277,9 @@ reshape_exp_data <- function(db, metadata, mother_tbl) {
   DOBS_tser_ipt <- DATA_tbls_ident[["observed_timeseries"]] ## some years summary, other timeseries
   ATTR_ipt <- DATA_tbls_ident[["other"]]
   
+  
+  MNGT_ipt <- DATA_tbls[names(DATA_tbls) %in%
+                          c("AUSSAAT", "BEREGNUNG", "BODENBEARBEITUNG", "ERNTE", "PFLANZENSCHUTZ", "DUENGUNG")]
   
   
   # Format fields table -----------------------------------------------------
