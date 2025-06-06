@@ -24,8 +24,7 @@ tag_data_type <- function(db, years_col, plots_col, plots_len, max_events = 8) {
   # years_col = "Year"
   # plots_col = "Plot_id"
   # plots_len = PLOTS_n
-  # max_events = 8
-  
+  # max_events = mean(TREATMENTS_n, na.rm = TRUE)
   
   # Tag tables independent of plots as "other" as both management and observed data are tied to the plots
   db_desc <- lapply(db, function(df){
@@ -41,28 +40,27 @@ tag_data_type <- function(db, years_col, plots_col, plots_len, max_events = 8) {
   db <- db[!names(db) %in% names(db_desc)]
 
   db_tag <- lapply(db, function(df){
-    
-    df <- db[[9]]  #tmp
+
     pkey <- get_pkeys(df, alternates = FALSE)
     
-    tag <- df %>%
+    # Calculate mean number of modalities per year
+    modalities <- df %>%
+      # Drop unique identifiers to keep only unique measurement/management modalities
       select(-all_of(c(plots_col, pkey))) %>%
       distinct() %>%
       group_by_at(years_col) %>%
-      # Calculate mean number of rows (i.e., unique data) per year
-      # If it is consistently low across years (i.e., < max_events), then it is tagged as management data
-      summarise(n = n()) %>%
-      #summarise(n = n_distinct(across(-all_of(c(get_pkeys(df, alternates = FALSE), plots_col)))), .groups = "drop") %>%
-      #summarise(n = mean(n)) %>%
-      mutate(tag = ifelse(n <= max_events, "management", "observed")) %>%
-      pull(unique(tag))
-    
-    df$tag <- tag  
-    
+      # Calculate modalities per year and average across years
+      summarise(n = n(), .groups = "drop") %>%
+      summarise(mean_n = mean(n)) %>%
+      pull(mean_n)
+
+    tag <- ifelse(modalities <= max_events, "management", "observed")
+    df$tag <- tag
+
     # Handle obs at the year-level rather than overall
     # Observed data can over between Summary and TimeSeries categories depending on how many measurements were
     # taken per year. This may change across years.
-    if ("observed" %in% df$tag) {
+    if (tag == "observed") {
       
       plots_yr <- data.frame(
         Year = as.numeric(names(plots_len)),
