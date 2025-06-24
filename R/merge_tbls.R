@@ -9,13 +9,16 @@
 #' @param type type of join between parent and child tables; "parent-child" (parent primary key is the join column);
 #' "child-parent" (child primary key is the join column); "bidirectional" (looks for both parent-child and child-parent joins)
 #' @param drop_keys logical; keep join keys in merged tables
+#' @param suffixes character vector of length 2 specifying the suffixes to be added to overlapping column names in the result
+#' (other than the join keys). Default is c(".x", ".y").
 #' 
 #' @return a list containing the parent tables with their joined attributes from the child tables
 #'
 
 merge_tbls <- function(parent_list, child_list,
                        type = c("parent-child","child-parent","bidirectional"),
-                       drop_keys = TRUE) {
+                       drop_keys = TRUE,
+                       suffixes = c(".x", ".y")) {
 
   # Identify all columns and primary keys
   # TODO: attributes letter sequences names if no names
@@ -55,10 +58,12 @@ merge_tbls <- function(parent_list, child_list,
             intersect(parents_cols[[i]], child_pkeys[[j]]) )
         )
       }
-      
+      print(common_cols)
       if (length(common_cols) > 0) {
         
-        parent_df <- merge(parent_df, child_list[[j]], by = common_cols, all.x = TRUE, all.y = FALSE)
+        parent_df <- merge(parent_df, child_list[[j]],
+                           by = common_cols, all.x = TRUE, all.y = FALSE,
+                           suffixes = suffixes)
         
         join_tbls_list[[i]] <- c(join_tbls_list[[i]], names(child_list)[j])
         
