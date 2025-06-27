@@ -1,88 +1,346 @@
-#' Find years column in a design data frame based on temporal coverage metadata
+#' Check if a Vector is Year-Like
+#'
+#' Determines whether a vector is "year-like" based on several criteria:
+#' - All values are 4-digit numbers
+#' - All values are integers
+#' - There is at least one repeated value
+#' - All values fall within a plausible year range (default: 1800 to current year plus a future buffer)
+#'
+#' @param col A vector to be tested for year-likeness.
+#' @param range A numeric vector of length 2 specifying the minimum and maximum plausible years (default: c(1800, current year)).
+#' @param future_buffer An integer specifying how many years beyond the current year to allow as plausible (default: 5).
+#'
+#' @return Logical. \code{TRUE} if the vector meets all year-like criteria, \code{FALSE} otherwise.
+#'
+#' @examples
+#' is_year_like(c(1999, 2000, 2001, 2001))
+#' is_year_like(c("2010", "2011", "2012", "2012"))
+#' is_year_like(c(1999, 2000, 2001, 2002)) # No repeats, returns FALSE
+#' is_year_like(c(199, 2000, 2001, 2001))  # Not all 4 digits, returns FALSE
+#'
 #' 
-#' @param df a data frame
-#' @param start a character or date depicting the first day of first year of the experiment
-#' @param end a character or date depicting the last day of last year of the experiment
-#' 
-#' @return the name of the year column
-#' is_date is from etl_utils.R
-#' @importFrom lubridate year
-#' 
-#' @export
+
+is_year_like <- function(col, range = c(1800, as.numeric(format(Sys.Date(), "%Y"))), future_buffer = 5) {
+  
+  # Harmonize to character
+  col_chr <- as.character(col)
+  # Remove NAs
+  non_na <- na.omit(col_chr)
+  if (length(non_na) == 0) return(FALSE)
+  
+  # Set plausible range
+  range_max <- range[2] + future_buffer
+  range_min <- range[1]
+  
+  # Coerce to numeric safely
+  col_num <- suppressWarnings(as.numeric(non_na))
+  if (any(is.na(col_num))) return(FALSE)
+  
+  # Criteria
+  crit_4digits <- all(nchar(non_na) == 4)  # has 4 digits
+  crit_int  <- all(col_num == floor(col_num))  # is integer
+  crit_repeat <- length(unique(col_num)) < length(col_num)  # repeats
+  crit_range  <- all(col_num >= range_min & col_num <= range_max)  # is within range
+  
+  # Combine
+  crit_4digits && crit_int && crit_repeat && crit_range
+}
+
+#' Find Year-Like Columns in a Data Frame
+#'
+#' Identifies columns in a data frame that are "year-like" according to the \code{\link{is_year_like}} function.
+#' A year-like column is one where all values are 4-digit integers, within a plausible year range, and with at least one repeated value.
+#'
+#' @param df A data frame to search for year-like columns.
+#' @param range A numeric vector of length 2 specifying the minimum and maximum plausible years (default: c(1800, current year)).
+#' @param future_buffer An integer specifying how many years beyond the current year to allow as plausible (default: 5).
+#'
+#' @return A character vector of column names in \code{df} that are year-like.
+#'
+#' @seealso \code{\link{is_year_like}}
+#'
+#' @examples
+#' df <- data.frame(
+#'   year = c(2000, 2001, 2001, 2002),
+#'   value = c(1, 2, 3, 4),
+#'   code = c("A", "B", "C", "D")
+#' )
+#' find_year_col(df)
 #'
 
-get_years_col <- function(df, start, end){
+find_year_col <- function(df, range = c(1800, as.numeric(format(Sys.Date(), "%Y"))), future_buffer = 5) {
+  hits <- sapply(df, is_year_like, range = range, future_buffer = future_buffer)
+  names(df[hits])
+}
+
+
+#' Check if a Column is Plot-Like
+#'
+#' Determines whether a column in a data frame is "plot-like" based on several criteria:
+#' \enumerate{
+#'   \item Plot IDs are uniquely represented within each year (no duplicates within a year).
+#'   \item At least one plot ID is repeated across all years (i.e., there is at least one plot present in every year).
+#'   \item The column has the highest number of distinct values (modalities) within each year, compared to other non-primary-key columns.
+#' }
+#' The function returns \code{TRUE} if the column satisfies either criterion 1 or 2, and also satisfies criterion 3.
+#'
+#' @param df A data frame containing the data to be checked.
+#' @param col_name The name of the column to test for plot-likeness (as a string).
+#' @param year_col_name The name of the year column (as a string).
+#'
+#' @return Logical. \code{TRUE} if the column is plot-like, \code{FALSE} otherwise.
+#'
+#' @details
+#' The function uses \code{get_pkeys} to determine primary key columns, which are excluded from the modality check.
+#'
+#' @seealso \code{\link{get_pkeys}}
+#'
+#' @examples
+#' # Example usage (assuming get_pkeys is defined):
+#' # df <- data.frame(Plot = c(1,1,2,2), Year = c(2000,2001,2000,2001), Value = c(5,6,7,8))
+#' # is_plot_like(df, "Plot", "Year")
+#'
+
+is_plot_like <- function(df, col_name, year_col_name) {
   
-  if (is_date(start)) { 
-    start <- year(start)
-  }
+  by_year_col <- split(df[[col_name]], df[[year_col_name]])
   
-  if (is_date(end)) { 
-    end <- year(end)
-  }
+  # Criterion #1: Plots are uniquely represented within year
+  crit_nested <- all(sapply(by_year_col, function(x) length(unique(x)) == length(x)))
+  # >> not consistent; plots split with multiple crops in some experiments
   
-  is_year <- apply(df, 2, function(x)
-    all(x >= start) & all(x <= end)
+  # Criterion #2: Plot IDs are repeated (at least partially) across all years
+  unique_sets <- lapply(by_year_col, unique)
+  # overlaps <- outer(seq_along(unique_sets), seq_along(unique_sets), Vectorize(function(i, j) {
+  #   length(intersect(unique_sets[[i]], unique_sets[[j]]))
+  # }))
+  # crit_repeated <- any(overlaps[upper.tri(overlaps)])
+  # Find elements common to all sets
+  common_elements <- Reduce(intersect, unique_sets)
+  # Check if there is at least one element present in all sets
+  crit_repeated <- length(common_elements) > 0
+  
+  isPlotLike <- (crit_nested || crit_repeated)
+  
+  # Criterion #3: Plot has the most distinct modalities within 
+  pk <- get_pkeys(df)
+  by_year <- split(df[, !(names(df) %in% pk)], df[[year_col_name]])  # drop primary key
+  col_longest <- unique(
+    sapply(by_year, function(df) {
+      unique_counts <- sapply(df, function(x) length(unique(x)))
+      names(unique_counts)[which.max(unique_counts)]
+    })
   )
   
-  return(names(df[is_year]))
+  # Is plot criterion = (C1 OR C2) & C3
+  if (length(col_longest) == 1) {
+    col_longest == col_name
+  } else {
+    FALSE
+  }
 }
 
-#' Find treatments column in a design data frame based on the years and plots column
-#' 
+
+#' Find Plot-Like Columns in a Data Frame
+#'
+#' Identifies columns in a data frame that are "plot-like" according to the \code{\link{is_plot_like}} function.
+#' A plot-like column is one that uniquely identifies plots within years, is repeated across years, and has the highest number of distinct values per year (see \code{is_plot_like} for details).
+#'
+#' @param df A data frame to search for plot-like columns.
+#' @param year_col_name The name of the year column (as a string).
+#'
+#' @return A character vector of column names in \code{df} that are plot-like.
+#'
+#' @seealso \code{\link{is_plot_like}}
+#'
+#' @examples
+#' # Example usage (assuming is_plot_like and get_pkeys are defined):
+#' # df <- data.frame(Plot = c(1,1,2,2), Year = c(2000,2001,2000,2001), Value = c(5,6,7,8))
+#' # find_plot_col(df, "Year")
+#'
+
+find_plot_col <- function(df, year_col_name) {
+  
+  isPlot <- sapply(
+    setdiff(names(df), year_col_name),
+    function(col) is_plot_like(df, col, year_col_name)
+  )
+  plot_nm <- names(isPlot[isPlot])
+  
+  return(plot_nm)
+}
+
+
+#' Check Consistency of Plot-Treatment Associations in Consecutive Year Blocks
+#'
+#' Determines whether plot-treatment associations are conserved within blocks of consecutive years in a data frame.
+#' A new block is started whenever there is a change in treatment allocation or a gap in the sequence of years.
+#' The function returns \code{TRUE} only if all blocks have consistent plot-treatment associations and each block is at least \code{min_block_length} years long.
+#'
+#' @param df A data frame containing the data to be checked.
+#' @param col_name The name of the treatment column (as a string).
+#' @param plot_col The name of the plot column (as a string).
+#' @param year_col The name of the year column (as a string).
+#' @param min_block_length Integer. The minimum number of consecutive years required for a block to be considered valid (default: 2).
+#'
+#' @return Logical. \code{TRUE} if all blocks of consecutive years have consistent plot-treatment associations and meet the minimum block length, \code{FALSE} otherwise.
+#'
+#' @details
+#' The function sorts the data by year, splits it into blocks of consecutive years with consistent plot-treatment associations, and checks both the consistency and the minimum length of each block.
+#'
+#' @examples
+#' # Example usage:
+#' # df <- data.frame(
+#' #   Plot = c(1,1,2,2,1,1,2,2),
+#' #   Year = c(2000,2001,2000,2001,2003,2004,2003,2004),
+#' #   Treatment = c('A','A','B','B','C','C','D','D')
+#' # )
+#' # check_consecutive_treatment_blocks(df, col_name = "Treatment", plot_col = "Plot", year_col = "Year", min_block_length = 2)
+#'
 #' @export
-#' 
-#' @param df a data frame
-#' @param years_col the name of the years column
-#' @param plots_col the name of the plots column
-#' 
-#' @return a list containing the name of the treatment column and the number of replicates
-#' 
-#' @importFrom dplyr "%>%" distinct group_by summarise pull
-#' @importFrom tidyr all_of
-#' 
 
-get_treatments_col <- function(design_tbl, years_col, plots_col){
-
-  pkey <- get_pkeys(design_tbl, alternates = FALSE)
+check_consecutive_treatment_blocks <- function(df, col_name, plot_col, year_col, min_block_length = 2) {
+  # Sort by year
+  df <- df[order(df[[year_col]]), ]
+  years <- unique(df[[year_col]])
+  treatment_map <- split(df[, c(plot_col, col_name)], df[[year_col]])
+  treatment_map <- lapply(treatment_map, unique)
+  treatment_lookup <- lapply(treatment_map, function(x) {
+    x <- na.omit(x)
+    x[order(x[[plot_col]]), ]
+  })
   
-  # Unidenified columns
-  cols <- setdiff(names(design_tbl), c(pkey, years_col, plots_col))
-  # Drop plots and keep unique rows
-  df_noplots <- design_tbl %>%
-    select(-all_of(plots_col)) %>%
-    distinct()
+  # Get mapping for each year
+  get_mapping <- function(x) {
+    mapping <- x[, col_name]
+    names(mapping) <- x[[plot_col]]
+    mapping
+  }
+  mappings <- lapply(treatment_lookup, get_mapping)
   
-  # Find column with fixed number of rows per group (i.e., number of replicates)
-  trt_col <- NULL
-  reps_n <- NULL
-  years_n <-  length(unique(design_tbl[[years_col]]))
-  for (i in cols) {
-    
-    reps <- df_noplots %>%
-      group_by(.[[i]]) %>% 
-      summarise(n = n()/ years_n) %>%
-      pull(n)
-    
-    if(length(unique(reps))==1){
-      if(unique(reps) < length(unique(design_tbl[[plots_col]]))){
-        trt_col <- c(trt_col, i)
-        reps_n <- c(reps_n, unique(reps))
-      }
-    }
+  # Identify change points (treatment change or year gap)
+  change_points <- logical(length(years))
+  change_points[1] <- TRUE
+  for (i in 2:length(years)) {
+    treatment_changed <- !identical(mappings[[i]], mappings[[i-1]])
+    year_gap <- (years[i] - years[i-1]) != 1
+    change_points[i] <- treatment_changed || year_gap
   }
   
-  return(list(trt_col, reps_n))
+  # Assign block IDs
+  block_id <- cumsum(change_points)
+  
+  # Check consistency and length within each block
+  block_consistent <- tapply(seq_along(mappings), block_id, function(idx) {
+    all(sapply(mappings[idx], function(m) identical(m, mappings[[idx[1]]])))
+  })
+  block_lengths <- as.numeric(table(block_id))
+  
+  # Return TRUE if all blocks are consistent and meet the minimum length
+  all(block_consistent) && all(block_lengths >= min_block_length)
 }
 
-#' Find a table based on its primary key
-#' 
+
+#' Check if a Column is Treatment-Like
+#'
+#' Determines whether a column in a data frame is "treatment-like" based on two criteria:
+#' \enumerate{
+#'   \item For each year, the column must have at least two unique non-NA values and at least one value must be reused across plots (i.e., not all values are unique within a year).
+#'   \item Plot-to-treatment associations must be consistent within blocks of consecutive years, as determined by \code{\link{check_consecutive_treatment_blocks}}.
+#' }
+#'
+#' @param df A data frame containing the data to be checked.
+#' @param col_name The name of the treatment column (as a string).
+#' @param plot_col The name of the plot column (as a string).
+#' @param year_col The name of the year column (as a string).
+#'
+#' @return Logical. \code{TRUE} if the column is treatment-like, \code{FALSE} otherwise.
+#'
+#' @details
+#' The function first checks that, for each year, the treatment column has at least two unique non-NA values and that at least one value is reused across plots. It then checks that plot-to-treatment associations are consistent within blocks of consecutive years using \code{\link{check_consecutive_treatment_blocks}}.
+#'
+#' @seealso \code{\link{check_consecutive_treatment_blocks}}
+#'
+#' @examples
+#' # Example usage:
+#' # df <- data.frame(
+#' #   Plot = c(1,1,2,2,1,1,2,2),
+#' #   Year = c(2000,2001,2000,2001,2003,2004,2003,2004),
+#' #   Treatment = c('A','A','B','B','C','C','D','D')
+#' # )
+#' # is_treatment_like(df, col_name = "Treatment", plot_col = "Plot", year_col = "Year")
+#'
 #' @export
-#' 
-#' @param db a list of linked data frames
-#' @param pkey a character, the name of the focal primary key
-#' 
-#' @return a data frame with its name in the input list as an attribute
+
+is_treatment_like <- function(df, col_name, plot_col, year_col) {
+  years <- unique(df[[year_col]])
+  
+  # Criterion #1: Treatment must have ≥2 unique non-NA values per year and be reused across plots
+  per_year_check <- all(sapply(years, function(yr) {
+    subset <- df[df[[year_col]] == yr, ]
+    vals <- unique(na.omit(subset[[col_name]]))
+    length(vals) >= 2 && any(duplicated(subset[[col_name]]))
+  }))
+  if (!per_year_check) return(FALSE)
+  
+  # Criteria #2: Plot → treatment must be consistent across years
+  # (allowing distinct blocks of consecutive years)
+  is_conserved <- check_consecutive_treatment_blocks(df, col_name, plot_col, year_col)
+}
+
+
+#' Find Treatment-Like Columns in a Data Frame
+#'
+#' Identifies columns in a data frame that are "treatment-like" according to the \code{\link{is_treatment_like}} function.
+#' A treatment-like column is one that has at least two unique non-NA values per year, at least one value reused across plots within a year, and consistent plot-to-treatment associations within blocks of consecutive years.
+#'
+#' @param df A data frame to search for treatment-like columns.
+#' @param plot_col The name of the plot column (as a string).
+#' @param year_col The name of the year column (as a string).
+#'
+#' @return A character vector of column names in \code{df} that are treatment-like.
+#'
+#' @seealso \code{\link{is_treatment_like}}
+#'
+#' @examples
+#' # Example usage (assuming is_treatment_like and check_consecutive_treatment_blocks are defined):
+#' # df <- data.frame(
+#' #   Plot = c(1,1,2,2,1,1,2,2),
+#' #   Year = c(2000,2001,2000,2001,2003,2004,2003,2004),
+#' #   Treatment = c('A','A','B','B','C','C','D','D')
+#' # )
+#' # find_treatment_col(df, plot_col = "Plot", year_col = "Year")
+#'
+
+find_treatment_col <- function(df, plot_col, year_col) {
+  candidate_cols <- setdiff(names(df), c(plot_col, year_col))
+  Filter(function(col) is_treatment_like(df, col, plot_col, year_col), candidate_cols)
+}
+
+
+#' Retrieve a Table from a List by Primary Key
+#'
+#' Retrieves a data frame (table) from a list of data frames by matching its primary key.
+#'
+#' @param db A list of data frames.
+#' @param pkey The name of the primary key to match (as a string).
+#'
+#' @return The data frame from \code{db} whose primary key matches \code{pkey}.
+#'
+#' @details
+#' The function uses \code{\link{get_pkeys}} (with \code{alternates = FALSE}) to determine the primary key of each data frame in the list, and returns the first data frame whose primary key matches \code{pkey}.
+#'
+#' @seealso \code{\link{get_pkeys}}
+#'
+#' @examples
+#' # Example usage (assuming get_pkeys is defined):
+#' # db <- list(
+#' #   df1 = data.frame(ID = 1:3, Value = c('A', 'B', 'C')),
+#' #   df2 = data.frame(Key = 1:3, Data = c('X', 'Y', 'Z'))
+#' # )
+#' # get_tbl(db, pkey = "ID")
+#'
+#' @export
 #' 
 
 get_tbl <- function(db, pkey){
@@ -92,3 +350,203 @@ get_tbl <- function(db, pkey){
   
   return(tbl)
 } 
+
+
+#' Count Unique Values per Year
+#'
+#' Counts the number of unique values in a specified column for each year in a data frame.
+#'
+#' @param col The name of the column to count unique values in (as a string).
+#' @param df A data frame containing the data.
+#' @param yr The name of the year column (as a string). Default is \code{"Year"}.
+#'
+#' @return A named integer vector giving the number of unique values in \code{col} for each year.
+#'
+#' @examples
+#' df <- data.frame(
+#'   Year = c(2000, 2000, 2001, 2001, 2001),
+#'   Plot = c(1, 2, 1, 2, 3)
+#' )
+#' count_per_year("Plot", df)
+#'
+#' @export
+
+count_per_year <- function(col, df, yr = "Year") {
+  tapply(df[[col]], df[[yr]], function(x) length(unique(x)))
+}
+
+
+#' Identify Experimental Design Structure in a Database
+#'
+#' Identifies and summarizes the year, plot, and treatment structure of an experimental design from a database and a design table.
+#' The function prints summaries of year, plot, and treatment attributes, including their ranges and associated tables, and returns a summary data frame (invisibly).
+#'
+#' @param db A list of data frames representing the database.
+#' @param design_tbl A data frame containing the experimental design information.
+#'
+#' @return Invisibly returns a data frame summarizing the year, plot, and treatment components, their associated table names, ID column names, and counts/ranges.
+#'
+#' @details
+#' The function:
+#' \itemize{
+#'   \item Identifies the year column and summarizes the range of years.
+#'   \item Identifies the plot column, summarizes the number and range of plots per year, and prints the associated table.
+#'   \item Identifies the treatment column, summarizes the number and range of treatments per year, and prints the associated table.
+#' }
+#' Helper functions such as \code{find_year_col}, \code{find_plot_col}, \code{find_treatment_col}, \code{count_per_year}, \code{get_tbl}, and \code{get_df_name} are used internally.
+#'
+#' @examples
+#' # Example usage (assuming all helper functions are defined):
+#' # db <- list(
+#' #   plots = data.frame(Plot = 1:4, ...),
+#' #   treatments = data.frame(Treatment = c("A", "B"), ...)
+#' # )
+#' # design_tbl <- data.frame(Year = rep(2000:2002, each = 4), Plot = rep(1:4, 3), Treatment = sample(c("A", "B"), 12, TRUE))
+#' # identify_exp_design(db, design_tbl)
+#'
+#' @export
+#'  
+
+identify_exp_design <- function(db, design_tbl) {
+
+  # Helper: summarize value ranges for a named vector
+  get_value_ranges <- function(x) {
+    years <- names(x)
+    vals <- as.vector(x)
+    unique_vals <- unique(vals)
+    result <- setNames(vector("character", length(unique_vals)), unique_vals)
+    
+    for (val in unique_vals) {
+      idx <- which(vals == val)
+      # Find runs
+      runs <- split(idx, cumsum(c(1, diff(idx) != 1)))
+      ranges <- sapply(runs, function(run_idx) {
+        yrs <- years[run_idx]
+        if (length(yrs) == 1) {
+          yrs
+        } else {
+          paste0(yrs[1], "-", yrs[length(yrs)])
+        }
+      })
+      result[as.character(val)] <- paste(ranges, collapse = "; ")
+    }
+    result
+  }
+  
+  #--- Year attribute
+  
+  # Find year column across the data
+  # multiyear <- if(metadata$start_date != metadata$status) {
+  #   TRUE
+  # } else {
+  #   FALSE
+  # }
+  
+  year_nm <- find_year_col(design_tbl,
+                           range = c(1900, as.numeric(format(Sys.Date(), "%Y"))),
+                           future_buffer = 0)
+  year_n <- length(unique(design_tbl[[year_nm]]))
+  year_min <- min(design_tbl[[year_nm]], na.rm = TRUE)
+  year_max <- max(design_tbl[[year_nm]], na.rm = TRUE)
+  cat("\033[31m>> YEARS - ID: \"", year_nm, "\"; n = ", year_n, " [", year_min, "-", year_max, "]\033[0m\n", sep = "")
+  
+  #--- Plot attribute
+  plot_nm <- find_plot_col(design_tbl, year_col_name = year_nm)
+  plot_n <- count_per_year(plot_nm, design_tbl, year_nm)
+  plot_ranges <- get_value_ranges(plot_n)
+  plot_n_disp <- paste0(names(plot_ranges), " [", plot_ranges, "]", collapse = ", ")
+  plot_tbl <- get_tbl(db, plot_nm)
+  plot_tbl_nm <- get_df_name(db, plot_tbl)
+  cat("\033[31m>> PLOTS - Table \"", plot_tbl_nm, "\"; ID: \"", plot_nm, "\"; n = ", plot_n_disp, "\033[0m\n", sep = "")
+  print(as_tibble(plot_tbl))
+  
+  #--- Treatment attribute
+  treat_nm <- find_treatment_col(design_tbl, plot_col = plot_nm, year_col = year_nm)
+  treat_n <- count_per_year(treat_nm, design_tbl, year_nm)
+  treat_ranges <- get_value_ranges(treat_n)
+  treat_n_disp <- paste0(names(treat_ranges), " [", treat_ranges, "]", collapse = ", ")
+  treat_tbl <- get_tbl(db, treat_nm)
+  treat_tbl_nm <- get_df_name(db, treat_tbl)
+  cat("\033[31m>> TREATMENTS - Table \"", treat_tbl_nm, "\"; ID: \"", treat_nm, "\"; n = ", treat_n_disp, "\033[0m\n", sep = "")
+  print(as_tibble(treat_tbl))
+  
+  #--- Output summary
+  out <- data.frame(
+    comp = c("year", "plot", "treatment"),
+    tbl_name = c(NA_character_, plot_tbl_nm, treat_tbl_nm),
+    id_name = c(year_nm, plot_nm, treat_nm),
+    n = c(year_n, plot_n_disp, treat_n_disp),
+    stringsAsFactors = FALSE
+  )
+  invisible(out)
+}
+
+
+#' Identify Experimental Attribute Columns and Join Keys in a Database
+#'
+#' Identifies and annotates attribute columns and join keys across all tables in a database.
+#' The function renames non-join attribute columns to include their table name as a prefix, and attaches lists of primary keys, join keys, and attribute columns as attributes to the output.
+#'
+#' @param db A list of data frames representing the database.
+#' @param str_cols Optional character vector of additional columns to consider as structural/join keys.
+#'
+#' @return A list of data frames (the database) with non-join attribute columns renamed to include their table name as a prefix. The list has the following attributes:
+#'   \item{primary_keys}{A list of primary key columns for each table.}
+#'   \item{join_keys}{A list of join key columns for each table.}
+#'   \item{attributes}{A list of non-join attribute columns for each table.}
+#'
+#' @details
+#' The function:
+#' \itemize{
+#'   \item Gathers all column names across tables.
+#'   \item Identifies date columns using \code{is_date}.
+#'   \item Identifies primary keys using \code{get_pkeys}.
+#'   \item Determines join keys as columns that are primary keys or in \code{str_cols}, but not date columns, and that appear in more than one table.
+#'   \item Renames non-join attribute columns to include their table name as a prefix.
+#'   \item Attaches lists of primary keys, join keys, and attribute columns as attributes to the output.
+#' }
+#'
+#' @examples
+#' # Example usage (assuming is_date and get_pkeys are defined):
+#' # db <- list(
+#' #   plots = data.frame(PlotID = 1:4, Area = c(10, 12, 11, 13)),
+#' #   treatments = data.frame(TreatmentID = 1:2, Name = c("A", "B"))
+#' # )
+#' # identify_exp_attributes(db)
+#'
+#' @export
+#' 
+
+identify_exp_attributes <- function(db, str_cols = NULL) {
+  
+  # Gather all column names across tables
+  all_cols <- unlist(lapply(db, colnames), use.names = FALSE)
+  # Identify columns containing dates
+  date_cols <- names(which(unlist(lapply(db, function(df) sapply(df, is_date)))))
+  # Identify all join keys (excluding date columns)
+  pkeys <- unlist(lapply(db, get_pkeys, alternates = FALSE), use.names = FALSE)
+  keys <- unique(
+    all_cols[all_cols %in% c(pkeys, str_cols) & !all_cols %in% date_cols]
+  )
+  jkeys <- c(unique(keys[duplicated(keys)])) 
+  # Identify non-join attribute columns
+  attr_cols <- setdiff(all_cols, keys)
+  
+  # Annotate non-join attribute columns with table name
+  db_out <- lapply(names(db), function(df_name) {
+    df <- db[[df_name]]
+    colnames(df) <- ifelse(colnames(df) %in% attr_cols,
+                           paste(df_name, colnames(df), sep = "."),
+                           colnames(df))
+    df
+  })
+  names(db_out) <- names(db)
+  
+  # Attach join keys and attribute columns as attributes
+  attr(db_out, "primary_keys") <- lapply(db_out, function(df) intersect(colnames(df), pkeys))
+  attr(db_out, "join_keys") <- lapply(db_out, function(df) intersect(colnames(df), jkeys))
+  attr_cols_out <- setdiff(unlist(lapply(db_out, colnames), use.names = FALSE), keys)
+  attr(db_out, "attributes") <- lapply(db_out, function(df) intersect(colnames(df), attr_cols_out))
+  
+  return(db_out)
+}
