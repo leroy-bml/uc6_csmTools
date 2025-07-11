@@ -522,12 +522,10 @@ identify_exp_attributes <- function(db, str_cols = NULL) {
   # Gather all column names across tables
   all_cols <- unlist(lapply(db, colnames), use.names = FALSE)
   # Identify columns containing dates
-  date_cols <- names(which(unlist(lapply(db, function(df) sapply(df, is_date)))))
+  date_cols <- unname(unlist(lapply(db, function(df) names(df)[sapply(df, is_date)])))
   # Identify all join keys (excluding date columns)
   pkeys <- unlist(lapply(db, get_pkeys, alternates = FALSE), use.names = FALSE)
-  keys <- unique(
-    all_cols[all_cols %in% c(pkeys, str_cols) & !all_cols %in% date_cols]
-  )
+  keys <- all_cols[all_cols %in% c(pkeys, str_cols) & !all_cols %in% date_cols]
   jkeys <- c(unique(keys[duplicated(keys)])) 
   # Identify non-join attribute columns
   attr_cols <- setdiff(all_cols, keys)

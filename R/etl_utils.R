@@ -10,26 +10,74 @@
 #' 
 
 
-is_date <- function(x, dssat_fmt = FALSE) {
-  
-  # Convert all dates in DSSAT format %Y%j into usable formats
-  if (dssat_fmt & is.integer(x) & all(nchar(as.character(x)) == 5)) {
-    
+is_date <- function(x, dssat_fmt = FALSE, n_check = 5, threshold = 0.8) {
+  # DSSAT format handling (unchanged)
+  if (dssat_fmt && is.integer(x) && all(nchar(as.character(x)) == 5)) {
     x <- format(as.Date(as.character(x), format = "%y%j"), "%Y-%m-%d")
   }
   
-  # If some values do not deparse (warning message), return NA (prevent parsing of 5 digits+ numericals)
-  dates <- tryCatch(
-    {
-      parse_date_time(as.character(x), orders = c("Ymd", "mdY", "dmy", "ymd", "mdy"))
-    },
-    warning = function(w){
-      return(NA)
-    }
+  # Date-like heuristics
+  if (!is.character(x) && !is.factor(x) && !is.Date(x) && !is.POSIXct(x) && !is.POSIXlt(x)) return(FALSE) # character or factor
+  x <- as.character(x)
+  x <- x[!is.na(x) & nzchar(x)]  # remove NAs
+  if (length(x) == 0) return(FALSE)
+  if (!any(grepl("[-/T]", x))) return(FALSE)  # at least one date-like separator
+  x <- head(x, n_check)
+  
+  formats <- c(
+    "%Y-%m-%dT%H:%M:%S",  # ISO 8601 with T
+    "%Y-%m-%dT%H:%M",     # ISO 8601 with T, no seconds
+    "%Y-%m-%d %H:%M:%S",  # Datetime with space
+    "%Y-%m-%d %H:%M",     # Datetime with space, no seconds
+    "%Y-%m-%d",           # Date only
+    "%m/%d/%Y",           # US format
+    "%d/%m/%Y",           # European format
+    "%Y/%m/%d",           # Year first with slashes
+    "%Y%m%d",             # Compact YMD
+    "%m%d%Y",             # Compact MDY
+    "%d%m%Y",             # Compact DMY
+    "%Y-%m-%dT%H:%M:%OS", # ISO 8601 with fractional seconds
+    "%Y-%m-%dT%H:%M:%OSZ" # ISO 8601 with Zulu time
   )
   
-  return(!all(is.na(dates)))
+  n_valid <- 0
+  for(fmt in formats) {
+    res <- try(as.POSIXct(x, format = fmt, tz = "UTC"), silent = TRUE)
+    if(!inherits(res, "try-error")) {
+      n_valid <- sum(!is.na(res))
+      if (n_valid / length(x) >= threshold) return(TRUE)
+    }
+  }
+  FALSE
 }
+
+
+#'
+#'
+#'
+
+standardize_date <- function(x, output_format = "%Y-%m-%d") {
+  # Try all common input formats
+  formats <- c(
+    "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M",
+    "%Y-%m-%d", "%m/%d/%Y", "%d/%m/%Y", "%Y/%m/%d", "%Y%m%d", "%m%d%Y", "%d%m%Y"
+  )
+  for (fmt in formats) {
+    res <- suppressWarnings(as.POSIXct(x, format = fmt, tz = "UTC"))
+    if (any(!is.na(res))) {
+      # Output as Date or as character in desired format
+      if (output_format == "Date") {
+        return(as.Date(res))
+      } else {
+        return(format(res, output_format))
+      }
+    }
+  }
+  # If nothing worked, return original
+  return(x)
+}
+
+
 
 #' Skip NAs in aggregation functions regardless of whether na.rm is an argument
 #' 
@@ -148,4 +196,33 @@ collapse_cols <- function(df, cols) {
   df %>%
     group_by_at(grp_cols) %>%
     summarise(across(all_of(cols), ~ list(.x)), .groups = "drop")
+}
+
+#'
+#'
+#'
+#'
+
+drop_duplicate_dfs <- function(lst) {
+  # Convert each data frame to a string representation
+  df_strings <- sapply(lst, function(df) paste(capture.output(dput(df)), collapse = ""))
+  # Find unique indices
+  unique_indices <- !duplicated(df_strings)
+  # Return only unique data frames
+  lst[unique_indices]
+}
+
+#'
+#'
+#'
+#'
+
+intersect_dfs <- function(list1, list2) {
+  # Convert each data frame to a string representation
+  str1 <- sapply(list1, function(df) paste(capture.output(dput(df)), collapse = ""))
+  str2 <- sapply(list2, function(df) paste(capture.output(dput(df)), collapse = ""))
+  # Find common string representations
+  common_strs <- intersect(str1, str2)
+  # Return the data frames from list1 that are in the intersection
+  list1[which(str1 %in% common_strs)]
 }
