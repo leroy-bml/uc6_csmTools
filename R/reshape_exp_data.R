@@ -125,29 +125,30 @@ melt_dataset <- function(db, drop_keys = FALSE, exclude_tbls = NULL, exclude_col
 # + dikopshof
 # + bad lauchstadt
 
+
 reshape_exp_data <- function(db, metadata, mother_tbl_name) {
   
   # Identify the components of the experimental design ----------------------
   
-  db <- grossbeeren  #tmp
-  mother_tbl_name <- "VERSUCHSAUFBAU"  #tmp
+  # db <- duernast  #tmp
+  # mother_tbl_name <- "VERSUCHSAUFBAU"  #tmp
   
   design_tbl <- db[[mother_tbl_name]]
   
   # Identify core design elements: years, plots, treatments
   exp_str <- identify_exp_design(db, design_tbl)
-  
-  # Breakdown design elements
   exp_str_ids <- exp_str$id_name  # unique identifiers
   exp_str_tbl_nms <- c(exp_str$tbl_name[!is.na(exp_str$tbl_name)], mother_tbl_name)  # table names
-  exp_str_tbls <- db[exp_str_tbl_nms]  # tables
   
   # Identify column properties (primary/foreign keys, data attributes)
   # > Labels data attributes with table name as prefix to make them unique
   db <- identify_exp_attributes(db, str_cols = exp_str_ids)
   nokeys <- do.call(c, attr(db, "attributes"))  # list of unique data attributes
   
+  # Get design tables
+  exp_str_tbls <- db[exp_str_tbl_nms]
   
+
   # Melt dataset ------------------------------------------------------------
   
   # Melt structural tables into one table
@@ -201,65 +202,51 @@ reshape_exp_data <- function(db, metadata, mother_tbl_name) {
     )
   })
   
+  return(db)  #tmp
+}
+  
+  
+  
+#----- wip
+tmp <- reshape_exp_data(db = muencheberg, mother_tbl_name = "VERSUCHSAUFBAU")
+
+colnames <- unique(unlist(
+  lapply(tmp, names)
+)
+)
+writeClipboard(colnames)
+
+
+
   
   # Identify management and observed data -----------------------------------
   
-  # Distinguish management and observed data
-  DATA_tbls_ident <- tag_data_type(db = db,
-                                   years_col = exp_str$id_name[1],
-                                   plots_col = exp_str$id_name[2],
-                                   plots_len = 240,
-                                   max_mods = mean(4, na.rm = TRUE))
-  # TODO: >2 date vars?
+  # # Distinguish management and observed data
+  # DATA_tbls_ident <- tag_data_type(db = db,
+  #                                  years_col = exp_str$id_name[1],
+  #                                  plots_col = exp_str$id_name[2],
+  #                                  plots_len = 240,
+  #                                  max_mods = mean(4, na.rm = TRUE))
+  # # TODO: >2 date vars?
+  # 
+  # # Separate management and observed data
+  # data_cats <- sapply(DATA_tbls_ident, function(df) attr(df, "category"))
+  # 
+  # MNGT_ipt <- DATA_tbls_ident[["management"]]
+  # DOBS_suma_ipt <- DATA_tbls_ident[["observed_summary"]]
+  # DOBS_tser_ipt <- DATA_tbls_ident[["observed_timeseries"]] ## some years summary, other timeseries
+  # ATTR_ipt <- DATA_tbls_ident[["other"]]
+  
+  
+  # Extract metadata --------------------------------------------------------
+  
+  # Extract field coordinates
+  
+  path <- "./inst/extdata/lte_duernast/0_raw/7e526e38-4bf1-492b-b903-d8dbcfd36b6d.xml"
+  metadata <- read_metadata(path, repo = "bnr")
 
-  # Separate management and observed data
-  data_cats <- sapply(DATA_tbls_ident, function(df) attr(df, "category"))
-
-  MNGT_ipt <- DATA_tbls_ident[["management"]]
-  DOBS_suma_ipt <- DATA_tbls_ident[["observed_summary"]]
-  DOBS_tser_ipt <- DATA_tbls_ident[["observed_timeseries"]] ## some years summary, other timeseries
-  ATTR_ipt <- DATA_tbls_ident[["other"]]
+  #NOTES <- c(paste0("Data files mapped on ", Sys.Date(), " with csmTools"), paste0("Source data DOI: ", DOI))
   
-  
-  # Format fields table -----------------------------------------------------
-  
-  # TODO: USE THE XML METADATA
-  
-  # Define FIELDS ID
-  # PLOTS_all_ids <- get_pkeys(PLOTS_tbl, alternates = TRUE)
-  # FIELDS_cols <- setdiff(colnames(PLOTS_tbl), c(PLOTS_all_ids, std_str_names))
-  # 
-  # # Make field table
-  # FIELDS_tbl <- PLOTS_tbl %>%
-  #   group_by_at(FIELDS_cols) %>%
-  #   mutate(FL_ID = cur_group_id()) %>% ungroup() %>%
-  #   relocate(FL_ID, .before = everything()) 
-  # 
-  # FIELDS <- FIELDS_tbl %>%
-  #   select(FL_ID, all_of(FIELDS_cols)) %>%
-  #   distinct()
-  # 
-  # # Check if spatial data is in the table using bounding box data
-  # for (col_name in colnames(FIELDS)) { ##!! is not fool proof?
-  #   
-  #   if (all(FIELDS[[col_name]] == metadata$longitude)) {  #! currently does not handle multi-sites
-  #     names(FIELDS)[names(FIELDS) == col_name] <- "FL_LON"
-  #   }
-  #   
-  #   if (all(FIELDS[[col_name]] == metadata$latitude)) {
-  #     names(FIELDS)[names(FIELDS) == col_name] <- "FL_LAT"
-  #   }
-  # }
-  # 
-  # # If not in table, replace by the mean of the bounding box x and y boundaries
-  # # Whether this is accurate depends on how the bouding box is defined, and only if there is one field
-  # if(!"FL_LON" %in% names(FIELDS)){
-  #   FIELDS[["FL_LON"]] = metadata$longitude
-  # }
-  # 
-  # if(!"FL_LAT" %in% names(FIELDS)){
-  #   FIELDS[["FL_LAT"]] = metadata$latitude
-  # }
   
   
   
@@ -387,29 +374,7 @@ reshape_exp_data <- function(db, metadata, mother_tbl_name) {
   
   # Format metadata output elements -----------------------------------------
   
-  # GET FROM XML FILE
-  
-  # Format provenance and identification metadata
-  EXP_NAME = metadata$name
-  PERSONS = metadata$contact_name
-  EMAIL = metadata$contact_email
-  ADDRESS = metadata$trial_institution  #TODO: Add address elements if more are added to the metadata schema
-  DOI = metadata$doi
-  
-  # Site and plots details
-  SITE <- metadata$site
-  COUNTRY <- metadata$country
-  PLTA = metadata$size_plots
-  
-  NOTES <- c(paste0("Data files mapped on ", Sys.Date(), " with csmTools"), paste0("Source data DOI: ", DOI))
-  GENERAL <- data.frame(PERSONS = PERSONS,
-                        EMAIL = EMAIL,
-                        ADDRESS = ADDRESS,
-                        SITE = SITE,
-                        COUNTRY = COUNTRY,
-                        PLTA = PLTA,
-                        DOI = DOI,
-                        NOTES = NOTES)
+
   
   
   
