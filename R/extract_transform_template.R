@@ -1,16 +1,28 @@
-#' Remove artefact columns from a data frame
-#' 
-#' This function processes a data frame by eliminating unnamed columns 
-#' `NA` only columns, and duplicate names.
-#' 
-#' @param df a data frame
-#' 
-#' @return a clean data frame
-#' 
-#' @importFrom dplyr filter
+#' Remove Artefact Columns and Rows from a Data Frame
 #'
+#' Cleans a data frame by removing columns with missing or unnamed headers and rows that are entirely NA.
+#'
+#' @param df A data frame to be cleaned.
+#'
+#' @details
+#' The function first replaces any missing column names with "unnamed" and ensures all column names are unique (without sanitizing special characters). It then removes columns whose names start with "unnamed" and drops any rows where all values are NA.
+#'
+#' This is useful for cleaning up data frames imported from files that may contain artefact columns (e.g., from extra delimiters or empty columns) or rows.
+#'
+#' The function uses the \strong{dplyr} package for row filtering.
+#'
+#' @return A cleaned data frame with artefact columns and all-NA rows removed.
+#'
+#' @examples
+#' library(dplyr)
+#' df <- data.frame(a = c(1, NA), b = c(NA, NA), c = c(2, 3))
+#' colnames(df)[2] <- NA
+#' drop_artefacts(df)
+#' # Returns a data frame with only columns 'a' and 'c', and only rows with at least one non-NA value
+#'
+#' @importFrom dplyr filter
+#' 
 
-# Extract data
 drop_artefacts <- function(df) {
 
   # Identify artefact columns
@@ -27,21 +39,31 @@ drop_artefacts <- function(df) {
 }
 
 
-#' Extract ICASA categorical variable codes from the Excel template
-#' 
-#' This function processes the ICASA template (Excel format) to extract ICASA codes 
-#' for categorical variables from the dropdown list worksheet.
-#' 
-#' @param wb the template Excel workbook, as a named list of data frames
-#' NB: names should be identical to worksheet names in the Excel file.
-#' 
-#' @return a named list of data frames, each representing providing level names and codes
-#' for a given ICASA variable
-#' 
-#' @importFrom openxlsx2 wb_to_df
-#' @importFrom dplyr select filter
-#' @importFrom tidyr ends_with all_of
+#' Extract and Organize Code Lists from a the ICASA Template Workbook
 #'
+#' Reads code lists from the "DropDown" sheet of the ICASA template workbook and organizes them into a named list of data frames.
+#'
+#' @param wb A workbook object, as accepted by \code{wb_to_df}.
+#'
+#' @details
+#' The function reads the "DropDown" sheet from the provided workbook, starting from the second row. It removes columns ending with \code{\"_sort\"} (used for data entry helpers), then splits the remaining columns into separate data frames for each code list, based on column name prefixes. Each resulting data frame contains at least a "desc" (description) and "code" column, and is named according to its prefix. The "country" code list is excluded from the result.
+#'
+#' This is useful for extracting and organizing code lists from standardized data entry templates.
+#'
+#' The function uses the \strong{dplyr} package for data manipulation.
+#'
+#' @return A named list of data frames, each representing a code list from the template workbook.
+#'
+#' @examples
+#' \dontrun{
+#' wb <- openxlsx::loadWorkbook(\"template.xlsx\")
+#' codes_ls <- get_template_codes(wb)
+#' names(codes_ls)
+#' # [1] \"crop\" \"soil\" \"site\" ...
+#' }
+#'
+#' @importFrom dplyr select all_of filter
+#' 
 
 get_template_codes <- function(wb){
   
@@ -78,29 +100,36 @@ get_template_codes <- function(wb){
 }
 
 
-#' Extract data from the ICASA Excel template and return as an
-#' ICASA-formatted dataset
-#' 
-#' This function loads the ICASA Excel template, extracts relevant sheets, 
-#' removes workbook artefacts, maps dropdown descriptions to ICASA codes, 
-#' and formats data to ICASA. Different experiments are returned as 
-#' separate datasets. 
-#' 
-#' @param path
-#' @param exp_id
-#' @param headers 
-#' 
-#' @return A named list of data frames, each containing an experiment's extracted data.
-#' 
-#' @importFrom openxlsx2 wb_load wb_get_sheet_names wb_to_df
-#' @importFrom dplyr filter mutate
+#' Extract and Process Data from a the ICASA Template Workbook
 #'
+#' Loads, cleans, and processes data from the ICASA template Excel workbook, mapping descriptions to ICASA codes and formatting according to the ICASA data model.
+#'
+#' @param path Character. Path to the template Excel workbook.
+#' @param exp_id Character vector or NA. Experiment ID(s) to extract. If NA (default), all experiments are returned.
+#' @param headers Character. Which column header format to use in the output: \code{"short"} (default) or \code{"long"}.
+#'
+#' @details
+#' The function loads the workbook, extracts all relevant (capitalized) sheets, and cleans each data frame by removing artefact columns and rows. It maps template dropdown list descriptions to ICASA codes, deletes empty data frames, and formats treatment and event tables. Metadata is structured according to the ICASA data model. If \code{headers} is \code{"short"}, column names are mapped to their short format using the template dictionary.
+#'
+#' The function returns a list of experiments, each as a list of processed data frames.
+#'
+#' The function uses several helper functions, including \code{wb_load}, \code{wb_get_sheet_names}, \code{wb_to_df}, \code{drop_artefacts}, \code{get_template_codes}, \code{desc_to_codes}, \code{format_envmod_tbl}, \code{format_treatment_str}, \code{format_events}, \code{structure_metadata}, \code{icasa_long_to_short}, and \code{split_experiments}.
+#'
+#' @return A named list of experiments, each containing a list of processed data frames for each section of the template.
+#'
+#' @examples
+#' \dontrun{
+#' out <- extract_template("template.xlsx")
+#' names(out)
+#' # [1] "EXP001" "EXP002" ...
+#' }
+#'
+#' @importFrom dplyr mutate filter
+#' 
 #' @export
 #' 
 
 extract_template <- function(path, exp_id = NA_character_, headers = c("short", "long")){
-   
-  #path = template_path  #tmp
   
   # Load workbook and set name criterion for sheets to be loaded (capitalized sheet names)
   wb <- suppressWarnings(wb_load(path))
@@ -136,8 +165,8 @@ extract_template <- function(path, exp_id = NA_character_, headers = c("short", 
   dfs <- format_treatment_str(dfs)
   
   # Replace null events (e.g., "rainfed" irrigation input)
-  dfs <- format_events(dfs, "FERTILIZERS", "fertilizer_level", "fert_applied", "FERTILIZER_APPLICS")
-  dfs <- format_events(dfs, "IRRIGATIONS", "irrigation_level", "irrig_applied", "IRRIGATION_APPLICATIONS")
+  dfs <- format_events(dfs, "FERTILIZERS", "fertilizer_level", "fert_applied", "FERTILIZER_APPLICS")  #check warnings
+  dfs <- format_events(dfs, "IRRIGATIONS", "irrigation_level", "irrig_applied", "IRRIGATION_APPLICATIONS")  #TODO: check warnings
   
   # Format metadata
   dfs <- structure_metadata(dfs, data_model = "icasa")
@@ -166,26 +195,40 @@ extract_template <- function(path, exp_id = NA_character_, headers = c("short", 
 }
 
 
-#' Convert ICASA variables from long to short names
-#' 
-#' This function maps long-format variable names in a data frame to 
-#' standardized ICASA short header codes by querying the ICASA dictionary.
-#' 
-#' @param df A data frame with ICASA long-format column names.
-#' @param section A character string specifying the dictionary section to be queried.
-#' @param dict A data frame containing the ICASA dictionary an DSSAT mappings.
-#' @param keep_unmapped Logical; if FALSE, columns not mapped will be dropped.
-#' 
-#' @return A data frame with ICASA short column names.
-#' 
-#' @importFrom dplyr rename_width
+#' Map Long Column Names to ICASA Short Codes for a Template Section
 #'
+#' Renames columns in a data frame from long descriptive names to ICASA short codes, using a dictionary for a specific template section.
+#'
+#' @param df A data frame with columns to be renamed.
+#' @param section Character. The name of the template section (sheet) to use for mapping.
+#' @param dict A data frame containing the mapping dictionary, with columns \code{Sheet}, \code{var_name}, and \code{Code_Query}.
+#' @param keep_unmapped Logical. If \code{FALSE}, only columns with a mapped ICASA code are retained. If \code{TRUE} (default), unmapped columns are kept with their original names.
+#'
+#' @details
+#' The function generates a mapping vector from the dictionary for the specified section, then renames columns in \code{df} accordingly. If \code{keep_unmapped} is \code{FALSE}, only columns with a mapped ICASA code are retained in the output.
+#'
+#' This is useful for standardizing column names in data extracted from template workbooks to the ICASA data model.
+#'
+#' The function uses the \strong{dplyr} package for column renaming.
+#'
+#' @return A data frame with columns renamed to ICASA short codes, and optionally filtered to only mapped columns.
+#'
+#' @examples
+#' library(dplyr)
+#' df <- data.frame(LongName1 = 1:3, LongName2 = 4:6)
+#' dict <- data.frame(
+#'   Sheet = "SECTION",
+#'   var_name = c("LongName1", "LongName2"),
+#'   Code_Query = c("LN1", "LN2")
+#' )
+#' icasa_long_to_short(df, section = "SECTION", dict = dict)
+#' # Returns a data frame with columns "LN1" and "LN2"
+#'
+#' @importFrom dplyr rename_with
+#' 
 
 icasa_long_to_short <- function(df, section, dict, keep_unmapped = TRUE){
-  
-  # section <- "SOIL_METADATA"  #tmp
-  # df <- dfs[["SOIL_METADATA"]]  #tmp
-  
+
   # Generate mapping vector for the focal section
   subset <- dict[dict$Sheet == section,]
   rename_vector <- setNames(subset$Code_Query, subset$var_name)
@@ -201,15 +244,30 @@ icasa_long_to_short <- function(df, section, dict, keep_unmapped = TRUE){
 }
 
 
-#' Convert categorical variable levels to ICASA codes
-#' 
-#' This function replaces level description used in drop down lists for
-#' categorical variables with their corresponding ICASA codes using a reference dictionary.
-#' 
-#' @param df A data frame containing ICASA variables with descriptive categories
-#' @param codes A named list of code mappings for ICASA variables
-#' 
-#' @return A data frame with descriptive names replaced by corresponding ICASA codes.
+#' Replace categorical variable Values with corresponding ICASA Codes
+#'
+#' Recodes categorical columns in a data frame by replacing descriptive values with corresponding codes from a provided list of code data frames.
+#'
+#' @param df A data frame whose categorical columns (character or factor) may contain descriptive values to be recoded.
+#' @param codes A named list of data frames, each with at least \code{desc} (description) and \code{code} columns, as produced by \code{get_template_codes}.
+#'
+#' @details
+#' For each character or factor column in \code{df}, the function checks if any values match the \code{desc} column in any of the code data frames in \code{codes}. If a match is found, the descriptive value is replaced with the corresponding code. If no match is found, the original value is retained.
+#'
+#' This is useful for standardizing data entry by mapping human-readable descriptions to standardized codes.
+#'
+#' @return A data frame with descriptive values replaced by codes where applicable.
+#'
+#' @examples
+#' df <- data.frame(
+#'   crop = c(\"Maize\", \"Wheat\", \"Rice\"),
+#'   stringsAsFactors = FALSE
+#' )
+#' codes <- list(
+#'   crop = data.frame(desc = c(\"Maize\", \"Wheat\", \"Rice\"), code = c(\"MZ\", \"WH\", \"RC\"))
+#' )
+#' desc_to_codes(df, codes)
+#' # Returns a data frame with crop codes: \"MZ\", \"WH\", \"RC\"
 #'
 
 desc_to_codes <- function(df, codes) {
@@ -241,23 +299,40 @@ desc_to_codes <- function(df, codes) {
       }
     }
   }
-  
   return(df)
 }
 
 
-#' Format reference identifiers for treatments and observation units
-#' 
-#' This function removes helper description from treatment/plot selection
-#' drop down lists used in the template to leave only integer indentifiers
-#' 
-#' @param ls an ICASA dataset as a list of named data frames
-#' 
-#' @return an ICASA dataset as a list with cleaned treatment and measured data tables
-#' 
-#' @importFrom dplyr across where mutate
-#' @importFrom tidyr everything
+#' Format ICASA Treatment Matrix and Related Tables in a List
 #'
+#' Cleans and standardizes the treatment matrix and related measured data tables within a list of data frames, ensuring numeric columns and removing extra string content.
+#'
+#' @param ls A named list of data frames, typically representing sections of an experimental template, including a "TREATMENTS" matrix and measured data tables.
+#'
+#' @details
+#' The function processes the "TREATMENTS" data frame by:
+#' \itemize{
+#'   \item Removing any content after a pipe (\code{|}) in character columns.
+#'   \item Trimming leading whitespace from all columns.
+#'   \item Replacing \code{NA} values in level columns (\code{genotype_level_number} to \code{mulch_level}) with 0.
+#'   \item Converting relevant columns to numeric type.
+#'   \item Ensuring \code{simulation_control_level} is numeric and defaults to 1 if missing.
+#' }
+#' It also processes measured data tables (those with names matching \code{TS_}, \code{SM_}, or \code{OBSERV_}) by cleaning and converting the \code{treatment_number} column.
+#'
+#' The cleaned data frames replace the originals in the input list.
+#'
+#' The function uses the \strong{dplyr} package for data manipulation.
+#'
+#' @return The input list with formatted "TREATMENTS" and measured data tables.
+#'
+#' @examples
+#' \dontrun{
+#' ls <- format_treatment_str(ls)
+#' }
+#'
+#' @importFrom dplyr mutate across everything where
+#' 
 
 format_treatment_str <- function(ls){
 
@@ -292,16 +367,30 @@ format_treatment_str <- function(ls){
 }
 
 
-#' Format environmental modification table
-#' 
-#' This function restructures the 'Environmental modification' table to the
-#' ICASA standard by pivoting it into a wide format.
-#' Returns the input when environmental modifications are missing.
-#' 
-#' @param ls an ICASA dataset as a list of named data frames
-#' 
-#' @return An ICASA dataset as a list with reformatted environmental modifications tables
-#' 
+#' Format the ICASA Environmental Modification Levels Table in a List
+#'
+#' Transforms the "ENVIRON_MODIF_LEVELS" data frame in a list to a wide format, renaming columns for ICASA compatibility.
+#'
+#' @param ls A named list of data frames, typically representing sections of an experimental template, including "ENVIRON_MODIF_LEVELS".
+#'
+#' @details
+#' If the list contains a data frame named "ENVIRON_MODIF_LEVELS", this function:
+#' \itemize{
+#'   \item Removes the \code{environ_parameter_unit} column.
+#'   \item Pivots the table to a wide format, with columns for each environmental parameter's modification code and value.
+#'   \item Renames columns to use the \code{environ_modif_code} and \code{environ_modif} prefixes for ICASA compatibility.
+#' }
+#' The transformed data frame replaces the original in the input list.
+#'
+#' The function uses the \strong{dplyr} and \strong{tidyr} packages for data manipulation.
+#'
+#' @return The input list with the "ENVIRON_MODIF_LEVELS" table formatted in wide format and renamed columns.
+#'
+#' @examples
+#' \dontrun{
+#' ls <- format_envmod_tbl(ls)
+#' }
+#'
 #' @importFrom dplyr select
 #' @importFrom tidyr pivot_wider
 #'
@@ -326,8 +415,36 @@ format_envmod_tbl <- function(ls){
 }
 
 
-#' ###
-#' 
+#' Format Event Tables by Handling Non-Applied Levels in Experimental Data
+#'
+#' Updates event header, application, and treatment tables in a list to handle cases where certain event levels (e.g., fertilizer or irrigation) are not applied.
+#'
+#' @param ls A named list of data frames, typically representing sections of an experimental template, including event headers, application tables, and the treatment matrix.
+#' @param type Character. The name of the event header table (e.g., \code{"FERTILIZERS"}, \code{"IRRIGATIONS"}).
+#' @param head_key Character. The name of the column in the event header table that identifies the event level (e.g., \code{"fertilizer_level"}, \code{"irrigation_level"}).
+#' @param applied_key Character. The name of the column in the event header table indicating whether the event was applied (e.g., \code{"fert_applied"}, \code{"irrig_applied"}).
+#' @param applics_key Character. The name of the application events table (e.g., \code{"FERTILIZER_APPLICS"}, \code{"IRRIGATION_APPLICATIONS"}).
+#'
+#' @details
+#' For the specified event type, the function:
+#' \itemize{
+#'   \item Identifies event levels that were not applied (where \code{applied_key} == "N").
+#'   \item Updates the event header table, setting the event level to 0 for non-applied levels and re-indexing levels.
+#'   \item Updates the application events and treatment matrix tables to reflect the new event level indices.
+#'   \item Removes non-applied levels from the event header and application tables.
+#' }
+#' The cleaned data frames replace the originals in the input list.
+#'
+#' The function uses the \strong{dplyr} package for data manipulation.
+#'
+#' @return The input list with updated event header, application, and treatment tables.
+#'
+#' @examples
+#' \dontrun{
+#' ls <- format_events(ls, "FERTILIZERS", "fertilizer_level", "fert_applied", "FERTILIZER_APPLICS")
+#' }
+#'
+#' @importFrom dplyr mutate arrange group_by ungroup left_join select filter coalesce all_of sym
 #' 
   
 format_events <- function(ls, type, head_key, applied_key, applics_key) {
@@ -380,18 +497,35 @@ format_events <- function(ls, type, head_key, applied_key, applics_key) {
 }
 
 
-#' ###
-#' 
-#' 
-#' @param df ###
-#' 
-#' @return a data frame ###
-#' 
-#' @importFrom dplyr summarise across select_if n_distinct all_of
-#' @importFrom tidyr everything
+#' Concatenate Non-Constant Columns by Group in a Data Frame
 #'
+#' Groups a data frame by columns with constant values and concatenates the remaining columns within each group.
+#'
+#' @param df A data frame to process.
+#'
+#' @details
+#' The function identifies columns in \code{df} that have the same value in every row (constant columns). It then groups the data frame by these constant columns and, for each group, concatenates the values of the remaining columns into comma-separated strings.
+#'
+#' This is useful for summarizing data where some columns are invariant within groups, and you want to aggregate the other columns as concatenated lists.
+#'
+#' The function uses the \strong{dplyr} package for data manipulation.
+#'
+#' @return A data frame grouped by the constant columns, with other columns concatenated as comma-separated strings.
+#'
+#' @examples
+#' library(dplyr)
+#' df <- data.frame(
+#'   id = c(1, 1, 2, 2),
+#'   value1 = c('a', 'b', 'c', 'd'),
+#'   value2 = c('x', 'y', 'z', 'w')
+#' )
+#' concatenate_per_group(df)
+#' # Returns a data frame with one row per id, and value1/value2 as comma-separated strings
+#'
+#' @importFrom dplyr summarise across group_by select_if all_of
+#' 
 
-# # TODO: add_property_mapping <- function(name, unit, icasa = list(), agg_funs = list())
+# TODO: add_property_mapping <- function(name, unit, icasa = list(), agg_funs = list())
 concatenate_per_group <- function(df) {
   
   constant_cols <- df %>%
@@ -409,15 +543,25 @@ concatenate_per_group <- function(df) {
 }
 
 
-#' Generate strict abbreviations for strings
+#' Strictly Abbreviate a String to a Minimum Length
 #'
-#' This function creates abbreviations for strings with a specified minimum length, 
-#' ensuring strict truncation if necessary.
-#' 
-#' @param string A character vector to be abbreviated.
-#' @param minlength An integer specifying the minimum length of the abbreviation.
-#' 
-#' @return A character vector of abbreviated strings
+#' Produces a strict abbreviation of a string, ensuring the result does not exceed the specified minimum length.
+#'
+#' @param string Character vector. The string(s) to abbreviate.
+#' @param minlength Integer. The minimum (and maximum) length of the abbreviation. Default is 2.
+#'
+#' @details
+#' The function uses \code{abbreviate} with \code{strict = TRUE} to generate abbreviations. If the resulting abbreviation exceeds \code{minlength}, it is truncated to exactly \code{minlength} characters.
+#'
+#' This is useful for generating short, fixed-length codes or labels from longer strings.
+#'
+#' @return A character vector of abbreviated strings, each of length \code{minlength}.
+#'
+#' @examples
+#' strict_abbreviate("Wheat", minlength = 3)
+#' # Returns "Whe"
+#' strict_abbreviate(c("Maize", "Rice"), minlength = 2)
+#' # Returns c("Ma", "Ri")
 #'
 
 strict_abbreviate <- function(string, minlength = 2) {
@@ -428,15 +572,27 @@ strict_abbreviate <- function(string, minlength = 2) {
   return(abbr)
 }
 
-#' Format and merge ICASA-format measured data
-#' 
-#' This function classifies and merges measured data tables from 
-#' the ICASA template into SUMMARY and TIME_SERIES tables
-#' 
-#' @param ls An ICASA dataset as a list of data frames
-#' 
-#' @return An ICASA dataset as a list of data frames with tidy measured data
-#' 
+
+#' Format and Merge Observed Data Sections in a List
+#'
+#' Merges related observed data tables (e.g., summary and time series) in a list of data frames, producing unified "SUMMARY" and "TIME_SERIES" sections.
+#'
+#' @param ls A named list of data frames, typically representing sections of an experimental template, including observed data tables.
+#'
+#' @details
+#' The function searches for tables in the list whose names match "SM_" (summary) or "TS_" (time series), as well as "OBSERV_DATA_LINKS". It merges these tables by their common columns using \code{left_join}, producing unified "SUMMARY" and "TIME_SERIES" data frames. If the merged table has the same columns as "OBSERV_DATA_LINKS", it is omitted (returns \code{NULL}).
+#'
+#' After merging, the function removes all original observed data tables (those matching "SM_", "TS_", or "OBS") from the list, leaving only the merged "SUMMARY" and "TIME_SERIES" sections.
+#'
+#' The function uses the \strong{dplyr} package for joining data frames.
+#'
+#' @return The input list with merged "SUMMARY" and "TIME_SERIES" data frames, and observed data tables removed.
+#'
+#' @examples
+#' \dontrun{
+#' ls <- format_observed_data(ls)
+#' }
+#'
 #' @importFrom dplyr left_join
 #'
 
@@ -467,21 +623,17 @@ format_observed_data <- function(ls){
 }
 
 
-#' ###
+#' TEMP reshape function from icasa to dssat approach;
+#' later integrate to a generic melt-explode-map sequence
 #' 
 #' 
-#' @param df ###
-#' 
-#' @return a data frame ###
-#' 
-#' @importFrom ###
 #'
 
-reshape_to_model_dssat <- function(vector, map, input_model = "icasa", output_model = "dssat") {
+reshape_to_model_dssat <- function(vector, map_path, input_model = "icasa", output_model = "dssat") {
   
   # NB: temporary approach; later integrate to a generic melt-explode-map sequence
   
-  map <- load_map() %>%
+  map <- load_map(map_path) %>%
     filter(dataModel == output_model) %>%
     select(template_section, section) %>%
     distinct()
@@ -503,14 +655,25 @@ reshape_to_model_dssat <- function(vector, map, input_model = "icasa", output_mo
 }
 
 
-#' ###
-#' 
-#' 
-#' @param df ###
-#' 
-#' @return a data frame ###
-#' 
-#' @importFrom ###
+#' Combine List Elements with Duplicate Names by Merging Data Frames
+#'
+#' Merges data frames in a list that share the same name, joining them by their common columns.
+#'
+#' @param ls A named list of data frames, possibly containing multiple data frames with the same name.
+#'
+#' @details
+#' The function identifies all unique names in the list. For each name, it collects all data frames with that name, determines their common columns, and merges them using \code{merge} with \code{all = TRUE} (full outer join) on the common columns. The result is a new list with one merged data frame per unique name.
+#'
+#' This is useful for consolidating data from dual-tier or multi-section templates where sections may be split across multiple data frames with the same name.
+#'
+#' @return A named list of merged data frames, one for each unique name in the input list.
+#'
+#' @examples
+#' df1 <- data.frame(a = 1:2, b = c(\"x\", \"y\"))
+#' df2 <- data.frame(a = 3:4, b = c(\"z\", \"w\"))
+#' ls <- list(SECTION = df1, SECTION = df2)
+#' combine_dual_tier(ls)
+#' # Returns a list with one element \"SECTION\", containing the merged data frame
 #'
 
 combine_dual_tier <- function(ls) {
@@ -530,23 +693,36 @@ combine_dual_tier <- function(ls) {
 }
 
 
-
-#' ###
-#' 
-#' 
-#' @param df ###
-#' 
-#' @return a data frame ###
-#' 
-#' @importFrom ###
+#' Remap and Reshape Dataset Between Data Models Using a Mapping File
 #'
+#' Transforms a dataset from one data model (e.g., ICASA) to another (e.g., DSSAT) using a mapping file, reshaping and renaming sections as needed.
+#'
+#' @param dataset A named list of data frames representing the dataset to be remapped.
+#' @param map_path Character. Path to the mapping file used for variable and section translation.
+#' @param input_model Character. The name of the input data model (default: \code{"icasa"}).
+#' @param output_model Character. The name of the output data model (default: \code{"dssat"}).
+#'
+#' @details
+#' The function first formats observed data into "SUMMARY" and "TIME_SERIES" tables, then renames sections to match the output model. For each section, it loads the mapping file and applies the mapping to translate variables and structure. Dual-tier sections (e.g., header + events/layers) are combined, and metadata is structured according to the output data model.
+#'
+#' The function uses several helper functions, including \code{format_observed_data}, \code{reshape_to_model_dssat}, \code{load_map}, \code{map_data}, \code{combine_dual_tier}, and \code{structure_metadata}.
+#'
+#' @return A named list of data frames, structured and mapped according to the output data model.
+#'
+#' @examples
+#' \dontrun{
+#' remapped <- remap(dataset, map_path = "mapping.csv", input_model = "icasa", output_model = "dssat")
+#' }
+#'
+#' @export
+#' 
 
-remap <- function(dataset, input_model = "icasa", output_model = "dssat"){
+remap <- function(dataset, map_path, input_model = "icasa", output_model = "dssat"){
   
   # # Map data within target section
   # if (is.data.frame(dataset)) {
   #   
-  #   map <- load_map()
+  #   map <- load_map(map_path)
   #   fdata <- map_data(dataset, input_model, output_model, map = map,
   #                     keep_unmapped = FALSE,  col_exempt = c("INST_NAME", "WST_NAME"))
   #       
@@ -562,7 +738,7 @@ remap <- function(dataset, input_model = "icasa", output_model = "dssat"){
     #i = 12
     
     sec <- names(rdata)[i]
-    map <- load_map() 
+    map <- load_map(map_path) 
     sub <- map %>% filter(section %in% sec)
     
     # TODO: solve problem, bug when SUMMARY only contains TRNO
@@ -582,21 +758,32 @@ remap <- function(dataset, input_model = "icasa", output_model = "dssat"){
 }
 
 
-#' 
-#' 
-#' @param df ###
-#' 
-#' @return a data frame ###
-#' 
-#' @importFrom ###
+#' Split a List of Data Frames into Experiments with Associated Soil and Weather Data
 #'
+#' Splits a list of data frames into separate experiments, attaching relevant soil and weather data to each experiment based on identifier columns.
+#'
+#' @param ls A named list of data frames, typically representing sections of an experimental template, including experiment, soil, and weather data.
+#'
+#' @details
+#' The function determines the appropriate identifier columns for experiments, soil, and weather data based on the column names in the first data frame. It splits experiment data frames by experiment ID, then attaches soil and weather data frames that match the relevant profile or station IDs for each experiment. All-NA columns in measured data sections are removed.
+#'
+#' This is useful for organizing a combined dataset into a list of experiments, each with its associated environmental data, for further analysis or export.
+#'
+#' The function uses the \strong{dplyr} package for data manipulation and relies on the helper function \code{revert_list_str}.
+#'
+#' @return A list of lists, each representing an experiment with its associated data frames.
+#'
+#' @examples
+#' \dontrun{
+#' experiments <- split_experiments(ls)
+#' }
+#'
+#' @importFrom dplyr filter
+#' 
 
 # NB: fails when applied to the mapped dataset with unmapped variables kept, due to duplicate name in multiple table (ELEV.x, ELEV.y)
 split_experiments <- function(ls) {
-  
-  #ls <- dfs  #tmp
-  
-  
+
   # Set the splitting factor (IDs) for each data type (experiment, soil, weather)
   if(all(grepl("^[A-Z_]+$", colnames(ls[[1]])))){
     fcts <- c(exp = "EID", sol = "SOIL_SUBSET", wth = "WTH_SUBSET")
@@ -615,21 +802,21 @@ split_experiments <- function(ls) {
   sol_split <- wth_split <- c()
   
   for (i in 1:length(exp_dfs_split)){
-
+    
     # Identify profile and station IDs for each experiment
     profile_id <- exp_dfs_split[[i]]$FIELDS[[fcts[["sol"]]]]
     station_id <- exp_dfs_split[[i]]$FIELDS[[fcts[["wth"]]]]
     
-    
     # Keep only soil data records containing the profile ID
     sol_split[[i]] <- lapply(env_dfs, function(df) {
       
-      matched_col <- which(sapply(df, function(col) any(col %in% profile_id)))
+      matched_col <- names(which(sapply(df, function(col) any(col %in% profile_id))))
       
       if (all(!is.na(profile_id)) && length(matched_col) > 0) {
-        df %>% filter(df[[matched_col]] %in% profile_id)
+        df %>% filter(.data[[matched_col[1]]] %in% profile_id)
+        # NB: [1] in case soil/weather data names are identical to IDs (wrong practice)
       } else {
-        df <- NULL
+        NULL
       }
     })
     
@@ -639,12 +826,13 @@ split_experiments <- function(ls) {
     # Keep only weather data records containing the station ID
     wth_split[[i]] <- lapply(env_dfs, function(df) {
       
-      matched_col <- which(sapply(df, function(col) any(col %in% station_id)))
+      matched_col <- names(which(sapply(df, function(col) any(col %in% station_id))))
       
       if (all(!is.na(station_id)) && length(matched_col) > 0) {
-        df %>% filter(df[[matched_col]] %in% station_id)
+        df %>% filter(.data[[matched_col[1]]] %in% station_id)
+        # NB: [1] in case soil/weather data names are identical to IDs (wrong practice)
       } else {
-        df <- NULL
+        NULL
       }
     })
     
@@ -680,6 +868,3 @@ split_experiments <- function(ls) {
   
   return(exp_dfs_split)
 }
-
-
-

@@ -1,13 +1,22 @@
-#' Reset index variables to start at 1
-#' 
-#' Includes a special case for ignoring 0s (ID in treatment matrix with no linked record in a management section)
-#' 
-#' @export
-#' 
-#' @param df a data frame with rows identified by an integer index variable
-#' @param id_col a length 1 character containing the name of the index column in df
-#' 
-#' @return a data frame; the input data with a reset index variable
+#' Reset Management Level IDs to Start from 1
+#'
+#' Resets the values in a specified ID column of a management data frame
+#' so that the minimum nonzero ID becomes 1, and all other positive IDs are shifted accordingly.
+#'
+#' @param df A data frame containing an ID column to reset.
+#' @param id_col Character. The name of the column containing the IDs to reset.
+#'
+#' @details
+#' The function finds the minimum nonzero value in the specified ID column and subtracts \code{min_id - 1} from all positive IDs, so that the smallest positive ID becomes 1. Zero values are left unchanged.
+#'
+#' This is useful for re-indexing management levels (e.g., fertilizer, irrigation) after splitting or subsetting experimental data.
+#'
+#' @return The input data frame with the specified ID column reset to start from 1.
+#'
+#' @examples
+#' df <- data.frame(fertilizer_level = c(0, 2, 3, 4))
+#' reset_id(df, "fertilizer_level")
+#' # fertilizer_level: 0, 1, 2, 3
 #'
 
 reset_id <- function(df, id_col) {
@@ -23,16 +32,35 @@ reset_id <- function(df, id_col) {
   return(df)
 }
 
-#' Split a multiyear crop experiment dataset by year
-#' 
-#' Handles all artefacts created by spitting the original data (e.g., empty data frames, columns with only NAs)
-#' 
-#' @export
-#' 
-#' @param ls a list of data frames containing ICASA-structured crop experiment data
-#' 
-#' @return a list containing n lists of crop experiment data tables, where n is the number of years in the experiment
+
+#' Split a multiyear crop experiment dataset by Year and Reset Management IDs
 #'
+#' Splits each data frame in a list by the "Year" column, removes empty and all-NA columns, and resets management IDs for each year.
+#'
+#' @param ls A named list of data frames, typically representing sections of an experimental dataset.
+#'
+#' @details
+#' The function:
+#' \itemize{
+#'   \item Removes metadata sections common to all years.
+#'   \item Splits each remaining data frame by the "Year" column.
+#'   \item Removes empty data frames and columns with only NA values.
+#'   \item Removes summary or time series files with only minimal columns.
+#'   \item Resets management IDs in the treatment matrix and management data frames for each year, using \code{reset_id}.
+#' }
+#' The result is a list of lists, one per year, each containing the relevant data frames for that year with cleaned and reset management IDs.
+#'
+#' The function uses the helper functions \code{revert_list_str} and \code{reset_id}.
+#'
+#' @return A named list of lists, each corresponding to a year (e.g., "Y2020"), containing the split and cleaned data frames for that year.
+#'
+#' @examples
+#' \dontrun{
+#' yearly_data <- split_by_year(ls)
+#' names(yearly_data)
+#' }
+#'
+#' @export
 
 split_by_year <- function(ls) {
 
@@ -97,21 +125,35 @@ split_by_year <- function(ls) {
   return(ls_yr)
 }
 
-#' Prepare data tables for export as various DSSAT input file types
-#' 
-#' @export
-#' 
-#' @param df a data frame of the data to be formatted
-#' @param template a model data frame for the focal file type, as generated in 'dssat_file_templates.R'
-#' 
-#' @return a data frame; a formatted DSSAT input table
-#' 
-#' lubridate as.POSIXct\ # is part of base now
-#' @importFrom dplyr "%>%" bind_rows select slice arrange
-#' @importFrom tidyr all_of
-#' @importFrom purrr map map_lgl
-#' @importFrom DSSAT as_DSSAT_tbl
-#' 
+
+#' Format a Data Frame According to a Template for DSSAT Files
+#'
+#' Formats a data frame to match the structure, column types, and composite columns of a DSSAT template.
+#'
+#' @param df A data frame to be formatted.
+#' @param template A template data frame or list, specifying the desired structure and column types.
+#'
+#' @details
+#' The function:
+#' \itemize{
+#'   \item Collapses columns for composite sections if the template contains list-columns.
+#'   \item Ensures columns in \code{df} match the types of those in \code{template}, including date and POSIXct handling.
+#'   \item Populates the template with the input data, preserving column order and structure.
+#'   \item Handles NULL lists for composite tables by filling with \code{NA} as needed.
+#' }
+#' The result is a data frame formatted for DSSAT file writing, with the correct structure and types.
+#'
+#' The function uses \code{collapse_cols}, \code{bind_rows}, and \code{as_DSSAT_tbl} for data manipulation.
+#'
+#' @return A data frame formatted according to the template, ready for DSSAT file writing.
+#'
+#' @examples
+#' \dontrun{
+#' formatted <- format_table(df, template)
+#' }
+#'
+#' @importFrom dplyr bind_rows select slice arrange
+#' @importFrom purrr map_lgl map
 #' 
 
 format_table <- function(df, template) {
@@ -152,25 +194,36 @@ format_table <- function(df, template) {
   has_lists <- map_lgl(out, is.list)
   out[has_lists] <- map(out[has_lists], ~ ifelse(is.null(.x[[1]]), rep(NA, length(out[[1]])), .x))
   
-  
   return(as_DSSAT_tbl(out))
 }
 
 
-#' Format crop management data as DSSAT input tables
+#' Format management table list as a DSSAT input file format (file X)
+#'
+#' Assembles and formats all management sections into a DSSAT File X structure,
+#' applying templates, setting defaults, and preserving metadata.
+#'
+#' @param ls A named list containing at least a \code{"MANAGEMENT"} data frame or list of management sections.
+#' @param title Character or NULL. Optional title for the file (not currently used).
+#' @param site_code Character or NA. Optional site code (not currently used).
+#'
+#' @details
+#' The function extracts the \code{"MANAGEMENT"} section, applies the appropriate template to each management section, and sets default values for missing parameters in the treatments matrix. It checks for required sections and fills them with template defaults if missing, issuing warnings as needed. The resulting list is ordered according to the template and has relevant attributes transferred from the original data.
+#'
+#' This is useful for preparing a complete DSSAT File X (management file) for writing to disk.
+#'
+#' @return A named list of formatted management sections, ready for DSSAT File X writing, with metadata attributes attached.
+#'
+#' @examples
+#' \dontrun{
+#' filex <- build_filex(ls)
+#' }
+#'
+#' @importFrom dplyr mutate across where
 #' 
 #' @export
 #' 
-#' @param ls a list of data frames containing crop management data, to be formatted into DSSAT input tables
-#' @param title a length 1 character vector specifying the title of the dataset
-#' @param site_code a length 1 character vector provide the DSSAT standard code for the experimental site
-#' 
-#' @return a data frame with codes mapped to the format specified in the supplied map
-#' 
-#' @importFrom dplyr "%>%" mutate across where
-#'
 
-# Assemble File X
 build_filex <- function(ls, title = NULL, site_code = NA_character_) {
 
   filex <- ls[["MANAGEMENT"]]
@@ -223,19 +276,31 @@ build_filex <- function(ls, title = NULL, site_code = NA_character_) {
 }
 
 
-#' Format observed summary data as a DSSAT input table
+#' Format observed summary table list as a DSSAT input file format
+#'
+#' Formats an observed summary data frame from a list into the DSSAT summary
+#' file structure, applying date formatting and setting file attributes.
+#'
+#' @param ls A named list containing at least a \code{"SUMMARY"} data frame.
+#' @param title Character or NULL. Optional title for the file (not currently used).
+#' @param site_code Character or NA. Optional site code (not currently used).
+#'
+#' @details
+#' The function extracts the \code{"SUMMARY"} data frame from the list, formats all date columns as DSSAT day-of-year strings, arranges by treatment, and applies the \code{as_DSSAT_tbl} function. It sets the \code{v_fmt} attribute for variable formatting, using only those formats present in the data.
+#'
+#' This is useful for preparing observed summary data for writing to a DSSAT-compatible file.
+#'
+#' @return A formatted data frame ready for DSSAT summary file writing, with formatting attributes attached.
+#'
+#' @examples
+#' \dontrun{
+#' filea <- build_filea(ls)
+#' }
+#'
+#' @importFrom dplyr mutate arrange across where
 #' 
 #' @export
 #' 
-#' @param ls a list of data frames containing crop experiment data ### (File A)
-#' @param title a length 1 character vector specifying the title of the dataset
-#' @param site_code a length 1 character vector provide the DSSAT standard code for the experimental site
-#' 
-#' @return a data frame with codes mapped to the format specified in the supplied map
-#' 
-#' @importFrom dplyr "%>%" mutate select across where arrange
-#' @importFrom DSSAT as_DSSAT_tbl
-#'
 
 build_filea <- function(ls, title = NULL, site_code = NA_character_) {
 
@@ -253,23 +318,33 @@ build_filea <- function(ls, title = NULL, site_code = NA_character_) {
 }
 
 
+#' Format observed time-series table list as a DSSAT input file format
+#'
+#' Formats a time series observed data frame from a list into the DSSAT
+#' time series file structure, applying date formatting and setting file attributes.
+#'
+#' @param ls A named list containing at least a \code{"TIME_SERIES"} data frame.
+#' @param title Character or NULL. Optional title for the file (not currently used).
+#' @param site_code Character or NA. Optional site code (not currently used).
+#'
+#' @details
+#' The function extracts the \code{"TIME_SERIES"} data frame from the list, formats the \code{DATE} column as DSSAT day-of-year strings, arranges by treatment and date, and applies the \code{as_DSSAT_tbl} function. It sets the \code{v_fmt} attribute for variable formatting, using only those formats present in the data.
+#'
+#' This is useful for preparing observed time series data for writing to a DSSAT-compatible file.
+#'
+#' @return A formatted data frame ready for DSSAT time series file writing, with formatting attributes attached.
+#'
+#' @examples
+#' \dontrun{
+#' filet <- build_filet(ls)
+#' }
+#'
+#' @importFrom dplyr mutate arrange
 #' 
 #' @export
 #' 
-#' @param ls a list of data frames containing crop experiment data ### (File T)
-#' @param title a length 1 character vector specifying the title of the dataset
-#' @param site_code a length 1 character vector provide the DSSAT standard code for the experimental site
-#' 
-#' @return a data frame with codes mapped to the format specified in the supplied map
-#' 
-#' @importFrom dplyr "%>%" mutate select across where arrange
-#' @importFrom DSSAT as_DSSAT_tbl
-#'
-
 
 build_filet <- function(ls, title = NULL, site_code = NA_character_) {
-  
-  #ls <- data_dssat  #tmp
   
   if (!"TIME_SERIES" %in% names(ls)) return(NULL)
   
@@ -286,20 +361,29 @@ build_filet <- function(ls, title = NULL, site_code = NA_character_) {
 }
 
 
-#' Format observed time series data as a DSSAT input table
-#' 
+#' Format soil profile data as a DSSAT input table
+#'
+#' Formats a soil data frame from a list into the DSSAT soil file structure,
+#' applying a template and preserving metadata.
+#'
+#' @param ls A named list containing at least a \code{"SOIL"} data frame and its attributes.
+#'
+#' @details
+#' The function extracts the \code{"SOIL"} data frame from the list, formats it using \code{format_table} and a \code{SOIL_template}, and attaches relevant metadata attributes (\code{title}, \code{file_name}, \code{comments}) from the original data frame.
+#'
+#' This is useful for preparing soil data for writing to a DSSAT-compatible .SOL file.
+#'
+#' @return A formatted data frame ready for DSSAT soil file writing, with metadata attributes attached.
+#'
+#' @examples
+#' \dontrun{
+#' filesol <- build_sol(ls)
+#' }
+#'
 #' @export
 #' 
-#' @param ls a list of data frames containing soil profile data (layers + surface as separate data frames)
-#' 
-#' @return a data frame containing soil profile data formatted as a DSSAT input
-#' 
-#' @importFrom dplyr "%>%" slice bind_rows bind_cols
-#'
 
 build_sol <- function(ls) {
-  
-  #ls <- data_dssat
   
   # Apply template format for DSSAT file writing
   sol <- ls[["SOIL"]]
@@ -314,20 +398,28 @@ build_sol <- function(ls) {
 }
 
 
+#' Build a DSSAT Weather File from a List
+#'
+#' Formats a weather data frame from a list into the DSSAT weather file structure, applying a template, formatting dates, and preserving metadata.
+#' NB: Currently contains a workaround to correct date formatting issues with
+#' the write_wth function that leads to failed simulation
 #' 
-#' Currently contains a workaround to correct date formatting issues with the write_wth function that leads to
-#' failed simulation
-#' 
+#' @param ls A named list containing at least a \code{"WEATHER"} data frame and its attributes.
+#'
+#' @details
+#' The function extracts the \code{"WEATHER"} data frame from the list, formats it using \code{format_table} and a \code{WEATHER_template}, and formats the \code{DATE} column as DSSAT day-of-year strings. It sets print formats for weather variables and attaches relevant metadata attributes (\code{station_metadata}, \code{location}, \code{comments}, \code{file_name}) to the output.
+#'
+#' This is useful for preparing weather data for writing to a DSSAT-compatible .WTH file.
+#'
+#' @return A formatted data frame ready for DSSAT weather file writing, with metadata attributes attached.
+#'
+#' @examples
+#' \dontrun{
+#' filewth <- build_wth(ls)
+#' }
+#'
 #' @export
 #' 
-#' @param ls a list of data frames containing weather data (daily + header as separate data frames) and station
-#' metadata as comments
-#' 
-#' @return a data frame containing soil profile data formatted as a DSSAT input
-#' 
-#' @importFrom dplyr "%>%" mutate
-#' @importFrom DSSAT as_DSSAT_tbl
-#'
 
 build_wth <- function(ls) {
   
@@ -357,33 +449,36 @@ build_wth <- function(ls) {
 }
 
 
-#' Write multiple types of standard DSSAT files before
-#' 
-#' Only handles input tables that have been previously mapped to the DSSAT standard format
-#' 
-#' @export
-#' 
-#' @param ls a list DSSAT-formated crop experiment data 
-#' @param path a character vector storing the path to the directory where the files will be written
-#' 
-#' @return NULL
-#' 
-#' @importFrom DSSAT write_filex write_filea write_filet write_sol write_wth
+#' Write DSSAT Input Files from a List of Data Frames
 #'
-
-# temp workaround for date formatting issue with DSSAT::write_wth (open an issue on GitHub)
-write_wth2 <- function(wth, file_name) {
-  write_wth(wth = wth, file_name = file_name, force_std_fmt = FALSE)
-}
-
-#' TODO: Needs documentation!
-#' 
-#' @export 
-#' 
+#' Writes DSSAT input files (X, A, T, SOL, WTH) from a list of formatted data frames, using appropriate write functions and file names.
+#'
+#' @param ls A named list of formatted DSSAT data frames, each with a \code{file_name} attribute (e.g., as produced by \code{build_sol}, \code{build_wth}, etc.).
+#' @param sol_append Logical. Whether to append to the soil file (\code{write_sol}). Default is \code{TRUE}.
+#' @param path Character. Directory path to write files to. Default is the current working directory.
+#'
+#' @details
+#' The function iterates over the expected DSSAT file types (X, A, T, SOL, WTH), and for each present in the list, writes the file using the corresponding write function. The soil file (\code{filesol}) is written with the \code{append} argument as specified. If a required file is missing, a warning is issued.
+#'
+#' This is useful for exporting a complete set of DSSAT input files from a processed dataset.
+#'
+#' @return Invisibly returns \code{NULL}. Used for its side effect of writing files.
+#'
+#' @examples
+#' \dontrun{
+#' write_dssat(ls, sol_append = FALSE, path = \"./dssat_inputs\")
+#' }
+#'
 #' @importFrom purrr walk
 #' 
 
 write_dssat <- function(ls, sol_append = TRUE, path = getwd()) {
+  
+  # temp workaround for date formatting issue with
+  # DSSAT::write_wth (open an issue on GitHub)
+  write_wth2 <- function(wth, file_name) {
+    write_wth(wth = wth, file_name = file_name, force_std_fmt = FALSE)
+  }
   
   # Write functions (from DSSAT package)
   write_funs <- list(
@@ -411,15 +506,30 @@ write_dssat <- function(ls, sol_append = TRUE, path = getwd()) {
   })
 }
 
-#' ###
-#' 
-#' 
-#' @param df ###
-#' 
-#' @return a data frame ###
-#' 
-#' @importFrom ###
+
+#' Compile and Optionally Write a Complete DSSAT Model Dataset
 #'
+#' Formats and compiles all required DSSAT input files from a dataset, and optionally writes them to disk.
+#'
+#' @param dataset A named list of data frames representing the model dataset, including management, observed, soil, and weather data.
+#' @param framework Character. The modeling framework (default: \code{"dssat"}).
+#' @param write Logical. Whether to write the compiled files to disk. Default is \code{FALSE}.
+#' @param sol_append Logical. Whether to append to the soil file (\code{filesol}). Default is \code{TRUE}.
+#' @param path Character. Directory path to write files to. Default is the current working directory.
+#' @param args List. Named list of simulation control values to overwrite in the management file.
+#'
+#' @details
+#' The function formats the management, observed summary, observed time series, soil, and weather data frames using the appropriate builder functions. It updates simulation control values in the management file if specified in \code{args}. The output is a named list of formatted DSSAT input files. If \code{write = TRUE}, the files are written to disk using \code{write_dssat}.
+#'
+#' @return A named list containing the formatted DSSAT input files (\code{filex}, \code{filea}, \code{filet}, \code{filesol}, \code{filewth}).
+#'
+#' @examples
+#' \dontrun{
+#' dssat_files <- compile_model_dataset(dataset, write = TRUE, path = "./dssat_inputs")
+#' }
+#'
+#' @export
+#' 
 
 compile_model_dataset <-
   function(dataset, framework = "dssat",

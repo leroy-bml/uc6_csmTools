@@ -1,5 +1,29 @@
+#' Validate DSSAT Entity names by Type
 #'
+#' Checks whether a code string is valid for a given DSSAT entity name (experiment, cultivar, field, soil, or weather station).
 #'
+#' @param x Character vector. The code(s) to validate.
+#' @param item Character. The type of entity. One of \code{"experiment"}, \code{"cultivar"}, \code{"field"}, \code{"soil"}, or \code{"weather_station"}.
+#' @param framework Character. The modeling framework (default: \code{"dssat"}). Currently only DSSAT is supported.
+#'
+#' @details
+#' The function uses regular expressions to check if the input code(s) match the expected format for the specified entity type:
+#' \itemize{
+#'   \item \code{experiment}: 4 uppercase letters followed by 4 digits (e.g., "EXPT2023")
+#'   \item \code{cultivar}: 2 uppercase letters followed by 4 digits (e.g., "CU1234")
+#'   \item \code{field}: 4 uppercase letters followed by 4 digits
+#'   \item \code{soil}: 4 uppercase letters and 6 digits, or 2 uppercase letters and 8 digits
+#'   \item \code{weather_station}: 4 uppercase letters
+#' }
+#'
+#' @return Logical vector. \code{TRUE} if the code is valid for the specified type, \code{FALSE} otherwise.
+#'
+#' @examples
+#' isValidCode("EXPT2023", "experiment")        # TRUE
+#' isValidCode("CU1234", "cultivar")            # TRUE
+#' isValidCode("SOIL000001", "soil")            # TRUE
+#' isValidCode("WXST", "weather_station")       # TRUE
+#' isValidCode("BADCODE", "experiment")         # FALSE
 #'
 
 isValidCode <- function(x,
@@ -16,7 +40,6 @@ isValidCode <- function(x,
   
   return(isValid)
 }
-
 
 
 #' Format metadata documentation for ICASA/DSSAT datasets into the target data model
@@ -535,10 +558,26 @@ structure_metadata <- function(dataset, data_model = c("icasa", "dssat")) {
 }
 
 
+#' Generate an Experimental Design Code from a DSSAT management table list
 #'
+#' Constructs a compact code describing the experimental design, based on treatment and fertilizer structure, using ICASA abbreviations.
 #'
+#' @param dataset A named list of data frames, including at least \code{"TREATMENTS"} and \code{"FERTILIZERS"}.
 #'
+#' @details
+#' The function maps treatment headers to ICASA abbreviations, removes managements with only one level, and groups columns by their sequence of levels. It then constructs a code summarizing the experimental design, indicating the number of levels and the management types involved. If fertilization is a treatment, the code includes the focal nutrient(s) (e.g., "FE(N)" for nitrogen).
 #'
+#' This code is useful for summarizing and comparing experimental designs in a standardized way.
+#'
+#' The function uses \code{map_headers} and \code{load_map} for header mapping.
+#'
+#' @return A character string representing the experimental design code.
+#'
+#' @examples
+#' \dontrun{
+#' code <- make_expd_code(dataset)
+#' print(code)
+#' }
 #'
 
 make_expd_code <- function(dataset) {

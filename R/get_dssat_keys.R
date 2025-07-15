@@ -1,5 +1,25 @@
-options(DSSAT.CSM = "C:\\DSSAT48\\DSCSM048.EXE")
+#' Download and Load the ICASA Data Dictionary
+#'
+#' Downloads the official ICASA Data Dictionary Excel file from the DSSAT GitHub repository and loads its sheets as data frames.
+#'
+#' @details
+#' The function downloads the ICASA Data Dictionary from the official DSSAT GitHub repository and loads each worksheet (except the first) into a list of data frames. The list is named according to the sheet names in the workbook.
+#'
+#' The function uses \code{wb_load} and \code{wb_to_df} for reading the Excel file and converting sheets to data frames.
+#'
+#' @return A named list of data frames, each corresponding to a sheet in the ICASA Data Dictionary (excluding the first sheet).
+#'
+#' @examples
+#' \dontrun{
+#' icasa_dict <- get_icasa()
+#' names(icasa_dict)
+#' }
+#'
+#' @export
+#' 
 
+# options(DSSAT.CSM = "C:\\DSSAT48\\DSCSM048.EXE")
+# TODO: check if url still valid
 
 get_icasa <- function(){
   url <- "https://github.com/DSSAT/ICASA-Dictionary/raw/refs/heads/main/ICASA%20Data%20Dictionary.xlsx"  # official ICASA repo
@@ -14,8 +34,23 @@ get_icasa <- function(){
 }
 
 
+#' Lookup Table for DSSAT Reference Keys and File Locations
 #'
+#' Provides a mapping of DSSAT reference items (e.g., crops, models, soil analyses) to their corresponding file names and section headers.
 #'
+#' @details
+#' This function returns a data frame mapping reference items (such as "crops", "models", and "soil_analyses") to the DSSAT file in which they are found and the header string that marks the start of the relevant section.
+#'
+#' It is used internally by functions such as \code{get_dssat_terms} to locate and extract reference tables from DSSAT installation files.
+#'
+#' @return A data frame with columns \code{item}, \code{file}, and \code{header}.
+#'
+#' @examples
+#' lookup_keys()
+#' # Returns a data frame mapping items to files and headers
+#'
+#' @export
+#' 
 
 lookup_keys <- function(){
   
@@ -26,8 +61,28 @@ lookup_keys <- function(){
   )
 }
 
+
+#' Retrieve DSSAT Terms for Crops, Models, or Soil Analyses
 #'
+#' Extracts reference tables (e.g., crops, models, soil analyses) from DSSAT installation files.
 #'
+#' @param key Character. The type of terms to retrieve. Options are \code{"crops"}, \code{"models"}, or \code{"soil_analyses"}.
+#'
+#' @details
+#' The function locates the DSSAT installation directory using the \code{DSSAT.CSM} option, then looks up the appropriate file and header for the requested key using \code{lookup_keys()}. It reads the relevant section from the file, parses the lines into columns, and returns a data frame of the terms.
+#'
+#' This is useful for retrieving reference tables (e.g., crop codes, model codes) used in DSSAT input files.
+#'
+#' @return A data frame containing the requested DSSAT terms.
+#'
+#' @examples
+#' \dontrun{
+#' crops <- get_dssat_terms("crops")
+#' models <- get_dssat_terms("models")
+#' }
+#'
+#' @export
+#' 
 
 get_dssat_terms <- function(key = c("crops","models","soil_analyses")){
   

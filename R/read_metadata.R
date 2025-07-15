@@ -98,9 +98,11 @@ read_metadata <- function(path, repo = "bonares", sheet = NULL) {
   
   
   ##---- Dates ----
-  dates <- xml2::xml_text(xml2::xml_find_all(metadata,
-                                 ".//gmd:identificationInfo/bnr:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:date/gco:Date",
-                                 ns))
+  dates <- xml2::xml_text(
+    xml2::xml_find_all(
+      metadata,
+      ".//gmd:identificationInfo/bnr:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:date/gco:Date",
+      ns))
   dates <- as.Date(dates)
   dates <- dates[!is.na(dates)]
   date_published <- if (length(dates) > 0) min(dates) else NA
@@ -134,77 +136,79 @@ read_metadata <- function(path, repo = "bonares", sheet = NULL) {
 #' 
 #' 
 
-read_var_key <- function(path, repo, sheet = NULL){
-  
-  # Read metadata file
-  metadata <- xml2::read_xml(path)
-  # Get namespace mapping
-  ns <- xml2::xml_ns(metadata)
-  
-  # Extract variable key
-  key <- switch(repo,
-                "bnr" = {
-                  # Find all nodes that match a given XPath expression
-                  var_nodes <- xml2::xml_find_all(metadata, "//bnr:MD_Column")
-                  # Extract the data for each variable as a named vector
-                  vars <- map(var_nodes, function(x) {
-                    tbl_name <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:tableName"))
-                    name <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:name"))
-                    descript <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:description"))
-                    methods <- xml2::xml_text(xml2::xml_find_first(x, "//bnr:methods"))
-                    unit <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:unit"))
-                    data_type <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:dataType"))
-                    nas <- xml2::xml_text(xml2::xml_find_first(x, "//bnr:missingValue"))
-                    # Group into a list
-                    list(tbl_name = tbl_name, name = name, description = descript, methods = methods, unit = unit, 
-                         data_type = data_type, missing_vals = nas)
-                  })
-                  # Combine the list of named vectors into a data frame
-                  key <- bind_rows(vars)
-                },
-                "dwd" = {
-                  # Find all nodes that match a given XPath expression
-                  var_nodes <- xml2::xml_find_all(metadata, "//MetElement")
-                  # Extract the data for each variable as a named vector
-                  vars <- map(var_nodes, function(x) {
-                    name <- xml2::xml_text(xml2::xml_find_first(x, ".//ShortName"))
-                    unit <- xml2::xml_text(xml2::xml_find_first(x, ".//UnitOfMeasurement"))
-                    descript <- xml2::xml_text(xml2::xml_find_first(x, ".//Description"))
-                    # Group into a list
-                    list(name = name, description = descript, unit = unit)
-                  })
-                  # Combine the list of named vectors into a data frame
-                  key <- bind_rows(vars)
-                },
-                c("hdv","zdp","opa","sradi","odja") %in% {
-                  # Determine file format
-                  ext <- gsub("\\.", "", substr(metadata, nchar(metadata)-4+1, nchar(metadata)))
-                  # Read key
-                  switch(ext,
-                         "txt" = {
-                           key <- read.delim(metadata, header = TRUE, sep = "\t", fill = TRUE)
-                         },
-                         "csv" = {
-                           lines <- readLines(metadata, n = 1)
-                           if (grepl(",", lines)) { 
-                             key <- read.csv(metadata, header = TRUE, sep = ",", fill = TRUE)
-                           } else if (grepl(";", lines)) {
-                             key <- read.csv(metadata, header = TRUE, sep = ";", fill = TRUE)
-                           }
-                         },
-                         "xlsx" = {
-                           key <- read_excel(metadata, sheet = sheet)
-                         },
-                         "ods" = {
-                           key <- read_ods(metadata, sheet = sheet)
-                         },
-                         {
-                           print("Invalid file format") # add json/xml
-                         }
-                  )
-                  
-                }
-  )
-  
-  return(key)
-}
+# TODO: revise var key; redefine objectives?
+#
+# read_var_key <- function(path, repo, sheet = NULL){
+#   
+#   # Read metadata file
+#   metadata <- xml2::read_xml(path)
+#   # Get namespace mapping
+#   ns <- xml2::xml_ns(metadata)
+#   
+#   # Extract variable key
+#   key <- switch(repo,
+#                 "bnr" = {
+#                   # Find all nodes that match a given XPath expression
+#                   var_nodes <- xml2::xml_find_all(metadata, "//bnr:MD_Column")
+#                   # Extract the data for each variable as a named vector
+#                   vars <- map(var_nodes, function(x) {
+#                     tbl_name <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:tableName"))
+#                     name <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:name"))
+#                     descript <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:description"))
+#                     methods <- xml2::xml_text(xml2::xml_find_first(x, "//bnr:methods"))
+#                     unit <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:unit"))
+#                     data_type <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:dataType"))
+#                     nas <- xml2::xml_text(xml2::xml_find_first(x, "//bnr:missingValue"))
+#                     # Group into a list
+#                     list(tbl_name = tbl_name, name = name, description = descript, methods = methods, unit = unit, 
+#                          data_type = data_type, missing_vals = nas)
+#                   })
+#                   # Combine the list of named vectors into a data frame
+#                   key <- bind_rows(vars)
+#                 },
+#                 "dwd" = {
+#                   # Find all nodes that match a given XPath expression
+#                   var_nodes <- xml2::xml_find_all(metadata, "//MetElement")
+#                   # Extract the data for each variable as a named vector
+#                   vars <- map(var_nodes, function(x) {
+#                     name <- xml2::xml_text(xml2::xml_find_first(x, ".//ShortName"))
+#                     unit <- xml2::xml_text(xml2::xml_find_first(x, ".//UnitOfMeasurement"))
+#                     descript <- xml2::xml_text(xml2::xml_find_first(x, ".//Description"))
+#                     # Group into a list
+#                     list(name = name, description = descript, unit = unit)
+#                   })
+#                   # Combine the list of named vectors into a data frame
+#                   key <- bind_rows(vars)
+#                 },
+#                 c("hdv","zdp","opa","sradi","odja") %in% {
+#                   # Determine file format
+#                   ext <- gsub("\\.", "", substr(metadata, nchar(metadata)-4+1, nchar(metadata)))
+#                   # Read key
+#                   switch(ext,
+#                          "txt" = {
+#                            key <- read.delim(metadata, header = TRUE, sep = "\t", fill = TRUE)
+#                          },
+#                          "csv" = {
+#                            lines <- readLines(metadata, n = 1)
+#                            if (grepl(",", lines)) { 
+#                              key <- read.csv(metadata, header = TRUE, sep = ",", fill = TRUE)
+#                            } else if (grepl(";", lines)) {
+#                              key <- read.csv(metadata, header = TRUE, sep = ";", fill = TRUE)
+#                            }
+#                          },
+#                          "xlsx" = {
+#                            key <- read_excel(metadata, sheet = sheet)
+#                          },
+#                          "ods" = {
+#                            key <- read_ods(metadata, sheet = sheet)
+#                          },
+#                          {
+#                            print("Invalid file format") # add json/xml
+#                          }
+#                   )
+#                   
+#                 }
+#   )
+#   
+#   return(key)
+# }

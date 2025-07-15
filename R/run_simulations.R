@@ -1,12 +1,33 @@
-#' ###
-#' 
-#' 
-#' @param df ###
-#' 
-#' @return a data frame ###
-#' 
-#' @importFrom ###
+#' Run DSSAT Simulations from a Dataset and Return Output
 #'
+#' Prepares input files, writes batch files, runs DSSAT simulations, and reads output for a given dataset.
+#'
+#' @param dataset A list containing DSSAT input tables, including at least \code{X} (management), \code{A} (observed summary), \code{T} (observed time series), \code{WTH} (weather), \code{SOL} (soil), and \code{CUL} (cultivar).
+#' @param framework Character. Simulation framework to use (default: \code{"dssat"}).
+#' @param dssat_dir Character or NULL. Path to the DSSAT installation directory. If NULL, uses environment variable or default.
+#' @param sim_dir Character or NULL. Directory for simulation input/output files. If NULL, uses DSSAT directory or default.
+#' @param args List. Additional simulation parameters (e.g., \code{TRTNO}, \code{RP}, \code{SQ}, \code{OP}, \code{CO}).
+#'
+#' @details
+#' The function sets up the DSSAT environment, writes all required input files to the appropriate directories, prepares a batch file, and runs DSSAT in batch mode. It then reads the main output file (\code{PlantGro.OUT}) and returns it along with observed data. The function handles both Windows and Unix systems and uses several helper functions for file I/O and simulation control.
+#'
+#' @return A list containing:
+#' \describe{
+#'   \item{\code{plant_growth}}{A data frame of simulated plant growth output.}
+#'   \item{\code{OBSERVED_Summary}}{Observed summary data (if provided).}
+#'   \item{\code{OBSERVED_TimeSeries}}{Observed time series data (if provided).}
+#' }
+#'
+#' @examples
+#' \dontrun{
+#' result <- run_simulations(dataset)
+#' head(result$plant_growth)
+#' }
+#'
+#' @importFrom utils modifyList
+#' 
+#' @export
+#' 
 
 run_simulations <- function(dataset, framework = "dssat", dssat_dir = NULL, sim_dir = NULL, args = list()) {
   
@@ -112,15 +133,28 @@ run_simulations <- function(dataset, framework = "dssat", dssat_dir = NULL, sim_
 }
 
 
-#' ###
-#' 
-#' 
-#' @param df ###
-#' 
-#' @return a data frame ###
-#' 
-#' @importFrom ###
+#' Plot Simulated and Observed Plant Growth Output
 #'
+#' Creates a plot comparing simulated and observed plant growth (e.g., yield) for different treatments.
+#'
+#' @param sim_output A list containing simulation output and observed data, as returned by \code{run_simulations}.
+#'
+#' @details
+#' The function extracts observed summary data and simulated plant growth data from \code{sim_output}, formats dates, and creates a ggplot showing simulated growth as lines and observed data as points. The plot distinguishes treatments by color and includes custom legends for simulated and observed data.
+#'
+#' The function uses the \strong{dplyr} and \strong{ggplot2} packages for data manipulation and plotting.
+#'
+#' @return A ggplot object showing simulated and observed plant growth for each treatment.
+#'
+#' @examples
+#' \dontrun{
+#' plot_growth <- plot_output(sim_output)
+#' print(plot_growth)
+#' }
+#'
+#' @importFrom dplyr filter mutate
+#' @importFrom ggplot2 ggplot aes geom_line geom_point scale_colour_manual scale_size_manual scale_linewidth_manual labs guides guide_legend theme_bw theme element_text
+#' @export
 
 plot_output <- function(sim_output){
   

@@ -1,11 +1,22 @@
-#' ######
-#' 
-#' @param crop
-#' @param model
-#' 
-#' @importFrom DSSAT read_cul read+eco
-#' 
-#' @return 
+#' Extract a Section from DSSAT management tables (file X)
+#'
+#' Retrieves the first table from a DSSAT management table list based on section name.
+#'
+#' @param xtables A named list DSSAT management tables as data frames.
+#' @param sec_name Character. The section name or pattern to search for in the names of \code{xtables}.
+#'
+#' @details
+#' The function searches the names of \code{xtables} for entries matching \code{sec_name} using \code{grepl}. It returns the first matching table, or \code{NULL} if no match is found.
+#'
+#' This is useful for extracting a specific section or table from a list of tables by partial or full name.
+#'
+#' @return The first table (e.g., data frame) whose name matches \code{sec_name}, or \code{NULL} if no match is found.
+#'
+#' @examples
+#' xtables <- list(SUMMARY = data.frame(a = 1:3), DETAILS = data.frame(b = 4:6))
+#' get_xfile_sec(xtables, "SUM")
+#' # Returns the SUMMARY data frame
+#'
 
 get_xfile_sec <- function(xtables, sec_name){
   
@@ -16,14 +27,26 @@ get_xfile_sec <- function(xtables, sec_name){
 }
 
 
-#' ######
-#' 
-#' @param crop
-#' @param model
-#' 
-#' @importFrom DSSAT read_cul read+eco
-#' 
-#' @return 
+#' Retrieve Crop Genotype Data from DSSAT Files
+#'
+#' Loads crop genotype data (CUL file) for a specified crop and model from DSSAT installation directories.
+#'
+#' @param crop Character. The crop name or code (e.g., "maize", "wheat").
+#' @param model Character. The DSSAT model code (e.g., "APS", "CER", "GRO", "ARO", "CRP", "IXM"). Default includes all.
+#'
+#' @details
+#' The function constructs the file path for the crop genotype file (\code{.CUL}) based on the DSSAT installation path and version, as specified by the \code{DSSAT.CSM} option. It then loads the genotype data using \code{read_cul}. The crop code is constructed from the first two letters of the crop name (uppercased), the model code, and the DSSAT version.
+#'
+#' The function currently only loads the CUL file, but can be extended to load ECO files as well.
+#'
+#' @return A data frame containing the crop genotype data, with the crop name attached as an attribute.
+#'
+#' @examples
+#' \dontrun{
+#' cdata <- get_cdata("maize", model = "CER")
+#' }
+#'
+#' @export
 
 get_cdata <- function(crop, model = c("APS","CER","GRO","ARO","CRP","IXM")) {
   
@@ -37,7 +60,7 @@ get_cdata <- function(crop, model = c("APS","CER","GRO","ARO","CRP","IXM")) {
   
   # Open genotype files
   ctable <- read_cul(file_name = paste0(dssat_path, "Genotype\\", crop_code, ".CUL"))
-  #ilee <- read_eco(file_name = paste0(dssat_path, "Genotype\\", crop_code, ".ECO"))
+  #filee <- read_eco(file_name = paste0(dssat_path, "Genotype\\", crop_code, ".ECO"))
   
   # Output
   out <- ctable
@@ -50,13 +73,27 @@ get_cdata <- function(crop, model = c("APS","CER","GRO","ARO","CRP","IXM")) {
   
 }
 
-#' ######
-#' 
-#' @param ##
-#' 
-#' @importFrom ###
-#' 
-#' @return 
+
+#' Set Column Classes of a Data Frame According to a Reference
+#'
+#' Coerces the columns of a data frame to specified classes, using a named vector or list of target classes.
+#'
+#' @param df A data frame whose columns are to be coerced.
+#' @param classes A named vector or list specifying the target class for each column (e.g., \code{c(date = "Date", value = "numeric")}).
+#'
+#' @details
+#' The function matches columns in \code{df} to names in \code{classes}, then coerces each column to the specified class using standard R coercion functions (\code{as.Date}, \code{as.numeric}, etc.). If a class is not recognized, the column is returned unchanged.
+#'
+#' This is useful for ensuring that data frames have the correct column types after import or transformation.
+#'
+#' @return A data frame with columns coerced to the specified classes.
+#'
+#' @examples
+#' df <- data.frame(date = c("2022-01-01", "2022-01-02"), value = c("1", "2"))
+#' classes <- c(date = "Date", value = "numeric")
+#' set_class(df, classes)
+#' # Returns a data frame with date as Date and value as numeric
+#'
 
 set_class <- function(df, classes) {
   df <- df[names(df) %in% names(classes)]
@@ -76,15 +113,29 @@ set_class <- function(df, classes) {
   return(as.data.frame(df))
 }
 
-#' ######
-#' 
-#' @param trdata
-#' 
-#' @importFrom dplyr "%>%" mutate
-#' @importFrom tibble add_row
-#' 
-#' @return 
+
+#' Add a New Treatment Row to the treatment matrix of a DSSAT managemenet table list
 #'
+#' Adds a new treatment to the treatment table within a DSSAT management tale list,
+#' using the last row as a template and updating specified columns.
+#'
+#' @param xtables A named list of tables (e.g., data frames), including a treatment table (name starting with "TREATMENT").
+#' @param args A named list of column values to update in the new treatment row.
+#'
+#' @details
+#' The function locates the treatment table in \code{xtables} (the first table whose name starts with "TREATMENT"), copies its last row as a template, and updates the primary key (first column) to a new unique value. Columns specified in \code{args} are updated in the new row. The new row is appended to the treatment table, which is then converted to a DSSAT table using \code{as_DSSAT_tbl}.
+#'
+#' If a column specified in \code{args} does not exist in the treatment table, a warning is issued.
+#'
+#' @return The input list with the updated treatment table.
+#'
+#' @examples
+#' \dontrun{
+#' xtables <- add_treatment(xtables, args = list(crop = "maize", fertilizer = "NPK"))
+#' }
+#'
+#' @importFrom dplyr bind_rows
+#' @export
 
 add_treatment <- function(xtables, args = list()) {
   
@@ -109,22 +160,33 @@ add_treatment <- function(xtables, args = list()) {
   return(xtables)
 }
 
-#' ######
+
+#' Add a New evemt to a DSSAT management section Table
+#'
+#' Adds a new management event (e.g., fertilizer, irrigation, tillage) to the appropriate section table
+#' within a DSSAT management table list, creating the section if it does not exist.
+#'
+#' @param xtables A named list of tables (e.g., data frames), representing DSSAT management sections.
+#' @param section Character. The management section to add to (e.g., "fertilizer", "irrigation", "planting", etc.).
+#' @param args A named list of column values to update in the new management row.
+#'
+#' @details
+#' The function identifies the appropriate section table in \code{xtables} (by prefix), or creates it if missing using a template. It prepares a new row with the specified arguments, coerces columns to the correct class, and assigns a new unique primary key. For sections with nested (list) columns, it handles class assignment and collapsing as needed. The new row is appended to the section table, which is then converted to a DSSAT table using \code{as_DSSAT_tbl}.
+#'
+#' If a column specified in \code{args} does not exist in the section table, a warning is issued.
+#'
+#' @return The input list with the updated management section table.
+#'
+#' @examples
+#' \dontrun{
+#' xtables <- add_management(xtables, section = "fertilizer", args = list(amount = 50, date = "2022-03-01"))
+#' }
+#'
+#' @importFrom dplyr bind_rows unnest
+#' @importFrom tidyr unnest
 #' 
-#' @param fdata
-#' @param type
-#' @param rate
-#' @param FDATE
-#' @param FNAME
-#' @param FMCD
-#' @param FACD
-#' @param FDEP
-#' @param FOCD
+#' @export
 #' 
-#' @importFrom dplyr "%>%" mutate
-#' @importFrom tibble add_row
-#' 
-#' @return 
 
 # TODO: TEST handle composite section (initial_conditions, irrigation); class list for collapsed vars
 #section <- "irrigation"
@@ -212,8 +274,41 @@ add_management <- function(xtables,
 }
 
 
-#' ######
-#' 
+#' Write a DSSAT Batch File for cultivar parameter calibration
+#'
+#' Generates and writes a DSSAT batch file for model calibration,
+#' formatting the batch table and header according to DSSAT conventions.
+#'
+#' @param xfile Character vector. The X-file names (one per treatment).
+#' @param trtno Integer vector. Treatment numbers.
+#' @param rp Integer vector. Replication numbers.
+#' @param sq Integer vector. Sequence numbers.
+#' @param op Integer vector. Operation numbers.
+#' @param co Integer vector. Code numbers.
+#' @param ... Additional arguments (not used directly).
+#'
+#' @details
+#' The function constructs a batch table with the specified columns, formats the header and data lines according to DSSAT batch file requirements, and writes the result to a file. The batch file name and path are constructed using the \code{cultivar} and \code{crop_code} variables (which must be defined in the environment), and the output directory \code{dir_out}.
+#'
+#' The function uses the \strong{glue}, \strong{dplyr}, and \strong{stringr} packages for string formatting and data manipulation.
+#'
+#' @return The name of the batch file written.
+#'
+#' @examples
+#' \dontrun{
+#' write_gluebatch(
+#'   xfile = c("EX001A.WHX", "EX001B.WHX"),
+#'   trtno = 1:2,
+#'   rp = c(1, 1),
+#'   sq = c(1, 2),
+#'   op = c(1, 1),
+#'   co = c(1, 1)
+#' )
+#' }
+#'
+#' @importFrom dplyr mutate mutate_at vars
+#' @importFrom stringr str_c
+#' @importFrom glue glue_data
 #' 
 
 write_gluebatch <- function(xfile, trtno, rp, sq, op, co, ...){
@@ -246,10 +341,32 @@ write_gluebatch <- function(xfile, trtno, rp, sq, op, co, ...){
 }
 
 
-#' ######
-#' 
-#' 
-#' 
+#' Write a GLUE Simulation Control File for DSSAT calibration Batch Runs
+#'
+#' Generates and writes a simulation control CSV file for GLUE-based DSSAT calibration batch runs,
+#' specifying file paths, flags, and run parameters.
+#'
+#' @param cfilename Character. The model ID or control file name.
+#' @param batchname Character. The name of the cultivar batch file.
+#' @param ... Additional arguments (not used directly, but required variables must be present in the environment: \code{ecocal}, \code{dir_glue}, \code{dir_out}, \code{dir_dssat}, \code{flag}, \code{reps}, \code{cores}, \code{dir_genotype}).
+#'
+#' @details
+#' The function creates a data frame of simulation control variables and their values, then writes it to \code{SimulationControl.csv} in the GLUE directory. The required variables (e.g., \code{ecocal}, \code{dir_glue}, etc.) must be defined in the environment.
+#'
+#' This file is used to control GLUE-based DSSAT batch simulations.
+#'
+#' @return The data frame of simulation control variables and values (invisibly).
+#'
+#' @examples
+#' \dontrun{
+#' write_gluectrl(
+#'   cfilename = "CERES",
+#'   batchname = "BATCH.WHC"
+#'   # plus required variables in the environment
+#' )
+#' }
+#'
+#' @export
 
 write_gluectrl <- function(cfilename, batchname, ...){
 
@@ -266,10 +383,25 @@ write_gluectrl <- function(cfilename, batchname, ...){
   return(controls)
 }
 
-#' ######
-#' 
-#' 
-#' 
+
+#' Ensure Required DSSAT/GLUE Files Are Present in the GLUE Directory
+#'
+#' Checks for the presence of required DSSAT/GLUE files in the GLUE directory and copies them from the DSSAT directory if missing.
+#'
+#' @param dir_dssat Character. Path to the DSSAT installation directory containing required files.
+#' @param dir_glue Character. Path to the GLUE working directory where files should be present.
+#'
+#' @details
+#' The function determines the operating system and sets the list of required files accordingly. It checks for each required file in \code{dir_glue}, and if a file is missing, it copies it from \code{dir_dssat}. This ensures that all necessary files for GLUE-based DSSAT simulations are available in the working directory.
+#'
+#' @return Invisibly returns \code{NULL}. Used for its side effect of copying files if needed.
+#'
+#' @examples
+#' \dontrun{
+#' check_glue_files("C:/DSSAT", "C:/GLUE")
+#' }
+#'
+#' @export
 
 check_glue_files <- function(dir_dssat, dir_glue){
   
@@ -294,24 +426,25 @@ check_glue_files <- function(dir_dssat, dir_glue){
 }
   
   
-#' ######
-#' 
-#' @param fdata
-#' @param type
-#' @param rate
-#' @param FDATE
-#' @param FNAME
-#' @param FMCD
-#' @param FACD
-#' @param FDEP
-#' @param FOCD
-#' 
-#' @importFrom dplyr "%>%" mutate
-#' @importFrom tibble add_row
-#' 
-#' @return 
-#' 
-
+#' Disable Water and/or Nitrogen Stress in DSSAT Simulations
+#'
+#' Modifies DSSAT management tables to add treatments with automatic irrigation
+#' and/or nitrogen saturation, disabling water and/or nitrogen stress.
+#'
+#' @param xtables A named list of DSSAT tables (data frames), including management and treatment sections.
+#' @param stress Character vector. Which stresses to disable. Options are \code{"water"}, \code{"nitrogen"}, or both (default: \code{c("water", "nitrogen")}).
+#'
+#' @details
+#' For water stress, the function adds a simulation control row with auto-irrigation enabled. For nitrogen stress, it adds a fertilizer management row with high N application. It then creates a new treatment referencing these management levels, with a descriptive treatment name. The function uses helper functions such as \code{get_xfile_sec}, \code{add_management}, and \code{add_treatment}.
+#'
+#' @return The input list with the new treatment(s) added to disable the specified stress(es).
+#'
+#' @examples
+#' \dontrun{
+#' xtables <- disable_stress(xtables, stress = c("water", "nitrogen"))
+#' }
+#'
+#' @export
 
 disable_stress <- function(xtables, stress = c("water", "nitrogen")) {
 
@@ -352,16 +485,43 @@ disable_stress <- function(xtables, stress = c("water", "nitrogen")) {
 }
 
 
-#' Calibrate genotype parameters for DSSAT models
+#' Calibrate DSSAT Cultivar Parameters Using GLUE
+#'
+#' Sets up and runs a GLUE-based calibration for DSSAT cultivar parameters, handling file preparation, backup, batch/control file writing, and execution.
+#'
+#' @param xfile Character. Path to the DSSAT X-file (experiment file).
+#' @param cultivar Character. The name of the cultivar to calibrate.
+#' @param model Character or NULL. The DSSAT model code (e.g., "CER", "APS"). If NULL, inferred from the X-file.
+#' @param trtno Integer or NULL. Treatment number to use for calibration. If NULL, determined automatically.
+#' @param pars Character vector. Parameters to calibrate (e.g., \code{c("phenology","growth")}). Default: both.
+#' @param method Character. Calibration method. Default is \code{"glue"}.
+#' @param minbound, maxbound Named lists. Minimum and maximum bounds for genetic parameters.
+#' @param calibrate_ecotype Logical. Whether to calibrate ecotype parameters. Default: FALSE.
+#' @param reps Integer. Number of GLUE replicates. Default: 3.
+#' @param cores Integer or NULL. Number of CPU cores to use. Default: half of available.
+#' @param dir_glue, dir_out, dir_dssat, dir_genotype Character or NULL. Paths to GLUE, output, DSSAT, and genotype directories. If NULL, inferred from DSSAT installation.
+#' @param overwrite Logical. Whether to overwrite existing files. Default: FALSE.
+#' @param ... Additional arguments passed to internal functions.
+#'
+#' @details
+#' The function prepares all required files and directories, backs up originals, sets up batch and control files, and runs the GLUE calibration script. It updates genetic parameter bounds, disables stress treatments as needed, and writes results back to the genotype directory. The function uses several helper functions for file I/O and management.
+#'
+#' @return A data frame of the fitted cultivar parameters for the specified cultivar.
+#'
+#' @examples
+#' \dontrun{
+#' calibrate(
+#'   xfile = "EX001A.WHX",
+#'   cultivar = "Pioneer 123",
+#'   model = "CER",
+#'   reps = 10
+#' )
+#' }
+#'
+#' @importFrom dplyr group_by summarise slice_max pull filter
+#' @importFrom tidyr unnest
 #' 
-#' ###
-#' 
-#' @param xfile a character vector a length one that contains the full path of
-#' the DSSAT X file for the focal dataset
-#' @importFrom dplyr "%>%" mutate
-#' @importFrom tibble add_row
-#' 
-#' @return 
+#' @export
 #' 
 
 calibrate <- function(xfile, cultivar, model = NULL, trtno = NULL,
@@ -677,9 +837,6 @@ calibrate <- function(xfile, cultivar, model = NULL, trtno = NULL,
 }
 
 ###---- TEST ----
-
-
-
 #TODO: testnew cultivar (not in original CUL file; set default params and MIN/MAX = default temporarily)
 # sequence phenology: (1) VSEN, PPSEN; (2) P5 [FIXED; DEFAULT IF NOT MEASURED: PHINT and P1]
 # sequence growth: (1) GRNO, (2) MXFIL [FIXED; DEFAULT IF NOT MEASURED: STMMX, SLAP1]

@@ -1,12 +1,22 @@
-#' Get SoilGrids DSSAT soil profiles published by Han et al., 2015, https://doi.org/10.7910/DVN/1PEEY0
-#' 
-#' The function first controls whether the dataset already exists in the specified directory 
-#' 
-#' @param dir a character vector specifying the target directory to save the data (default tempdir)
-#' 
-#' @importFrom dataverse dataset_files get_file
-#' 
-#' @export
+#' Download and Extract SoilGrids Profiles from Han et al. (2015); Harvard Dataverse
+#'
+#' Downloads and extracts the SoilGrids by-country soil profile dataset
+#' from the Harvard Dataverse (Han et al. 2015; https://doi.org/10.7910/DVN/1PEEY0), if not already present.
+#'
+#' @param dir Character. Directory in which to store and extract the SoilGrids profiles. Defaults to a temporary directory.
+#'
+#' @details
+#' The function checks for the presence of the SoilGrids by-country zip file and its extracted directory in the specified location. If not found, it downloads the file from the Harvard Dataverse using the dataset DOI, saves it, and extracts its contents. If the data is already present, it simply returns the path to the extracted directory.
+#'
+#' The function uses \code{dataset_files} and \code{get_file} to interact with the Dataverse API.
+#'
+#' @return The path to the directory containing the extracted SoilGrids profiles.
+#'
+#' @examples
+#' \dontrun{
+#' soil_dir <- get_soilGrids_dataverse()
+#' list.files(soil_dir)
+#' }
 #'
 
 get_soilGrids_dataverse <- function(dir = tempdir()) {
@@ -65,17 +75,27 @@ get_soilGrids_dataverse <- function(dir = tempdir()) {
   return(unzip_dir)
 }
 
-#' Get SoilGrids DSSAT soil profile for a specific location
-#' 
-#' 
-#' @param lat a number vector; target latitude(s) in decimal degrees
-#' @param lon a number vector; target longitude(s) in decimal degrees
-#' @param dir a character vector specifying the directory where the data is located or should be saved
-#' 
-#' @importFrom tidygeocoder reverse_geocode
-#' @importFrom DSSAT read_sol as_DSSAT_tbl
-#' @importFrom dplyr mutate filter select
-#' 
+#' Retrieve and Map a SoilGrids Profile for a Given Location
+#'
+#' Downloads, extracts, and maps the closest SoilGrids soil profile to a specified latitude and longitude, returning the data in ICASA format.
+#'
+#' @param lat Numeric. Latitude of the target location.
+#' @param lon Numeric. Longitude of the target location.
+#' @param dir Character. Directory in which to store and extract the SoilGrids profiles. Defaults to a temporary directory.
+#'
+#' @details
+#' The function downloads and extracts the SoilGrids by-country dataset if not already present, determines the country for the given coordinates using reverse geocoding, and loads the corresponding soil profile file. It selects the profile closest to the specified coordinates, splits the data into metadata, profile, and layer sections, and maps each section to the ICASA data model using a mapping file. The institution is set to "ISRIC" for provenance.
+#'
+#' The function uses \code{get_soilGrids_dataverse}, \code{reverse_geocode}, \code{read_sol}, \code{map_data}, and \code{load_map} for data retrieval and transformation.
+#'
+#' @return A list with elements \code{SOIL_METADATA}, \code{SOIL_PROFILES}, and \code{SOIL_PROFILE_LAYERS}, each as a data frame or list of data frames in ICASA format. A comment attribute is attached describing data provenance.
+#'
+#' @examples
+#' \dontrun{
+#' soil_profile <- get_soilGrids_profile(lat = 40.7128, lon = -74.0060)
+#' str(soil_profile)
+#' }
+#'
 #' @export
 #' 
 
@@ -175,10 +195,4 @@ get_soilGrids_profile <- function(lat, lon, dir = tempdir()) {
 }
 
 # TODO: XY in metadata rather than data?
-
-# test---
-
-#tmp <- get_soilGrids_profile(lat = 52.53998, lon = 5.56189)
-
-
 
