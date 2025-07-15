@@ -18,6 +18,9 @@
 #' list.files(soil_dir)
 #' }
 #'
+#' @importFrom dataverse get_file
+#' @importFrom zip unzip
+#'
 
 get_soilGrids_dataverse <- function(dir = tempdir()) {
   
@@ -95,6 +98,11 @@ get_soilGrids_dataverse <- function(dir = tempdir()) {
 #' soil_profile <- get_soilGrids_profile(lat = 40.7128, lon = -74.0060)
 #' str(soil_profile)
 #' }
+#'
+#' @importFrom tidygeocoder reverse_geocode
+#' @importFrom dplyr mutate filter row_number select pull everything distinct
+#' @importFrom tidyr unnest
+#' @importFrom DSSAT as_DSSAT_tbl
 #'
 #' @export
 #' 

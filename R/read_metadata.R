@@ -36,6 +36,9 @@
 #' print(meta)
 #' }
 #'
+#' @importFrom xml2 read_xml xml_ns xml_text xml_find_all xml_find_first
+#' @importFrom tibble tibble
+#'
 #' @export
 #' 
 

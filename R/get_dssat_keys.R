@@ -15,6 +15,8 @@
 #' names(icasa_dict)
 #' }
 #'
+#' @importFrom openxlsx2 wb_load wd_to_df
+#'
 #' @export
 #' 
 

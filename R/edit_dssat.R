@@ -9,8 +9,8 @@
 #' 
 #' @return a tibble; input table with the added cultivar as last row
 #' 
+#' @importFrom magrittr %>%
 #' @importFrom stringr str_detect
-#' @importFrom magrittr "%>%"
 #' @importFrom tibble add_row
 #' 
 #' @export

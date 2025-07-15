@@ -1,6 +1,4 @@
-#'
-#'
-#' @export
+#' DSSAT table templates
 #' 
 #' @importFrom dplyr rename
 #' 

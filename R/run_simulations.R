@@ -25,6 +25,7 @@
 #' }
 #'
 #' @importFrom utils modifyList
+#' @importFrom DSSAT write_filex write_filea write_filet write_wth write_sol write_cul write_dssbatch run_dssat read_output
 #' 
 #' @export
 #' 
@@ -152,9 +153,12 @@ run_simulations <- function(dataset, framework = "dssat", dssat_dir = NULL, sim_
 #' print(plot_growth)
 #' }
 #'
+#' @importFrom magrittr %>%
 #' @importFrom dplyr filter mutate
 #' @importFrom ggplot2 ggplot aes geom_line geom_point scale_colour_manual scale_size_manual scale_linewidth_manual labs guides guide_legend theme_bw theme element_text
+#' 
 #' @export
+#' 
 
 plot_output <- function(sim_output){
   

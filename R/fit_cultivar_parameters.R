@@ -306,6 +306,7 @@ add_management <- function(xtables,
 #' )
 #' }
 #'
+#' @importFrom magrittr %>%
 #' @importFrom dplyr mutate mutate_at vars
 #' @importFrom stringr str_c
 #' @importFrom glue glue_data
@@ -517,7 +518,8 @@ disable_stress <- function(xtables, stress = c("water", "nitrogen")) {
 #'   reps = 10
 #' )
 #' }
-#'
+#' 
+#' @importFrom magrittr %>%
 #' @importFrom dplyr group_by summarise slice_max pull filter
 #' @importFrom tidyr unnest
 #' 

@@ -55,9 +55,11 @@ isValidCode <- function(x,
 #' @return An ICASA/DSSAT dataset as a list of named data frames with metadata structured
 #' to the target data model
 #' 
+#' @importFrom magrittr %>%
 #' @importFrom dplyr mutate left_join full_join group_by summarise pull select
 #' @importFrom lubridate year month
 #' @importFrom tidygeocoder reverse_geocode
+#' @importFrom countrycode countrycode
 #' @importFrom elevatr get_elev_point
 #'
 #' @export  ##! keep or embed into the mapping wrapper?

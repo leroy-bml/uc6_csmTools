@@ -236,7 +236,8 @@ patch_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","Da
 #'
 #' @importFrom httr GET add_headers content
 #' @importFrom jsonlite fromJSON
-#' @importFrom dplyr %>% filter mutate pull rowwise select rename group_by_at summarise across all_of bind_rows
+#' @importFrom magrittr %>%
+#' @importFrom dplyr filter mutate pull rowwise select rename group_by_at summarise across all_of bind_rows
 #' @importFrom tidyr separate
 #' @importFrom tibble tibble
 #' 
@@ -436,7 +437,8 @@ get_all_obs <- function(url, token) {
 #' )
 #' }
 #'
-#' @importFrom dplyr %>% mutate select
+#' @importFrom magrittr %>%
+#' @importFrom dplyr mutate select
 #' @importFrom lubridate ymd_hms
 #' 
 #' @export

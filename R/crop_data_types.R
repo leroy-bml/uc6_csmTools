@@ -13,7 +13,8 @@
 #' 
 #' @return the input database tagged as "management", "observed" or "other" data category (as attr(., "category"))
 #' 
-#' @importFrom dplyr "%>%" group_by_at summarise n_distinct across mutate ungroup select pull left_join
+#' @importFrom magritte %>%
+#' @importFrom dplyr group_by_at summarise n_distinct across mutate ungroup select pull left_join
 #' @importFrom tidyr all_of
 #' @importFrom tibble as_tibble
 #' 
@@ -177,9 +178,10 @@ tag_data_type <- function(db, exp_str, plots_len, max_mods = 8) {
 #'  
 #' @return a data frame containing the year column and a logical "is_trt"
 #' 
-#' @importFrom dplyr "%>%" group_by_at arrange mutate row_number across c_across rowwise select n_distinct summarise
+#' @importFrom magrittr %>%
+#' @importFrom dplyr group_by_at arrange mutate row_number across c_across rowwise select n_distinct summarise
 #' @importFrom tidyr matches all_of spread
-#' @importFrom rlang "!!" sym
+#' @importFrom rlang !! sym
 #' 
 
 # db <- muencheberg

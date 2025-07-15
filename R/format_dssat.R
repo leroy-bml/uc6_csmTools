@@ -151,9 +151,11 @@ split_by_year <- function(ls) {
 #' \dontrun{
 #' formatted <- format_table(df, template)
 #' }
-#'
-#' @importFrom dplyr bind_rows select slice arrange
+#' 
+#' @importFrom magrittr %>%
+#' @importFrom dplyr bind_rows select all_of slice arrange
 #' @importFrom purrr map_lgl map
+#' @importFrom DSSAT as_DSSAT_tbl
 #' 
 
 format_table <- function(df, template) {
@@ -219,7 +221,9 @@ format_table <- function(df, template) {
 #' filex <- build_filex(ls)
 #' }
 #'
+#' @importFrom magrittr %>%
 #' @importFrom dplyr mutate across where
+#' @importFrom DSSAT as_DSSAT_tbl
 #' 
 #' @export
 #' 
@@ -297,7 +301,9 @@ build_filex <- function(ls, title = NULL, site_code = NA_character_) {
 #' filea <- build_filea(ls)
 #' }
 #'
+#' @importFrom magrittr %>%
 #' @importFrom dplyr mutate arrange across where
+#' @importFrom DSSAT as_DSSAT_tbl
 #' 
 #' @export
 #' 
@@ -339,7 +345,9 @@ build_filea <- function(ls, title = NULL, site_code = NA_character_) {
 #' filet <- build_filet(ls)
 #' }
 #'
+#' @importFrom magrittr %>%
 #' @importFrom dplyr mutate arrange
+#' @importFrom DSSAT as_DSSAT_tbl
 #' 
 #' @export
 #' 
@@ -417,6 +425,9 @@ build_sol <- function(ls) {
 #' \dontrun{
 #' filewth <- build_wth(ls)
 #' }
+#'
+#' @importFrom magrittr %>%
+#' @importFrom dplyr mutate
 #'
 #' @export
 #' 

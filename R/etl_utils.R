@@ -259,7 +259,8 @@ get_df_name <- function(ls, df) {
 #' collapse_cols(df, c('value1', 'value2'))
 #' # Returns a data frame with one row per id, and value1/value2 as list-columns
 #'
-#' @importFrom dplyr "%>%" group_by_at summarise across all_of
+#' @importFrom magrittr %>%
+#' @importFrom dplyr group_by_at summarise across all_of
 #' 
 
 collapse_cols <- function(df, cols) {

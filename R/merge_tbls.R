@@ -193,7 +193,11 @@ fuse_identical_columns <- function(df, sep = "-") {
 #' # )
 #' # merge_tbls(parent_list, child_list, type = "parent-child")
 #'
+#' @importFrom magrittr %>%
+#'
 #' @export
+#' 
+
 merge_tbls <- function(parent_list, child_list,
                        type = c("parent-child","child-parent","bidirectional"),
                        drop_keys = TRUE,

@@ -20,6 +20,7 @@
 #' drop_artefacts(df)
 #' # Returns a data frame with only columns 'a' and 'c', and only rows with at least one non-NA value
 #'
+#' @importFrom magrittr %>%
 #' @importFrom dplyr filter
 #' 
 
@@ -62,7 +63,9 @@ drop_artefacts <- function(df) {
 #' # [1] \"crop\" \"soil\" \"site\" ...
 #' }
 #'
-#' @importFrom dplyr select all_of filter
+#' @importFrom magrittr %>%
+#' @importFrom openxlsx2 wb_to_df
+#' @importFrom dplyr select all_of filter ends_with
 #' 
 
 get_template_codes <- function(wb){
@@ -124,7 +127,9 @@ get_template_codes <- function(wb){
 #' # [1] "EXP001" "EXP002" ...
 #' }
 #'
+#' @importFrom magrittr %>%
 #' @importFrom dplyr mutate filter
+#' @importFrom openxlsx2 wb_load wb_get_sheet_names wb_to_df
 #' 
 #' @export
 #' 
@@ -224,6 +229,7 @@ extract_template <- function(path, exp_id = NA_character_, headers = c("short", 
 #' icasa_long_to_short(df, section = "SECTION", dict = dict)
 #' # Returns a data frame with columns "LN1" and "LN2"
 #'
+#' @importFrom magrittr %>%
 #' @importFrom dplyr rename_with
 #' 
 
@@ -331,6 +337,7 @@ desc_to_codes <- function(df, codes) {
 #' ls <- format_treatment_str(ls)
 #' }
 #'
+#' @importFrom magrittr %>%
 #' @importFrom dplyr mutate across everything where
 #' 
 
@@ -391,6 +398,7 @@ format_treatment_str <- function(ls){
 #' ls <- format_envmod_tbl(ls)
 #' }
 #'
+#' @importFrom magrittr %>%
 #' @importFrom dplyr select
 #' @importFrom tidyr pivot_wider
 #'
@@ -444,7 +452,9 @@ format_envmod_tbl <- function(ls){
 #' ls <- format_events(ls, "FERTILIZERS", "fertilizer_level", "fert_applied", "FERTILIZER_APPLICS")
 #' }
 #'
-#' @importFrom dplyr mutate arrange group_by ungroup left_join select filter coalesce all_of sym
+#' @importFrom magrittr %>%
+#' @importFrom rlang !! := sym
+#' @importFrom dplyr mutate arrange group_by ungroup left_join select filter coalesce all_of
 #' 
   
 format_events <- function(ls, type, head_key, applied_key, applics_key) {
@@ -522,7 +532,8 @@ format_events <- function(ls, type, head_key, applied_key, applics_key) {
 #' concatenate_per_group(df)
 #' # Returns a data frame with one row per id, and value1/value2 as comma-separated strings
 #'
-#' @importFrom dplyr summarise across group_by select_if all_of
+#' @importFrom magrittr %>%
+#' @importFrom dplyr across everything n_distinct select_if group_by summarise all_of
 #' 
 
 # TODO: add_property_mapping <- function(name, unit, icasa = list(), agg_funs = list())
@@ -627,7 +638,8 @@ format_observed_data <- function(ls){
 #' later integrate to a generic melt-explode-map sequence
 #' 
 #' 
-#'
+#' @importFrom magrittr %>%
+#' @importFrom dplyr filer select distinct
 
 reshape_to_model_dssat <- function(vector, map_path, input_model = "icasa", output_model = "dssat") {
   
@@ -714,6 +726,9 @@ combine_dual_tier <- function(ls) {
 #' remapped <- remap(dataset, map_path = "mapping.csv", input_model = "icasa", output_model = "dssat")
 #' }
 #'
+#' @importFrom magrittr %>%
+#' @importFrom dplyr filter
+#' 
 #' @export
 #' 
 
@@ -734,8 +749,6 @@ remap <- function(dataset, map_path, input_model = "icasa", output_model = "dssa
   
   mdata <- list()
   for (i in 1:length(rdata)){
-    
-    #i = 12
     
     sec <- names(rdata)[i]
     map <- load_map(map_path) 
@@ -778,6 +791,7 @@ remap <- function(dataset, map_path, input_model = "icasa", output_model = "dssa
 #' experiments <- split_experiments(ls)
 #' }
 #'
+#' @importFrom magrittr %>%
 #' @importFrom dplyr filter
 #' 
 

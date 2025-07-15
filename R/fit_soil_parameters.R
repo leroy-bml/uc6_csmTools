@@ -24,7 +24,8 @@
 #' print(result$plot)
 #' head(result$data)
 #' }
-#'
+#' 
+#' @importFrom magrittr %>%
 #' @importFrom dplyr mutate relocate right_join filter arrange select across everything
 #' @importFrom tidyr gather
 #' @importFrom ggplot2 ggplot geom_point geom_line facet_wrap theme_minimal aes

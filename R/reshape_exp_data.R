@@ -29,6 +29,7 @@
 #' # melt_dataset(db)
 #'
 #' @export
+#' 
 
 melt_dataset <- function(db, drop_keys = FALSE, exclude_tbls = NULL, exclude_cols = NULL) {
   iteration <- 0
@@ -105,10 +106,11 @@ melt_dataset <- function(db, drop_keys = FALSE, exclude_tbls = NULL, exclude_col
 #' 
 #' @return a list containing the reshaped crop experiment data
 #' 
+#' @importFrom magrittr %>%
 #' @importFrom lubridate as_date parse_date_time
-#' @importFrom dplyr "%>%" select group_by group_by_at ungroup mutate relocate distinct left_join arrange across cur_group_id
+#' @importFrom dplyr select group_by group_by_at ungroup mutate relocate distinct left_join arrange across cur_group_id
 #' @importFrom tidyr any_of all_of everything ends_with
-#' @importFrom rlang "!!" ":="
+#' @importFrom rlang !! :=
 #' @importFrom countrycode countrycode
 #'
 #'

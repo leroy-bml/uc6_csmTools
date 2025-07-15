@@ -69,7 +69,9 @@ create_map <- function(dir = NULL) {
 #'
 #'
 #'
-#'
+#' @importFrom magrittr %>%
+#' @importFrom dplyr select starts_with distinct bind_rows filter add_row
+#' @importFrom jsonlite read_json toJSON
 #'
 
 make_mapping <- function(path = NULL,
@@ -287,6 +289,9 @@ make_code_lookup <- function(vec){
 #'     \item{mapped}{A character vector of columns that were mapped.}
 #'   }
 #'
+#' @importFrom magrittr %>%
+#' @importFrom dplyr rename
+#'
 
 map_headers <- function(df, map, direction = c("to_icasa", "from_icasa")) {
   
@@ -349,8 +354,9 @@ map_headers <- function(df, map, direction = c("to_icasa", "from_icasa")) {
 #'
 #' @return A data frame with codes mapped to the format specified in the supplied map.
 #'
-#' @importFrom dplyr recode_factor
-#' @importFrom rlang "!!!"
+#' @importFrom magrittr %>%
+#' @importFrom dplyr rename recode_factor
+#' @importFrom rlang !!!
 #' 
 
 # TODO: revise: mapping direction + json strings
@@ -424,6 +430,9 @@ convert_unit <- function(x, u1, u2){
 #'   \code{"from_icasa"} (from standard ICASA units).
 #'
 #' @return A data frame with numeric columns converted to the target units.
+#'
+#' @importFrom magrittr %>%
+#' @importFrom dplyr rename
 #'
 
 convert_units <- function(df, metadata = NULL, map, direction) {

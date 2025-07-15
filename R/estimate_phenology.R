@@ -13,9 +13,12 @@
 #' 
 #' @return a list of DSSAT input data components with estimated phenology appended to the observed data (file A)
 #' 
-#' @importFrom getCropParam calcSeasonality calcHarvestRule, calcHarvestDateVector, calcHarvestDate, calcMonthlyClimate calcCropCalendars
-#' @importFrom dplyr "%>%" case_when mutate
+#' @importFrom magrittr %>%
+#' @importFrom cropCalendars getCropParam calcSeasonality calcHarvestRule, calcHarvestDateVector, calcHarvestDate, calcMonthlyClimate calcCropCalendars
+#' @importFrom dplyr case_when mutate
 #' @importFrom lubridate year, yday, month, parse_date_time
+#' 
+#' @export
 #' 
 
 estimate_phenology <- function(dataset, data_model = "dssat", method = "crop parameters", wheat_season = NULL) {

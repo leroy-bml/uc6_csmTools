@@ -46,6 +46,7 @@ is_year_like <- function(col, range = c(1800, as.numeric(format(Sys.Date(), "%Y"
   crit_4digits && crit_int && crit_repeat && crit_range
 }
 
+
 #' Find Year-Like Columns in a Data Frame
 #'
 #' Identifies columns in a data frame that are "year-like" according to the \code{\link{is_year_like}} function.
