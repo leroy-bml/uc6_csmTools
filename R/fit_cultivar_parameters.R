@@ -182,7 +182,7 @@ add_treatment <- function(xtables, args = list()) {
 #' xtables <- add_management(xtables, section = "fertilizer", args = list(amount = 50, date = "2022-03-01"))
 #' }
 #'
-#' @importFrom dplyr bind_rows unnest
+#' @importFrom dplyr bind_rows
 #' @importFrom tidyr unnest
 #' 
 #' @export

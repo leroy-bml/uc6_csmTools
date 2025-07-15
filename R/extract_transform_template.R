@@ -639,7 +639,7 @@ format_observed_data <- function(ls){
 #' 
 #' 
 #' @importFrom magrittr %>%
-#' @importFrom dplyr filer select distinct
+#' @importFrom dplyr filter select distinct
 
 reshape_to_model_dssat <- function(vector, map_path, input_model = "icasa", output_model = "dssat") {
   

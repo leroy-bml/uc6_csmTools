@@ -71,7 +71,7 @@ is_date <- function(x, dssat_fmt = FALSE, n_check = 5, threshold = 0.8) {
 #' Attempts to parse input values as dates or datetimes using a variety of common formats, and returns them in a standardized output format.
 #'
 #' @param x A character vector of date or datetime strings to be standardized.
-#' @param output_format Character. The desired output format for the dates. Defaults to \code{\"%Y-%m-%d\"}. If set to \code{\"Date\"}, the function returns a Date object.
+#' @param output_format Character. The desired output format for the dates. Defaults to \code{"\%Y-\%m-\%d"}. If set to \code{"Date"}, the function returns a Date object.
 #'
 #' @details
 #' The function tries to parse each element of \code{x} using a set of common date and datetime formats, including ISO 8601, US, European, and compact forms. The first format that successfully parses any value is used for all elements. If \code{output_format} is \code{\"Date\"}, the result is returned as a Date object; otherwise, the result is formatted as a character vector using the specified format string.

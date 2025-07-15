@@ -206,18 +206,6 @@ reshape_exp_data <- function(db, metadata, mother_tbl_name) {
   
   return(db)  #tmp
 }
-  
-  
-  
-#----- wip
-tmp <- reshape_exp_data(db = muencheberg, mother_tbl_name = "VERSUCHSAUFBAU")
-
-colnames <- unique(unlist(
-  lapply(tmp, names)
-)
-)
-writeClipboard(colnames)
-
 
 
   
@@ -240,175 +228,175 @@ writeClipboard(colnames)
   # ATTR_ipt <- DATA_tbls_ident[["other"]]
   
   
-  # Extract metadata --------------------------------------------------------
-  
-  # Extract field coordinates
-  
-  path <- "./inst/extdata/lte_duernast/0_raw/7e526e38-4bf1-492b-b903-d8dbcfd36b6d.xml"
-  metadata <- read_metadata(path, repo = "bnr")
+  # # Extract metadata --------------------------------------------------------
+  # 
+  # # Extract field coordinates
+  # 
+  # path <- "./inst/extdata/lte_duernast/0_raw/7e526e38-4bf1-492b-b903-d8dbcfd36b6d.xml"
+  # metadata <- read_metadata(path, repo = "bnr")
+  # 
+  # #NOTES <- c(paste0("Data files mapped on ", Sys.Date(), " with csmTools"), paste0("Source data DOI: ", DOI))
+  # 
+  # 
+  # 
+  # 
+  # # Format management tables ------------------------------------------------
+  # 
+  # 
+  # # Identify which management category correpond to the treatments
+  # MNGT_is_trt <- lapply(MNGT_ipt, function(df) is_treatment(df, "Year", "Plot_id"))
+  # # TODO: handle 0/1 treatments (so far not tagged as treatment)
+  # # TODO: create treatment name in the function
+  # 
+  # # Merge management IDs with the treatments table
+  # MNGT_ipt <- mapply(function(df1, df2) left_join(df1, df2, by = "Year"), MNGT_ipt, MNGT_is_trt)
+  # 
+  # # Add an ID per year for non-treatment management events
+  # MNGT_fmt <- lapply(names(MNGT_ipt), function(df_name){
+  #   
+  #   df <- MNGT_ipt[[df_name]]
+  #   
+  #   #
+  #   mngt_id <- get_pkeys(df, alternates = FALSE)
+  #   
+  #   # Sepcify name of the ID for the reduced table
+  #   ID_nm <- paste0(toupper(substr(df_name, 1, 2)), "_ID")
+  #   # Create the ID variable
+  #   df <- df %>%
+  #     # TODO: modify to handle variable factor levels
+  #     left_join(DESIGN_str, by = c("Year", "Plot_id")) %>%
+  #     group_by_at(c("Year", "Faktor1_Stufe_ID")) %>%
+  #     mutate(ID_trt_1 = cur_group_id()) %>% ungroup() %>%
+  #     group_by_at(c("Year", "Faktor2_Stufe_ID")) %>%
+  #     mutate(ID_trt_2 = cur_group_id()) %>% ungroup() %>%
+  #     group_by_at("Year") %>%
+  #     mutate(ID_fix = cur_group_id()) %>% ungroup() %>%
+  #     mutate(!!ID_nm := ifelse(is_trt, paste(ID_trt_1, ID_trt_2, sep = "_"), ID_fix)) %>%
+  #     select(-c(ID_trt_1, ID_trt_2, ID_fix, is_trt, Faktor1_Stufe_ID, Faktor2_Stufe_ID)) %>%
+  #     relocate(!!ID_nm, .before = everything())
+  #   
+  #   # Drop primary key, treatment and crop keys
+  #   df <- df[!names(df) %in% c(mngt_id, "Treatment_id")]
+  #   df <- df %>% arrange(.data[[ID_nm]])
+  #   
+  #   return(df)
+  #   
+  # })
+  # names(MNGT_fmt) <- names(MNGT_ipt)
+  # 
+  # # List 1: reduced management tables
+  # # (identified by unique management event features rather than event x plot combinations)
+  # MNGT_out <- lapply(MNGT_fmt, function(df){ distinct(df[!names(df) == "Plot_id"]) })
+  # names(MNGT_out) <- names(MNGT_fmt)
+  # 
+  # # List 2: IDs only (to update IDs in the treatment matrix)
+  # MNGT_ids <- lapply(MNGT_fmt, function(df){
+  #   mngt_id <- colnames(df)[1]
+  #   df[names(df) %in% c(mngt_id, "Year", "Plot_id")]
+  # })
+  # 
+  # 
+  # 
+  # # Format treatments matrix ------------------------------------------------
+  # 
+  # 
+  # TREATMENTS_matrix <-
+  #   # Append each management IDs to the correponding year x plot combination
+  #   Reduce(function(x, y)
+  #     merge(x, y, by = intersect(names(x), names(y)), all.x = TRUE),
+  #     MNGT_ids, init = DESIGN_str) %>%
+  #   select(-Rep_no) %>%  ##!! see if necessary
+  #   distinct() %>%
+  #   # Append FIELDS ids
+  #   left_join(FIELDS_tbl %>%
+  #               select(FL_ID, Plot_id),
+  #             by = "Plot_id") %>%
+  #   # Replace NA ids by 0 (= no management event)
+  #   mutate(across(ends_with("_ID"), ~ifelse(is.na(.x), 0, .x))) %>%
+  #   # Rename and recode treatment ID
+  #   group_by(Treatment_id) %>%
+  #   mutate(TRTNO = cur_group_id()) %>% ungroup() %>%
+  #   #rename(REPNO = !!REPS_id) %>%
+  #   relocate(TRTNO, .before = everything())
+  # 
+  # 
+  # 
+  # # Format observed data ----------------------------------------------------
+  # 
+  # 
+  # # Drop identifiers and tag
+  # DOB_suma_ipt <- lapply(DOBS_suma_ipt, function(df){
+  #   pkeys <- get_pkeys(df, alternates = FALSE)
+  #   df[!names(df) %in% c(pkeys, "tag")]
+  # })
+  # 
+  # # Merge all dataframes
+  # DOB_suma_out <- Reduce(function(x, y)
+  #   merge(x, y, by = c("Year", "Plot_id"), all = TRUE), DOB_suma_ipt,
+  #   init = DESIGN_str %>% select(Year, Plot_id, Treatment_id, Rep_no)) %>%
+  #   # Rename and recode treatment and replicate IDs
+  #   group_by(Treatment_id) %>%
+  #   mutate(TRTNO = cur_group_id()) %>% ungroup() %>%
+  #   relocate(TRTNO, .before = everything()) %>%
+  #   arrange(Year, TRTNO) %>%
+  #   distinct()
+  # 
+  # # Drop identifiers and tag
+  # DOB_tser_ipt <- lapply(DOBS_tser_ipt, function(df){
+  #   pkeys <- get_pkeys(df, alternates = FALSE)
+  #   df[!names(df) %in% c(pkeys, "tag")]
+  # })
+  # 
+  # # Merge all dataframes
+  # DOB_tser_out <- Reduce(function(x, y)
+  #   merge(x, y, by = c("Year", "Plot_id"), all = TRUE), DOB_tser_ipt,
+  #   init = DESIGN_str %>% select(Year, Plot_id, Treatment_id, Rep_no)) %>%
+  #   # Use design structure as init to have all years covered (necessary for later estimation of missing variables)
+  #   # e.g., phenology
+  #   # Rename and recode treatment and replicate IDs
+  #   group_by(Treatment_id) %>%
+  #   mutate(TRTNO = cur_group_id()) %>% ungroup() %>%
+  #   relocate(TRTNO, .before = everything()) %>%
+  #   arrange(Year, TRTNO) %>%
+  #   distinct()
+  # 
+  # 
+  # 
+  # # Format metadata output elements -----------------------------------------
+  # 
+  # 
+  # 
+  # 
+  # 
+  # # Format output -----------------------------------------------------------
+  # 
+  # 
+  # # Data sections
+  # TREATMENTS_matrix <- TREATMENTS_matrix %>%
+  #   select(-c(Plot_id, "Treatment_id")) %>%
+  #   distinct()
+  # 
+  # MANAGEMENT <- append(MNGT_out, list(GENERAL, FIELDS, TREATMENTS_matrix), after = 0)
+  # names(MANAGEMENT)[1:3] <- c("GENERAL", "FIELDS", "TREATMENTS")
+  # 
+  # OBSERVED <- list(Summary = DOB_suma_out, Time_series = DOB_tser_out)
+  # 
+  # OTHER <- ATTR_ipt
+  # names(OTHER) <- paste0("OTHER_", names(ATTR_ipt))
+  # 
+  # DATA_out <-
+  #   append(MANAGEMENT, c(list(OBSERVED_Summary = DOB_suma_out),
+  #                        list(OBSERVED_TimeSeries = DOB_tser_out),
+  #                        OTHER),
+  #          after = length(MANAGEMENT))
+  # 
+  # # Metadata attributes
+  # attr(DATA_out, "EXP_DETAILS") <- EXP_NAME
+  # attr(DATA_out, "SITE_CODE") <- toupper(
+  #   paste0(
+  #     substr(SITE, 1, 2),
+  #     countrycode(COUNTRY, origin = "country.name", destination = "iso2c")  # if input language is English
+  #   ))
+  # 
+  # return(DATA_out)
 
-  #NOTES <- c(paste0("Data files mapped on ", Sys.Date(), " with csmTools"), paste0("Source data DOI: ", DOI))
-  
-  
-  
-  
-  # Format management tables ------------------------------------------------
-  
-  
-  # Identify which management category correpond to the treatments
-  MNGT_is_trt <- lapply(MNGT_ipt, function(df) is_treatment(df, "Year", "Plot_id"))
-  # TODO: handle 0/1 treatments (so far not tagged as treatment)
-  # TODO: create treatment name in the function
-  
-  # Merge management IDs with the treatments table
-  MNGT_ipt <- mapply(function(df1, df2) left_join(df1, df2, by = "Year"), MNGT_ipt, MNGT_is_trt)
-  
-  # Add an ID per year for non-treatment management events
-  MNGT_fmt <- lapply(names(MNGT_ipt), function(df_name){
-    
-    df <- MNGT_ipt[[df_name]]
-    
-    #
-    mngt_id <- get_pkeys(df, alternates = FALSE)
-    
-    # Sepcify name of the ID for the reduced table
-    ID_nm <- paste0(toupper(substr(df_name, 1, 2)), "_ID")
-    # Create the ID variable
-    df <- df %>%
-      # TODO: modify to handle variable factor levels
-      left_join(DESIGN_str, by = c("Year", "Plot_id")) %>%
-      group_by_at(c("Year", "Faktor1_Stufe_ID")) %>%
-      mutate(ID_trt_1 = cur_group_id()) %>% ungroup() %>%
-      group_by_at(c("Year", "Faktor2_Stufe_ID")) %>%
-      mutate(ID_trt_2 = cur_group_id()) %>% ungroup() %>%
-      group_by_at("Year") %>%
-      mutate(ID_fix = cur_group_id()) %>% ungroup() %>%
-      mutate(!!ID_nm := ifelse(is_trt, paste(ID_trt_1, ID_trt_2, sep = "_"), ID_fix)) %>%
-      select(-c(ID_trt_1, ID_trt_2, ID_fix, is_trt, Faktor1_Stufe_ID, Faktor2_Stufe_ID)) %>%
-      relocate(!!ID_nm, .before = everything())
-    
-    # Drop primary key, treatment and crop keys
-    df <- df[!names(df) %in% c(mngt_id, "Treatment_id")]
-    df <- df %>% arrange(.data[[ID_nm]])
-    
-    return(df)
-    
-  })
-  names(MNGT_fmt) <- names(MNGT_ipt)
-  
-  # List 1: reduced management tables
-  # (identified by unique management event features rather than event x plot combinations)
-  MNGT_out <- lapply(MNGT_fmt, function(df){ distinct(df[!names(df) == "Plot_id"]) })
-  names(MNGT_out) <- names(MNGT_fmt)
-  
-  # List 2: IDs only (to update IDs in the treatment matrix)
-  MNGT_ids <- lapply(MNGT_fmt, function(df){
-    mngt_id <- colnames(df)[1]
-    df[names(df) %in% c(mngt_id, "Year", "Plot_id")]
-  })
-  
-  
-  
-  # Format treatments matrix ------------------------------------------------
-  
-  
-  TREATMENTS_matrix <-
-    # Append each management IDs to the correponding year x plot combination
-    Reduce(function(x, y)
-      merge(x, y, by = intersect(names(x), names(y)), all.x = TRUE),
-      MNGT_ids, init = DESIGN_str) %>%
-    select(-Rep_no) %>%  ##!! see if necessary
-    distinct() %>%
-    # Append FIELDS ids
-    left_join(FIELDS_tbl %>%
-                select(FL_ID, Plot_id),
-              by = "Plot_id") %>%
-    # Replace NA ids by 0 (= no management event)
-    mutate(across(ends_with("_ID"), ~ifelse(is.na(.x), 0, .x))) %>%
-    # Rename and recode treatment ID
-    group_by(Treatment_id) %>%
-    mutate(TRTNO = cur_group_id()) %>% ungroup() %>%
-    #rename(REPNO = !!REPS_id) %>%
-    relocate(TRTNO, .before = everything())
-  
-  
-  
-  # Format observed data ----------------------------------------------------
-  
-  
-  # Drop identifiers and tag
-  DOB_suma_ipt <- lapply(DOBS_suma_ipt, function(df){
-    pkeys <- get_pkeys(df, alternates = FALSE)
-    df[!names(df) %in% c(pkeys, "tag")]
-  })
-  
-  # Merge all dataframes
-  DOB_suma_out <- Reduce(function(x, y)
-    merge(x, y, by = c("Year", "Plot_id"), all = TRUE), DOB_suma_ipt,
-    init = DESIGN_str %>% select(Year, Plot_id, Treatment_id, Rep_no)) %>%
-    # Rename and recode treatment and replicate IDs
-    group_by(Treatment_id) %>%
-    mutate(TRTNO = cur_group_id()) %>% ungroup() %>%
-    relocate(TRTNO, .before = everything()) %>%
-    arrange(Year, TRTNO) %>%
-    distinct()
-  
-  # Drop identifiers and tag
-  DOB_tser_ipt <- lapply(DOBS_tser_ipt, function(df){
-    pkeys <- get_pkeys(df, alternates = FALSE)
-    df[!names(df) %in% c(pkeys, "tag")]
-  })
-  
-  # Merge all dataframes
-  DOB_tser_out <- Reduce(function(x, y)
-    merge(x, y, by = c("Year", "Plot_id"), all = TRUE), DOB_tser_ipt,
-    init = DESIGN_str %>% select(Year, Plot_id, Treatment_id, Rep_no)) %>%
-    # Use design structure as init to have all years covered (necessary for later estimation of missing variables)
-    # e.g., phenology
-    # Rename and recode treatment and replicate IDs
-    group_by(Treatment_id) %>%
-    mutate(TRTNO = cur_group_id()) %>% ungroup() %>%
-    relocate(TRTNO, .before = everything()) %>%
-    arrange(Year, TRTNO) %>%
-    distinct()
-  
-  
-  
-  # Format metadata output elements -----------------------------------------
-  
-
-  
-  
-  
-  # Format output -----------------------------------------------------------
-  
-  
-  # Data sections
-  TREATMENTS_matrix <- TREATMENTS_matrix %>%
-    select(-c(Plot_id, "Treatment_id")) %>%
-    distinct()
-  
-  MANAGEMENT <- append(MNGT_out, list(GENERAL, FIELDS, TREATMENTS_matrix), after = 0)
-  names(MANAGEMENT)[1:3] <- c("GENERAL", "FIELDS", "TREATMENTS")
-  
-  OBSERVED <- list(Summary = DOB_suma_out, Time_series = DOB_tser_out)
-  
-  OTHER <- ATTR_ipt
-  names(OTHER) <- paste0("OTHER_", names(ATTR_ipt))
-  
-  DATA_out <-
-    append(MANAGEMENT, c(list(OBSERVED_Summary = DOB_suma_out),
-                         list(OBSERVED_TimeSeries = DOB_tser_out),
-                         OTHER),
-           after = length(MANAGEMENT))
-  
-  # Metadata attributes
-  attr(DATA_out, "EXP_DETAILS") <- EXP_NAME
-  attr(DATA_out, "SITE_CODE") <- toupper(
-    paste0(
-      substr(SITE, 1, 2),
-      countrycode(COUNTRY, origin = "country.name", destination = "iso2c")  # if input language is English
-    ))
-  
-  return(DATA_out)
-}
