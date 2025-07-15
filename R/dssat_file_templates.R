@@ -1,6 +1,4 @@
-#'
-#'
-#' @export
+#' DSSAT table templates
 #' 
 #' @importFrom dplyr rename
 #' 
@@ -106,6 +104,7 @@ PLANTING_DETAILS_template <- data.frame(P = 1,
                                         PLPH = NA_real_,
                                         SPRL = NA_real_,
                                         PLNAME = NA_character_)
+
 
 # Tillage
 TILLAGE_template <-
@@ -224,6 +223,24 @@ SIMULATION_CONTROLS_template <-
 
 
 # Assemble all sections
+# FILEX_template <- list(
+#   GENERAL = GENERAL_template,
+#   TREATMENTS = TREATMENTS_template,
+#   CULTIVARS = CULTIVARS_template,
+#   FIELDS = FIELDS_template,
+#   SOIL_ANALYSIS = SOIL_ANALYSIS_template,
+#   INITIAL_CONDITIONS = INITIAL_CONDITIONS_template,
+#   PLANTING_DETAILS = PLANTING_DETAILS_template,
+#   TILLAGE = TILLAGE_template,
+#   IRRIGATION = IRRIGATION_template,
+#   FERTILIZERS = FERTILIZERS_template,
+#   RESIDUES = RESIDUES_template,
+#   CHEMICALS = CHEMICALS_template,
+#   ENVIRONMENT_MODIFICATIONS = ENVIRONMENT_MODIFICATIONS_template,
+#   HARVEST = HARVEST_template,
+#   SIMULATION_CONTROLS = SIMULATION_CONTROLS_template
+# )
+
 FILEX_template <- list(
   GENERAL = GENERAL_template,
   TREATMENTS = TREATMENTS_template,
@@ -233,7 +250,7 @@ FILEX_template <- list(
   INITIAL_CONDITIONS = INITIAL_CONDITIONS_template,
   PLANTING_DETAILS = PLANTING_DETAILS_template,
   TILLAGE = TILLAGE_template,
-  IRRIGATION = IRRIGATION_template,
+  IRRIGATIONS = IRRIGATION_template,
   FERTILIZERS = FERTILIZERS_template,
   RESIDUES = RESIDUES_template,
   CHEMICALS = CHEMICALS_template,
@@ -241,7 +258,6 @@ FILEX_template <- list(
   HARVEST = HARVEST_template,
   SIMULATION_CONTROLS = SIMULATION_CONTROLS_template
 )
-
 
 
 # SOL file template -------------------------------------------------------
@@ -253,8 +269,6 @@ SOIL_template <-
     `SCS FAMILY` = NA_character_, SCOM = NA_character_, SALB = NA_real_, SLU1 = NA_real_, SLDR = NA_real_, SLRO = NA_real_,
     SLNF = NA_real_, SLPF = NA_real_, SMHB = NA_character_, SMPX = NA_character_, SMKE = NA_character_
   )
-
-rename(SOIL_template, `SCS FAMILY` = SCS.FAMILY)
 
 SOIL_template$SLB <- list(NA_real_)
 SOIL_template$SLMH <- list(NA_character_)
@@ -274,12 +288,30 @@ SOIL_template$SLHB <- list(NA_real_)
 SOIL_template$SCEC <- list(NA_real_)
 SOIL_template$SADC <- list(NA_real_)
 
+SOIL_template <- rename(SOIL_template, `SCS FAMILY` = SCS.FAMILY)
 
 
 # WTH file template -------------------------------------------------------
 
+WEATHER_header_template <-
+  data.frame(
+    INSI = NA_character_, LAT = NA_real_, LONG = NA_real_, ELEV = NA_real_,
+    TAV = NA_real_, AMP = NA_real_, REFHT = NA_real_, WNDHT = NA_real_
+  )
+# 
+# WEATHER_template$DATE <- list(as.POSIXct(NA))
+# WEATHER_template$SRAD <- list(NA_real_)
+# WEATHER_template$TMAX <- list(NA_real_)
+# WEATHER_template$TMIN <- list(NA_real_)
+# WEATHER_template$RAIN <- list(NA_real_)
+# WEATHER_template$DEWP <- list(NA_real_)
+# WEATHER_template$WIND <- list(NA_real_)
+# WEATHER_template$PAR <- list(NA_real_)
+# WEATHER_template$EVAP <- list(NA_real_)
+# WEATHER_template$RHUM <- list(NA_real_)
 
-WEATHER_template <- 
+
+WEATHER_template <-
   data.frame(
     DATE = as.POSIXct(NA), SRAD = NA_real_, TMAX = NA_real_, TMIN = NA_real_,
     RAIN = NA_real_, DEWP = NA_real_, WIND = NA_real_,
@@ -290,48 +322,85 @@ WEATHER_template <-
 
 # File A template ---------------------------------------------------------
 
+# v_fmt_filea <- c(
+#   TRNO = "%6.0f", ADAT = "%6s", BWAH = "%6.0f",
+#   #CHTA = "##%6.0f", CNAA = "%##6.0f",
+#   CNAM = "%6.1f",
+#   #CWAA = "%##6.0f",
+#   CWAH = "%6.0f",  # to confirm
+#   CWAM = "%6.0f", `GN%M` = "%6.2f", GNAM = "%6.1f", `H#AM` = "%6.0f", `H#UM` = "%6.0f", HDAT = "%6s",
+#   HWAHF = "%6.0f",  # to confirm
+#   #HIAM = "%##6.0f",
+#   HWAH = "%6.0f", HWAM = "%6.0f", HWUM = "%6.1f",  # to confirm
+#   #`L#SM` = "%##6.0f",
+#   LAIX = "%6.2f",
+#   MDAT = "%6s", EDAT = "%6s",
+#   #PWAM = "%##6.0f", RNAH = "%##6.0f",
+#   SNAM = "%6.1f",
+#   #`T#AM` = "%##6.0f",
+#   TDAT = "%6s"
+#   #TNAH = "%##6.0f", TWAH = "%##6.0f", `UN%H` = "%##6.0f", UNAM = "%##6.0f", UWAH = "%##6.0f", UYAH = "%##6.0f"
+# )
+
 
 v_fmt_filea <- c(
-  TRTNO = "%6.0f", ADAT = "%6s", BWAH = "%6.0f",
-  #CHTA = "##%6.0f", CNAA = "%##6.0f",
+  TRNO = "%6.0f", ADAT = "%6s", BWAH = "%6.0f",
+  CHTA = "##%6.0f", CNAA = "%6.0f",
   CNAM = "%6.1f",
-  #CWAA = "%##6.0f",
+  CWAA = "%6.0f",
   CWAH = "%6.0f",  # to confirm
-  CWAM = "%6.0f", `GN%M` = "%6.2f", GNAM = "%6.1f", `H#AM` = "%6.0f", `H#UM` = "%6.0f", HDAT = "%6s",
+  CWAM = "%6.0f", GWAM = "%6.0f", `GN%M` = "%6.2f", GNAM = "%6.1f", `H#AM` = "%6.0f", `H#UM` = "%6.0f", HDAT = "%6s",
   HWAHF = "%6.0f",  # to confirm
-  #HIAM = "%##6.0f",
+  HIAM = "%6.0f",
   HWAH = "%6.0f", HWAM = "%6.0f", HWUM = "%6.1f",  # to confirm
-  #`L#SM` = "%##6.0f",
+  `L#SM` = "%6.0f",
   LAIX = "%6.2f",
   MDAT = "%6s", EDAT = "%6s",
-  #PWAM = "%##6.0f", RNAH = "%##6.0f",
+  PWAM = "%6.0f", RNAH = "%6.0f",
   SNAM = "%6.1f",
-  #`T#AM` = "%##6.0f",
-  TDAT = "%6s"
-  #TNAH = "%##6.0f", TWAH = "%##6.0f", `UN%H` = "%##6.0f", UNAM = "%##6.0f", UWAH = "%##6.0f", UYAH = "%##6.0f"
+  `T#AM` = "%6.0f",
+  TDAT = "%6s",
+  TNAH = "%6.0f", TWAH = "%6.0f", `UN%H` = "%6.0f", UNAM = "%6.0f", UWAH = "%6.0f", UYAH = "%6.0f"
 )
 
 
 
 # File A template ---------------------------------------------------------
 
+# v_fmt_filet <- c(
+#   TRNO = "%6.0f", DATE = "%6s",
+#   CDAD = "%6.0f",
+#   #CHTD = "%##6.0f", `CN%D` = "%##6.0f", CNAD = "%##6.0f", CWAD = "%##6.0f", CWID = "%##6.0f",
+#   #`G#AD` = "##%6.0f", `GN%D` = "%##6.0f", GNAD = "%##6.0f", `GP%D` = "%##6.0f", GPAD = "%##6.0f", GWAD = "%##6.0f",
+#   #GWGD = "%##6.0f",
+#   #HIAD = "%6.0f", HIPD = "%6.2f",
+#   #`L#SD` = "%6.1f", `LN%D` = "%6s", `LP%D` = "%6.0f", LAID = "%6.0f", 
+#   #LDAD = "%6.0f", LNAD = "%6.0f", LPAD = "%6.0f", LWAD = "%6.0f",
+#   #NUPC = "%6.0f",
+#   #`P#AD` = "%6.0f", PWAD = "%6.0f", PWDD = "%6.0f",
+#   #RDPD = "%6.0f", `RN%D` = "%6.0f", RNAD = "%6.1f", RWAD = "%6.0f",
+#   #SDAD = "##%6.0f", SHAD = "%##6.0f", SLAD = "%##6.0f", SNAD = "%##6.0f", SPAD = "%6.2f", SWAD = "%6.0f",
+#   #`T#AD` = "%##6.0f", TWAD = "%##6.0f",
+#   #UNAD = "%6s", UWAD = "%6s", UYAD = "%6s",
+#   `VN%D` = "%##6.0f", VNAD = "%##6.0f"
+# )
 
 v_fmt_filet <- c(
-  DATE = "%6s", TRTNO = "%6.0f",
+  TRNO = "%6.0f", DATE = "%6s",
   CDAD = "%6.0f",
-  #CHTD = "%##6.0f", `CN%D` = "%##6.0f", CNAD = "%##6.0f", CWAD = "%##6.0f", CWID = "%##6.0f",
-  #`G#AD` = "##%6.0f", `GN%D` = "%##6.0f", GNAD = "%##6.0f", `GP%D` = "%##6.0f", GPAD = "%##6.0f", GWAD = "%##6.0f",
-  #GWGD = "%##6.0f",
-  #HIAD = "%6.0f", HIPD = "%6.2f",
-  #`L#SD` = "%6.1f", `LN%D` = "%6s", `LP%D` = "%6.0f", LAID = "%6.0f", 
-  #LDAD = "%6.0f", LNAD = "%6.0f", LPAD = "%6.0f", LWAD = "%6.0f",
-  #NUPC = "%6.0f",
-  #`P#AD` = "%6.0f", PWAD = "%6.0f", PWDD = "%6.0f",
-  #RDPD = "%6.0f", `RN%D` = "%6.0f", RNAD = "%6.1f", RWAD = "%6.0f",
-  #SDAD = "##%6.0f", SHAD = "%##6.0f", SLAD = "%##6.0f", SNAD = "%##6.0f", SPAD = "%6.2f", SWAD = "%6.0f",
-  #`T#AD` = "%##6.0f", TWAD = "%##6.0f",
-  #UNAD = "%6s", UWAD = "%6s", UYAD = "%6s",
-  `VN%D` = "%##6.0f", VNAD = "%##6.0f"
+  CHTD = "%6.0f", `CN%D` = "%6.0f", CNAD = "%6.0f", CWAD = "%6.0f", CWID = "%6.0f",
+  `G#AD` = "%6.0f", `GN%D` = "%6.0f", GNAD = "%6.0f", `GP%D` = "%6.0f", GPAD = "%6.0f", GWAD = "%6.0f",
+  GWGD = "%6.0f",
+  HIAD = "%6.0f", HIPD = "%6.2f",
+  `L#SD` = "%6.1f", `LN%D` = "%6s", `LP%D` = "%6.0f", LAID = "%6.0f", 
+  LDAD = "%6.0f", LNAD = "%6.0f", LPAD = "%6.0f", LWAD = "%6.0f",
+  NUPC = "%6.0f",
+  `P#AD` = "%6.0f", PWAD = "%6.0f", PWDD = "%6.0f",
+  RDPD = "%6.0f", `RN%D` = "%6.0f", RNAD = "%6.1f", RWAD = "%6.0f",
+  SDAD = "%6.0f", SHAD = "%6.0f", SLAD = "%6.0f", SNAD = "%6.0f", SPAD = "%6.2f", SWAD = "%6.0f",
+  `T#AD` = "%6.0f", TWAD = "%6.0f",
+  UNAD = "%6s", UWAD = "%6s", UYAD = "%6s",
+  `VN%D` = "%6.0f", VNAD = "%6.0f"
 )
 
 
@@ -352,6 +421,5 @@ filex_sections <- c("GENERAL",
                     "CHEMICALS",
                     "ENVIRONMENT_MODIFICATIONS",
                     "HARVEST",
-                    "SIMULATION_CONTROLS"
-                    )
+                    "SIMULATION_CONTROLS")
 

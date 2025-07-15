@@ -57,7 +57,7 @@ get_pkeys <- function(df, alternates = FALSE){
 #' @return the names of the parent tables of the focal table
 #'
 
-get_parent <- function(tbl, tbl_list) {
+get_parents <- function(tbl, tbl_list) {
   
   cols <- colnames(tbl)
   
@@ -76,7 +76,8 @@ get_parent <- function(tbl, tbl_list) {
     }
   }
   
-  return(parent_nms)
+  out <- tbl_list[parent_nms]
+  return(out)
 }
 
 #' Determine whether two data frames are linked by a common column
@@ -90,12 +91,16 @@ get_parent <- function(tbl, tbl_list) {
 #' @export
 #'
 
-has_link <- function(df1, df2, subset = NULL) {
+has_link <- function(df1, df2, subset = NULL, exclude = NULL) {
   
   common_cols <- intersect(names(df1), names(df2))
   
   if(!is.null(subset)){
     common_cols <- common_cols[common_cols %in% subset]
+  }
+  
+  if(!is.null(exclude)){
+    common_cols <- common_cols[!common_cols %in% exclude]
   }
   
   return(length(common_cols) > 0)

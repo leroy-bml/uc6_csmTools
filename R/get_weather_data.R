@@ -135,13 +135,13 @@ find_stations <- function(lat, lon, min_date, params){
                                       max_radius = params_solar[["max_radius"]][[1]])
     
     wst_solar$var <- "solar"
-    wst_full <- append(wst, list(wst_solar))
-    
+    wst <- append(wst, list(wst_solar))
+    names(wst)[length(wst)] <- "solar_radiation"
+     
   }
-  names(wst_full)[length(wst_full)] <- "solar_radiation"
   
   # Keep the closest station that meets the minimum date requirement
-  wst_sub <- lapply(wst_full, function(df){
+  wst_sub <- lapply(wst, function(df){
     suppressWarnings(df %>%
                        filter(von_datum <= min_date & bis_datum >= min_date)
     )
@@ -172,7 +172,6 @@ find_stations <- function(lat, lon, min_date, params){
 #' @importFrom lubridate as_date year
 #' 
 
-
 download_dwd <- function(
     vars = c("air_temperature","precipitation","solar_radiation","dewpoint","relative_humidity","wind_speed"),
     year,
@@ -183,7 +182,7 @@ download_dwd <- function(
   to_date <- paste0(year, "-12-31")
   
   dwd_data <- lapply(vars, function(x){
-
+    
     # Sort the stations by distance from the field, from lower to higher
     station <- stations %>%
       filter(var_ipt == x) %>%
@@ -197,6 +196,8 @@ download_dwd <- function(
 
       # Download data starting from the closest station
       for (i in 1:nrow(station)){
+        
+        i = 1  #tmp
         
         url <- selectDWD(id = station[i, ]$Stations_id,
                          res = station[i, ]$res,
@@ -373,7 +374,7 @@ impute_weather <- function(df, na.rm = TRUE, rule = 2) {
     return(x)
   })
   
-  df <- cbind(df[, !na_cols], df_na)
+  df <- cbind(df[, !na_cols, drop = FALSE], df_na)
   return(df)
   
   # TODO: other methods (NASA-power imputation, sequential imputation, random forest...)
@@ -404,6 +405,7 @@ impute_weather <- function(df, na.rm = TRUE, rule = 2) {
 #' @importFrom tibble rownames_to_column
 #' @importFrom purrr map2
 #' @importFrom lubridate month
+#' 
 #' 
 
 get_weather <- function(
@@ -533,7 +535,7 @@ get_weather <- function(
       col_order <- colnames(df)
       
       df <- impute_weather(df, na.rm = TRUE, rule = 2)
-      df <- df %>% select(all_of(col_order))
+      #df <- df %>% select(all_of(col_order))
     }
     return(df)
   })

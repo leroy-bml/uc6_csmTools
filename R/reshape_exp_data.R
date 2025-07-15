@@ -1,4 +1,98 @@
-#' Reshape crop experiment data into a standard ICASA format
+#' Iteratively Merge Leaf Tables into a Database Backbone
+#'
+#' Iteratively merges "leaf" tables (those without parents) into their parent tables in a database, 
+#' using primary keys and the \code{\link{merge_tbls}} function. The process continues until no mergeable leaves remain.
+#'
+#' @param db A named list of data frames representing the database.
+#' @param drop_keys Logical. If \code{TRUE}, drops the join key columns after merging (default: \code{FALSE}).
+#' @param exclude_tbls Optional character vector of table names to exclude from merging as leaves.
+#' @param exclude_cols Optional character vector of column names to exclude from being used as join keys.
+#'
+#' @return A list of data frames representing the melted (fully merged) database.
+#'
+#' @details
+#' The function:
+#' \itemize{
+#'   \item Identifies leaf tables (those with no parent in the database).
+#'   \item Merges mergeable leaves into their parent tables using \code{\link{merge_tbls}}.
+#'   \item Repeats the process until no mergeable leaves remain.
+#'   \item Optionally drops join key columns after merging.
+#'   \item Removes the \code{flag} column from tables if all values are \code{NA}.
+#' }
+#'
+#' @examples
+#' # Example usage (assuming get_pkeys, get_parent, and merge_tbls are defined):
+#' # db <- list(
+#' #   parent = data.frame(ID = 1:3, Value = c("A", "B", "C")),
+#' #   child = data.frame(ID = 1:3, Data = c("X", "Y", "Z"))
+#' # )
+#' # melt_dataset(db)
+#'
+#' @export
+#' 
+
+melt_dataset <- function(db, drop_keys = FALSE, exclude_tbls = NULL, exclude_cols = NULL) {
+  iteration <- 0
+  
+  repeat {
+    iteration <- iteration + 1
+    cat(sprintf("Iteration %d\n", iteration))
+    
+    # Identify parent for each table
+    all_parents <- lapply(db, function(df) get_parent(df, db))
+    
+    # Identify leaf tables (no parent)
+    leaf_tbls <- db[sapply(all_parents, is.null)]
+    leaf_tbls <- leaf_tbls[!names(leaf_tbls) %in% exclude_tbls]
+    branch_tbls <- db[!names(db) %in% names(leaf_tbls)]
+    
+    if (length(leaf_tbls) > 0) {
+      # Identify which leaves are mergeable (their primary key is present in a branch table)
+      leaves_mergeable <- leaf_tbls[
+        sapply(leaf_tbls, function(df1) {
+          pk <- get_pkeys(df1)
+          any(sapply(branch_tbls, function(df2) any(pk %in% names(df2))))
+        })
+      ]
+      leaves_unmergeable <- leaf_tbls[!names(leaf_tbls) %in% names(leaves_mergeable)]
+    } else {
+      leaves_mergeable <- character(0)
+    }
+    
+    n_left <- length(leaves_mergeable)
+    
+    if (n_left == 0) {
+      cat("No mergeable leaves left. Stopping.\n")
+      break
+    }
+    
+    # Merge mergeable leaves into the database
+    res <- merge_tbls(
+      db, leaves_mergeable,
+      type = "child-parent",
+      drop_keys = drop_keys,
+      exclude_cols = exclude_cols
+    )
+    db <- res$db  # Update db with merged tables
+    
+    # Remove merged leaves from db
+    db <- db[!names(db) %in% names(leaves_mergeable)]
+  }
+  
+  # Drop DQ flags if no rows are flagged (all NAs)
+  db <- lapply(db, function(df) {
+    if ("flag" %in% names(df)) {
+      df <- df[ c(setdiff(names(df), "flag"), "flag") ]
+      if (all(is.na(df$flag))) {
+        df$flag <- NULL
+      }
+    }
+    return(df)
+  })
+  return(db)
+}
+
+#' TODO: UPDATE DOCUMENTATION Reshape crop experiment data into a standard ICASA format
 #' 
 #' This function identifies the components of a crop experiment data set and re-arrange them into ICASA sections
 #' (see ICASA standards: https://docs.google.com/spreadsheets/u/0/d/1MYx1ukUsCAM1pcixbVQSu49NU-LfXg-Dtt-ncLBzGAM/pub?output=html)
@@ -12,260 +106,149 @@
 #' 
 #' @return a list containing the reshaped crop experiment data
 #' 
+#' @importFrom magrittr %>%
 #' @importFrom lubridate as_date parse_date_time
-#' @importFrom dplyr "%>%" select group_by group_by_at ungroup mutate relocate distinct left_join arrange across cur_group_id
+#' @importFrom dplyr select group_by group_by_at ungroup mutate relocate distinct left_join arrange across cur_group_id
 #' @importFrom tidyr any_of all_of everything ends_with
-#' @importFrom rlang "!!" ":="
+#' @importFrom rlang !! :=
 #' @importFrom countrycode countrycode
 #'
+#'
 
-reshape_exp_data <- function(db, metadata, mother_tbl) {
+# seehausen <- read_exp_data(dir = "./inst/extdata/lte_seehausen/0_raw", extension = "csv")  #check
+# muencheberg <- read_exp_data(dir = "./inst/extdata/lte_muencheberg/0_raw", extension = "csv")  #check
+# grossbeeren <- read_exp_data(dir = "./inst/extdata/lte_grossbeeren/0_raw", extension = "csv")  #check
+# duernast <- read_exp_data(dir = "./inst/extdata/lte_duernast/0_raw", extension = "csv")  #check
+# westerfeld <- read_exp_data(dir = "./inst/extdata/lte_westerfeld/0_raw", extension = "csv")  #check
+# rauischholzhausen <- read_exp_data(dir = "./inst/extdata/lte_rauischholzhausen/0_raw", extension = "csv")  #check
+# rostock <- read_exp_data(dir = "./inst/extdata/lte_rostock/0_raw", extension = "csv")  #check
+# darmstadt_a <- read_exp_data(dir = "./inst/extdata/lte_darmstadt_a/0_raw", extension = "csv")  #check
+# darmstadt_e <- read_exp_data(dir = "./inst/extdata/lte_darmstadt_e/0_raw", extension = "csv")  #data problem: PRUEFGLIED table missing
+# + dikopshof
+# + bad lauchstadt
+
+
+reshape_exp_data <- function(db, metadata, mother_tbl_name) {
   
   # Identify the components of the experimental design ----------------------
   
+  # db <- duernast  #tmp
+  # mother_tbl_name <- "VERSUCHSAUFBAU"  #tmp
   
-  DESIGN <- mother_tbl
-  DESIGN_tbl_nm <- get_df_name(db, DESIGN)
+  design_tbl <- db[[mother_tbl_name]]
   
-  # Find year column across the data
-  multiyear <- if(metadata$start_date != metadata$status) {
-    TRUE
-  } else {
-    FALSE
-  }
+  # Identify core design elements: years, plots, treatments
+  exp_str <- identify_exp_design(db, design_tbl)
+  exp_str_ids <- exp_str$id_name  # unique identifiers
+  exp_str_tbl_nms <- c(exp_str$tbl_name[!is.na(exp_str$tbl_name)], mother_tbl_name)  # table names
   
-  # Identify years column name and number
-  YEARS_id <- get_years_col(DESIGN,
-                            start = metadata$start_date, 
-                            end = metadata$status)
-  YEARS_n <- length(unique(DESIGN[[YEARS_id]])) # number of years in data
+  # Identify column properties (primary/foreign keys, data attributes)
+  # > Labels data attributes with table name as prefix to make them unique
+  db <- identify_exp_attributes(db, str_cols = exp_str_ids)
+  nokeys <- do.call(c, attr(db, "attributes"))  # list of unique data attributes
   
-  # Identify plots number, column names and data table
-  PLOTS_n <- if (is.na(metadata$number_plots)){  
-    nrow(DESIGN) / YEARS_n
-  } else {
-    as.numeric(metadata$number_plots)
-  }
-  PLOTS_id <- apply(DESIGN, 2, function(x) length(unique(x)))
-  PLOTS_id <- names(PLOTS_id[PLOTS_id == PLOTS_n])
-  PLOTS_tbl <- get_tbl(db, PLOTS_id)
+  # Get design tables
+  exp_str_tbls <- db[exp_str_tbl_nms]
   
-  # Identify repliates number and column name
-  REPS_n <- if (is.na(metadata$replication)) {
-    get_treatments_col(DESIGN, YEARS_id, PLOTS_id)[[2]]
-  } else {
-    as.numeric(metadata$replication)
-  }
-  REPS_id <- names(PLOTS_tbl)[sapply(PLOTS_tbl, function(x) length(unique(x))) == REPS_n] #!!
+
+  # Melt dataset ------------------------------------------------------------
   
-  # Identify plots number, column names and data table
-  TREATMENTS_n <- PLOTS_n / REPS_n  # Can also exploit design metadata
-  TREATMENTS_id <- get_treatments_col(DESIGN, YEARS_id, PLOTS_id)[[1]]
-  TREATMENTS_tbl <- get_tbl(db, TREATMENTS_id)
+  # Melt structural tables into one table
+  design_str <- melt_dataset(exp_str_tbls, drop_keys = FALSE)
   
+  # Calculate replicate number (inconsistent concept across datasets)
+  # TODO: CHECK variety/crop as treatment levels? not consistently?
+  design_str <- lapply(design_str, function(df) {
+    df %>%
+      group_by(!!sym(exp_str_ids[1]), !!sym(exp_str_ids[3])) %>%
+      mutate(Rep_no = row_number())
+  })
   
+  # Replace structural tables by unique merged design table
+  db <- db[!names(db) %in% exp_str_tbl_nms]
+  db <- c(design_str, db)
   
-  # Give standard name to design variables ----------------------------------
+  # Melt dataset into immediate children only (tables linked directly to the design table)
+  # TODO: double check get_parent
+  db <- melt_dataset(db, drop_keys = TRUE, exclude_tbls = exp_str_tbl_nms, exclude_cols = c(exp_str_ids, nokeys))
   
-  
-  raw_str_names <- c(YEARS_id, PLOTS_id, TREATMENTS_id, REPS_id)
-  std_str_names <- c("Year", "Plot_id", "Treatment_id", "Rep_no")
-  
-  for (i in seq_along(db)) {
-    for (j in seq_along(raw_str_names)) {
-      if (raw_str_names[j] %in% colnames(db[[i]])) {
-        colnames(db[[i]])[colnames(db[[i]]) == raw_str_names[j]] <- std_str_names[j]
-      }
-    }
-  }
-  
+
+  # # Give standard name to design variables ----------------------------------
+  # 
+  # 
+  # raw_str_names <- c(YEARS_nm, PLOTS_nm, TREATMENTS_nm, REPS_nm)
+  # std_str_names <- c("Year", "Plot_id", "Treatment_id", "Rep_no")
+  # 
+  # for (i in seq_along(db)) {
+  #   for (j in seq_along(raw_str_names)) {
+  #     if (raw_str_names[j] %in% colnames(db[[i]])) {
+  #       colnames(db[[i]])[colnames(db[[i]]) == raw_str_names[j]] <- std_str_names[j]
+  #     }
+  #   }
+  # }
   
   
   # Format dates ------------------------------------------------------------
   
-  
   # Identify dates and convert into a usable format (yyyy-mm-dd; vMapper default)
-  db <- lapply(db, function(df){
-    df <- as.data.frame(
-      lapply(df, function(x){
-        if(is_date(x)){
-          format(parse_date_time(x, orders = c("Ymd", "mdY", "dmy", "ymd", "mdy")), "%Y-%m-%d")
+  db <- lapply(db, function(df) {
+    as.data.frame(
+      lapply(df, function(x) {
+        if (is_date(x)) {
+          standardize_date(x, output_format = "Date")
         } else {
           x
         }
-      })
+      }),
+      stringsAsFactors = FALSE
     )
   })
   
-  
-  # Format variable names ---------------------------------------------------
-  
-  
-  all_cols <- unlist(lapply(db, colnames), use.names = FALSE)
-  
-  # Identify all date columns (can be identified as join keys, which is not desirable)
-  date_cols <- lapply(db, function(df) unlist(lapply(df, function(x) is_date(x)))) %>% unlist()
-  names(date_cols) <- gsub("^[^.]*\\.","", names(date_cols))
-  date_cols <- names(date_cols[date_cols])
-  
-  # Find join keys that are note dates
-  all_pkeys <- unlist(lapply(db, function(df) get_pkeys(df, alternates = FALSE)), use.names = FALSE)  # primary keys
-  
-  all_jkeys <- all_cols[all_cols %in% c(all_pkeys, std_str_names) & !all_cols %in% date_cols]  # exclude dates
-  all_jkeys <- c(unique(all_jkeys[duplicated(all_jkeys)]), "Rep_no")  # all join keys + rep number (str variables)
-  
-  attr_cols <- all_cols[!all_cols %in% all_jkeys]  # non-join attributes
-  
-  # Bind original table name to column names to prevent duplicate attributes and help with tracking errors
-  # along the data wrangling process
-  db_ipt <- lapply(
-    names(db), function(df_name) {
-      df <- db[[df_name]]
-      colnames(df) <- ifelse(colnames(df) %in% attr_cols,
-                             paste(df_name, colnames(df), sep = "."),
-                             colnames(df))
-      return(df)
-    }
-  )
-  names(db_ipt) <- names(db)
-  
-  # Update design elements affected by name change
-  DESIGN_tbl <- db_ipt[[DESIGN_tbl_nm]]
-  PLOTS_tbl <- get_tbl(db_ipt, "Plot_id")
-  TREATMENTS_tbl <- get_tbl(db_ipt, "Treatment_id")
-  
-  # Assemble the structured experimental design table
-  DESIGN_str <-
-    merge_tbls(list(DESIGN = DESIGN_tbl),
-               list(TREATMENTS = TREATMENTS_tbl, PLOTS = PLOTS_tbl),
-               type = "child-parent",
-               drop_keys = FALSE)[[1]] %>%
-    select(any_of(std_str_names), Faktor1_Stufe_ID, Faktor2_Stufe_ID)  #!!
-  
-  
-  # Identify and join related tables ----------------------------------------
-  
-  
-  # Identify non-design tables
-  DESIGN_tbls_nms <- unlist(
-    lapply(list(DESIGN_tbl, PLOTS_tbl, TREATMENTS_tbl), function(df) get_df_name(db_ipt, df))
-  )
-  
-  other_tbls <- db_ipt[!names(db_ipt) %in% DESIGN_tbls_nms]
-  other_tbls <- other_tbls[order(names(other_tbls))]
-  
-  # Identify data tables: tables with link to the design tabes
-  has_design_link <- sapply(other_tbls, function(df){
-    has_link(df, DESIGN_str, subset = c("Year", "Plot_id", "Treatment_id"))
-  })
-  DATA_tbls <- other_tbls[has_design_link]
-  
-  # Attribute tables: tables with no direct link to the design table (i.e., attributes of data tables)
-  ATTR_tbls <- other_tbls[!has_design_link]
+  return(db)  #tmp
+}
   
   
   
-  # ==== 1) ATTR tables ------------------------------------------------------
-  
-  # Iterate to merge multi-level joins (i.e., attributes of attribute tables) ###
-  repeat {
-    # Identify parent tables of each table in the database
-    ATTR_parents <- lapply(ATTR_tbls, function(df) get_parent(df, ATTR_tbls))
-    
-    # Identify leaf tables (i.e., terminal tables) and append to their parent tables
-    ATTR_leaves <- ATTR_tbls[sapply(ATTR_parents, is.null)]
-    ATTR_children <- ATTR_tbls[!names(ATTR_tbls) %in% names(ATTR_leaves)]
-    
-    # If there are no more leaves, break out of the loop
-    if (length(ATTR_leaves) == 0) {
-      break
-    }
-    
-    # Perform the merge
-    ATTR_merged <- merge_tbls(ATTR_children, ATTR_leaves, type = "child-parent", drop_keys = TRUE)
-    
-    # Update the original list
-    indices <- which(names(ATTR_tbls) %in% names(ATTR_merged))
-    ATTR_tbls[indices] <- ATTR_merged
-    
-    # Update the ATTR_children list after the merge
-    ATTR_children <- ATTR_tbls[!names(ATTR_tbls) %in% names(ATTR_leaves)]
-    
-    # If there are no more parents to process, break out of the loop
-    if (length(ATTR_children) == 0) {
-      break
-    }
-  }
-  
-  
-  
-  # ==== 2) DATA tables ------------------------------------------------------
-  
-  # Join attributes to data tables
-  DATA_tbls <- merge_tbls(DATA_tbls, ATTR_tbls, type = "bidirectional", drop_keys = TRUE)
-  #TODO: function to identify relationship types
-  
-  
+#----- wip
+tmp <- reshape_exp_data(db = muencheberg, mother_tbl_name = "VERSUCHSAUFBAU")
+
+colnames <- unique(unlist(
+  lapply(tmp, names)
+)
+)
+writeClipboard(colnames)
+
+
+
   
   # Identify management and observed data -----------------------------------
   
-  
-  # Distinguish management and observed data
-  DATA_tbls_ident <- tag_data_type(db = DATA_tbls,
-                                   years_col = "Year",
-                                   plots_col = "Plot_id",
-                                   plots_len = PLOTS_n,
-                                   max_events = 8)
-  # TODO: >2 date vars? 
-  
-  # Separate management and observed data
-  data_cats <- sapply(DATA_tbls_ident, function(df) attr(df, "category"))
-  
-  MNGT_ipt <- DATA_tbls_ident[["management"]]
-  DOBS_suma_ipt <- DATA_tbls_ident[["observed_summary"]]
-  DOBS_tser_ipt <- DATA_tbls_ident[["observed_timeseries"]] ## some years summary, other timeseries
-  ATTR_ipt <- DATA_tbls_ident[["other"]]
-  
+  # # Distinguish management and observed data
+  # DATA_tbls_ident <- tag_data_type(db = db,
+  #                                  years_col = exp_str$id_name[1],
+  #                                  plots_col = exp_str$id_name[2],
+  #                                  plots_len = 240,
+  #                                  max_mods = mean(4, na.rm = TRUE))
+  # # TODO: >2 date vars?
+  # 
+  # # Separate management and observed data
+  # data_cats <- sapply(DATA_tbls_ident, function(df) attr(df, "category"))
+  # 
+  # MNGT_ipt <- DATA_tbls_ident[["management"]]
+  # DOBS_suma_ipt <- DATA_tbls_ident[["observed_summary"]]
+  # DOBS_tser_ipt <- DATA_tbls_ident[["observed_timeseries"]] ## some years summary, other timeseries
+  # ATTR_ipt <- DATA_tbls_ident[["other"]]
   
   
-  # Format fields table -----------------------------------------------------
+  # Extract metadata --------------------------------------------------------
   
+  # Extract field coordinates
   
-  # Define FIELDS ID
-  PLOTS_all_ids <- get_pkeys(PLOTS_tbl, alternates = TRUE)
-  FIELDS_cols <- setdiff(colnames(PLOTS_tbl), c(PLOTS_all_ids, std_str_names))
+  path <- "./inst/extdata/lte_duernast/0_raw/7e526e38-4bf1-492b-b903-d8dbcfd36b6d.xml"
+  metadata <- read_metadata(path, repo = "bnr")
+
+  #NOTES <- c(paste0("Data files mapped on ", Sys.Date(), " with csmTools"), paste0("Source data DOI: ", DOI))
   
-  # Make field table
-  FIELDS_tbl <- PLOTS_tbl %>%
-    group_by_at(FIELDS_cols) %>%
-    mutate(FL_ID = cur_group_id()) %>% ungroup() %>%
-    relocate(FL_ID, .before = everything()) 
-  
-  FIELDS <- FIELDS_tbl %>%
-    select(FL_ID, all_of(FIELDS_cols)) %>%
-    distinct()
-  
-  # Check if spatial data is in the table using bounding box data
-  for (col_name in colnames(FIELDS)) { ##!! is not fool proof?
-    
-    if (all(FIELDS[[col_name]] == metadata$longitude)) {  #! currently does not handle multi-sites
-      names(FIELDS)[names(FIELDS) == col_name] <- "FL_LON"
-    }
-    
-    if (all(FIELDS[[col_name]] == metadata$latitude)) {
-      names(FIELDS)[names(FIELDS) == col_name] <- "FL_LAT"
-    }
-  }
-  
-  # If not in table, replace by the mean of the bounding box x and y boundaries
-  # Whether this is accurate depends on how the bouding box is defined, and only if there is one field
-  if(!"FL_LON" %in% names(FIELDS)){
-    FIELDS[["FL_LON"]] = metadata$longitude
-  }
-  
-  if(!"FL_LAT" %in% names(FIELDS)){
-    FIELDS[["FL_LAT"]] = metadata$latitude
-  }
   
   
   
@@ -393,28 +376,7 @@ reshape_exp_data <- function(db, metadata, mother_tbl) {
   
   # Format metadata output elements -----------------------------------------
   
-  
-  # Format provenance and identification metadata
-  EXP_NAME = metadata$name
-  PERSONS = metadata$contact_name
-  EMAIL = metadata$contact_email
-  ADDRESS = metadata$trial_institution  #TODO: Add address elements if more are added to the metadata schema
-  DOI = metadata$doi
-  
-  # Site and plots details
-  SITE <- metadata$site
-  COUNTRY <- metadata$country
-  PLTA = metadata$size_plots
-  
-  NOTES <- c(paste0("Data files mapped on ", Sys.Date(), " with csmTools"), paste0("Source data DOI: ", DOI))
-  GENERAL <- data.frame(PERSONS = PERSONS,
-                        EMAIL = EMAIL,
-                        ADDRESS = ADDRESS,
-                        SITE = SITE,
-                        COUNTRY = COUNTRY,
-                        PLTA = PLTA,
-                        DOI = DOI,
-                        NOTES = NOTES)
+
   
   
   
