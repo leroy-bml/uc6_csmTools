@@ -48,6 +48,9 @@ docs/
 /archive/
 inst/dev_utils
 
+# test data
+inst/extdata/test_data/
+
 # translation temp files
 po/*~
 
