@@ -44,6 +44,10 @@ vignettes/*.pdf
 # pkgdown site
 docs/
 
+# archived and temp devscripts
+/archive/
+inst/dev_utils
+
 # translation temp files
 po/*~
 
