@@ -17,7 +17,7 @@ SystemRequirements:
     libproj-dev
     libgdal-dev
 Depends: 
-    R (>= 3.5.0)
+    R (>= 4.4.3)
 Imports:
     DSSAT,
     countrycode,
