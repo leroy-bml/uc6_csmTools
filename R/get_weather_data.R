@@ -17,7 +17,7 @@
 #' @importFrom rdwd nearbyStations selectDWD dataDWD metaInfo
 #' @importFrom dplyr filter arrange distinct left_join mutate
 #' @importFrom spsUtil quiet
-#' @importFrom OSMscale earthDist
+#' @importFrom geosphere distVincentyEllipsoid
 #' @importFrom lubridate as_date
 #' 
 
@@ -55,7 +55,11 @@ nearbyStations_solar <- function(lat, lon, res, max_radius = 50){  ##inherit
   target$geoLaenge <- lon
   
   stations <- rbind(target, stations)
-  stations$dist <- earthDist("geoBreite", "geoLaenge", i = 1, data = stations)
+  # Calculate distance between station and queried location
+  stations$dist <- distVincentyEllipsoid(
+    cbind(stations$geoLaenge, stations$geoBreite),   # all points: (lon, lat)
+    c(stations$geoLaenge[1], stations$geoBreite[1])  # reference point
+  )
   
   stations <- stations %>%
     # Format dates so filter can be applied
