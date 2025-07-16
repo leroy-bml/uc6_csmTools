@@ -4,18 +4,18 @@
 \alias{tag_data_type}
 \title{Identify the type of experimental data}
 \usage{
-tag_data_type(db, years_col, plots_col, plots_len, max_events = 8)
+tag_data_type(db, exp_str, plots_len, max_mods = 8)
 }
 \arguments{
 \item{db}{a list of data frames}
 
+\item{plots_len}{integer; length of the plot identifier (i0.e., number of plots)}
+
+\item{max_mods}{integer; maximum number of management event of the same type (e.g., irrigation) within one year; default is 8}
+
 \item{years_col}{character string; name of the "year" column}
 
 \item{plots_col}{character string; name of the plot identifier column}
-
-\item{plots_len}{integer; length of the plot identifier (i0.e., number of plots)}
-
-\item{max_events}{integer; maximum number of management event of the same type (e.g., irrigation) within one year; default is 8}
 }
 \value{
 the input database tagged as "management", "observed" or "other" data category (as attr(., "category"))

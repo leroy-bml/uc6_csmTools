@@ -2,18 +2,33 @@
 % Please edit documentation in R/identify_exp_design.R
 \name{get_tbl}
 \alias{get_tbl}
-\title{Find a table based on its primary key}
+\title{Retrieve a Table from a List by Primary Key}
 \usage{
 get_tbl(db, pkey)
 }
 \arguments{
-\item{db}{a list of linked data frames}
+\item{db}{A list of data frames.}
 
-\item{pkey}{a character, the name of the focal primary key}
+\item{pkey}{The name of the primary key to match (as a string).}
 }
 \value{
-a data frame with its name in the input list as an attribute
+The data frame from \code{db} whose primary key matches \code{pkey}.
 }
 \description{
-Find a table based on its primary key
+Retrieves a data frame (table) from a list of data frames by matching its primary key.
+}
+\details{
+The function uses \code{\link{get_pkeys}} (with \code{alternates = FALSE}) to determine the primary key of each data frame in the list, and returns the first data frame whose primary key matches \code{pkey}.
+}
+\examples{
+# Example usage (assuming get_pkeys is defined):
+# db <- list(
+#   df1 = data.frame(ID = 1:3, Value = c('A', 'B', 'C')),
+#   df2 = data.frame(Key = 1:3, Data = c('X', 'Y', 'Z'))
+# )
+# get_tbl(db, pkey = "ID")
+
+}
+\seealso{
+\code{\link{get_pkeys}}
 }

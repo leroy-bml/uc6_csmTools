@@ -2,20 +2,32 @@
 % Please edit documentation in R/format_dssat.R
 \name{build_filet}
 \alias{build_filet}
-\title{Format observed time series data as a DSSAT input table}
+\title{Format observed time-series table list as a DSSAT input file format}
 \usage{
 build_filet(ls, title = NULL, site_code = NA_character_)
 }
 \arguments{
-\item{ls}{a list of data frames containing crop experiment data ### (File T)}
+\item{ls}{A named list containing at least a \code{"TIME_SERIES"} data frame.}
 
-\item{title}{a length 1 character vector specifying the title of the dataset}
+\item{title}{Character or NULL. Optional title for the file (not currently used).}
 
-\item{site_code}{a length 1 character vector provide the DSSAT standard code for the experimental site}
+\item{site_code}{Character or NA. Optional site code (not currently used).}
 }
 \value{
-a data frame with codes mapped to the format specified in the supplied map
+A formatted data frame ready for DSSAT time series file writing, with formatting attributes attached.
 }
 \description{
-Format observed time series data as a DSSAT input table
+Formats a time series observed data frame from a list into the DSSAT
+time series file structure, applying date formatting and setting file attributes.
+}
+\details{
+The function extracts the \code{"TIME_SERIES"} data frame from the list, formats the \code{DATE} column as DSSAT day-of-year strings, arranges by treatment and date, and applies the \code{as_DSSAT_tbl} function. It sets the \code{v_fmt} attribute for variable formatting, using only those formats present in the data.
+
+This is useful for preparing observed time series data for writing to a DSSAT-compatible file.
+}
+\examples{
+\dontrun{
+filet <- build_filet(ls)
+}
+
 }

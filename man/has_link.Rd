@@ -4,7 +4,7 @@
 \alias{has_link}
 \title{Determine whether two data frames are linked by a common column}
 \usage{
-has_link(df1, df2, subset = NULL)
+has_link(df1, df2, subset = NULL, exclude = NULL)
 }
 \arguments{
 \item{df1}{the first data frame}

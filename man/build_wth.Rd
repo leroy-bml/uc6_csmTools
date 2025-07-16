@@ -2,18 +2,29 @@
 % Please edit documentation in R/format_dssat.R
 \name{build_wth}
 \alias{build_wth}
-\title{Format observed time series data as a DSSAT input table}
+\title{Build a DSSAT Weather File from a List}
 \usage{
 build_wth(ls)
 }
 \arguments{
-\item{ls}{a list of data frames containing weather data (daily + header as separate data frames) and station
-metadata as comments}
+\item{ls}{A named list containing at least a \code{"WEATHER"} data frame and its attributes.}
 }
 \value{
-a data frame containing soil profile data formatted as a DSSAT input
+A formatted data frame ready for DSSAT weather file writing, with metadata attributes attached.
 }
 \description{
-Currently contains a workaround to correct date formatting issues with the write_wth function that leads to
-failed simulation
+Formats a weather data frame from a list into the DSSAT weather file structure, applying a template, formatting dates, and preserving metadata.
+NB: Currently contains a workaround to correct date formatting issues with
+the write_wth function that leads to failed simulation
+}
+\details{
+The function extracts the \code{"WEATHER"} data frame from the list, formats it using \code{format_table} and a \code{WEATHER_template}, and formats the \code{DATE} column as DSSAT day-of-year strings. It sets print formats for weather variables and attaches relevant metadata attributes (\code{station_metadata}, \code{location}, \code{comments}, \code{file_name}) to the output.
+
+This is useful for preparing weather data for writing to a DSSAT-compatible .WTH file.
+}
+\examples{
+\dontrun{
+filewth <- build_wth(ls)
+}
+
 }

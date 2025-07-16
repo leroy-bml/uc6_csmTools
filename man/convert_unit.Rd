@@ -2,20 +2,20 @@
 % Please edit documentation in R/map_data.R
 \name{convert_unit}
 \alias{convert_unit}
-\title{Convert numeric variables based on units provided as strings}
+\title{Convert Numeric Vector Between Units}
 \usage{
 convert_unit(x, u1, u2)
 }
 \arguments{
-\item{x}{a numeric to be converted}
+\item{x}{Numeric vector to be converted.}
 
-\item{u1}{the input unit, in which x is expressed}
+\item{u1}{Input unit (as a string) in which \code{x} is expressed.}
 
-\item{u2}{the target unit, in which the output is expressed}
+\item{u2}{Target unit (as a string) for the output.}
 }
 \value{
-a converted numeric
+Numeric vector converted to the target unit.
 }
 \description{
-####str unit formats
+Converts a numeric vector from one unit to another, using unit strings.
 }

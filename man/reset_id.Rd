@@ -2,18 +2,30 @@
 % Please edit documentation in R/format_dssat.R
 \name{reset_id}
 \alias{reset_id}
-\title{Reset index variables to start at 1}
+\title{Reset Management Level IDs to Start from 1}
 \usage{
 reset_id(df, id_col)
 }
 \arguments{
-\item{df}{a data frame with rows identified by an integer index variable}
+\item{df}{A data frame containing an ID column to reset.}
 
-\item{id_col}{a length 1 character containing the name of the index column in df}
+\item{id_col}{Character. The name of the column containing the IDs to reset.}
 }
 \value{
-a data frame; the input data with a reset index variable
+The input data frame with the specified ID column reset to start from 1.
 }
 \description{
-Includes a special case for ignoring 0s (ID in treatment matrix with no linked record in a management section)
+Resets the values in a specified ID column of a management data frame
+so that the minimum nonzero ID becomes 1, and all other positive IDs are shifted accordingly.
+}
+\details{
+The function finds the minimum nonzero value in the specified ID column and subtracts \code{min_id - 1} from all positive IDs, so that the smallest positive ID becomes 1. Zero values are left unchanged.
+
+This is useful for re-indexing management levels (e.g., fertilizer, irrigation) after splitting or subsetting experimental data.
+}
+\examples{
+df <- data.frame(fertilizer_level = c(0, 2, 3, 4))
+reset_id(df, "fertilizer_level")
+# fertilizer_level: 0, 1, 2, 3
+
 }

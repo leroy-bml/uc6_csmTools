@@ -7,11 +7,27 @@
 safe_aggregate(x, FUN, ...)
 }
 \arguments{
-\item{x}{a function name}
+\item{x}{A vector of values to be aggregated or summarized.}
+
+\item{FUN}{The function to apply to \code{x}. Should be a function that takes a vector as its first argument. If \code{FUN} supports the \code{na.rm} argument, it will be set to \code{TRUE} automatically.}
+
+\item{...}{Additional arguments to pass to \code{FUN}.}
 }
 \value{
-a function name with na.rm argument as appropriate
+The result of applying \code{FUN} to \code{x}, with \code{na.rm = TRUE} if supported.
 }
 \description{
-Skip NAs in aggregation functions regardless of whether na.rm is an argument
+Applies a summary or aggregation function to a vector, automatically setting \code{na.rm = TRUE} if the function supports it, to safely handle missing values.
+}
+\details{
+This utility checks whether the provided function \code{FUN} has an \code{na.rm} argument (commonly used in base R summary functions like \code{sum}, \code{mean}, \code{min}, \code{max}, etc.). If so, it calls the function with \code{na.rm = TRUE} to remove missing values before aggregation. If not, it calls the function without \code{na.rm}.
+
+This is useful for writing robust code that works with both base R and custom aggregation functions, regardless of whether they support missing value removal.
+}
+\examples{
+safe_aggregate(c(1, 2, NA, 4), sum)         # Returns 7
+safe_aggregate(c(1, 2, NA, 4), mean)        # Returns 2.333...
+safe_aggregate(c(1, 2, NA, 4), length)      # Returns 4 (length does not support na.rm)
+safe_aggregate(c(1, 2, 3), function(x) max(x) + 1) # Returns 4
+
 }

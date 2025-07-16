@@ -2,16 +2,28 @@
 % Please edit documentation in R/format_dssat.R
 \name{build_sol}
 \alias{build_sol}
-\title{Format observed time series data as a DSSAT input table}
+\title{Format soil profile data as a DSSAT input table}
 \usage{
 build_sol(ls)
 }
 \arguments{
-\item{ls}{a list of data frames containing soil profile data (layers + surface as separate data frames)}
+\item{ls}{A named list containing at least a \code{"SOIL"} data frame and its attributes.}
 }
 \value{
-a data frame containing soil profile data formatted as a DSSAT input
+A formatted data frame ready for DSSAT soil file writing, with metadata attributes attached.
 }
 \description{
-Format observed time series data as a DSSAT input table
+Formats a soil data frame from a list into the DSSAT soil file structure,
+applying a template and preserving metadata.
+}
+\details{
+The function extracts the \code{"SOIL"} data frame from the list, formats it using \code{format_table} and a \code{SOIL_template}, and attaches relevant metadata attributes (\code{title}, \code{file_name}, \code{comments}) from the original data frame.
+
+This is useful for preparing soil data for writing to a DSSAT-compatible .SOL file.
+}
+\examples{
+\dontrun{
+filesol <- build_sol(ls)
+}
+
 }

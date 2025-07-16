@@ -2,20 +2,32 @@
 % Please edit documentation in R/format_dssat.R
 \name{build_filea}
 \alias{build_filea}
-\title{Format observed summary data as a DSSAT input table}
+\title{Format observed summary table list as a DSSAT input file format}
 \usage{
 build_filea(ls, title = NULL, site_code = NA_character_)
 }
 \arguments{
-\item{ls}{a list of data frames containing crop experiment data ### (File A)}
+\item{ls}{A named list containing at least a \code{"SUMMARY"} data frame.}
 
-\item{title}{a length 1 character vector specifying the title of the dataset}
+\item{title}{Character or NULL. Optional title for the file (not currently used).}
 
-\item{site_code}{a length 1 character vector provide the DSSAT standard code for the experimental site}
+\item{site_code}{Character or NA. Optional site code (not currently used).}
 }
 \value{
-a data frame with codes mapped to the format specified in the supplied map
+A formatted data frame ready for DSSAT summary file writing, with formatting attributes attached.
 }
 \description{
-Format observed summary data as a DSSAT input table
+Formats an observed summary data frame from a list into the DSSAT summary
+file structure, applying date formatting and setting file attributes.
+}
+\details{
+The function extracts the \code{"SUMMARY"} data frame from the list, formats all date columns as DSSAT day-of-year strings, arranges by treatment, and applies the \code{as_DSSAT_tbl} function. It sets the \code{v_fmt} attribute for variable formatting, using only those formats present in the data.
+
+This is useful for preparing observed summary data for writing to a DSSAT-compatible file.
+}
+\examples{
+\dontrun{
+filea <- build_filea(ls)
+}
+
 }

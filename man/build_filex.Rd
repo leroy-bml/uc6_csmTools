@@ -2,20 +2,32 @@
 % Please edit documentation in R/format_dssat.R
 \name{build_filex}
 \alias{build_filex}
-\title{Format crop management data as DSSAT input tables}
+\title{Format management table list as a DSSAT input file format (file X)}
 \usage{
 build_filex(ls, title = NULL, site_code = NA_character_)
 }
 \arguments{
-\item{ls}{a list of data frames containing crop management data, to be formatted into DSSAT input tables}
+\item{ls}{A named list containing at least a \code{"MANAGEMENT"} data frame or list of management sections.}
 
-\item{title}{a length 1 character vector specifying the title of the dataset}
+\item{title}{Character or NULL. Optional title for the file (not currently used).}
 
-\item{site_code}{a length 1 character vector provide the DSSAT standard code for the experimental site}
+\item{site_code}{Character or NA. Optional site code (not currently used).}
 }
 \value{
-a data frame with codes mapped to the format specified in the supplied map
+A named list of formatted management sections, ready for DSSAT File X writing, with metadata attributes attached.
 }
 \description{
-Format crop management data as DSSAT input tables
+Assembles and formats all management sections into a DSSAT File X structure,
+applying templates, setting defaults, and preserving metadata.
+}
+\details{
+The function extracts the \code{"MANAGEMENT"} section, applies the appropriate template to each management section, and sets default values for missing parameters in the treatments matrix. It checks for required sections and fills them with template defaults if missing, issuing warnings as needed. The resulting list is ordered according to the template and has relevant attributes transferred from the original data.
+
+This is useful for preparing a complete DSSAT File X (management file) for writing to disk.
+}
+\examples{
+\dontrun{
+filex <- build_filex(ls)
+}
+
 }

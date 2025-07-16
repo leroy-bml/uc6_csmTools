@@ -2,9 +2,9 @@
 % Please edit documentation in R/reshape_exp_data.R
 \name{reshape_exp_data}
 \alias{reshape_exp_data}
-\title{Reshape crop experiment data into a standard ICASA format}
+\title{TODO: UPDATE DOCUMENTATION Reshape crop experiment data into a standard ICASA format}
 \usage{
-reshape_exp_data(db, metadata, mother_tbl)
+reshape_exp_data(db, metadata, mother_tbl_name)
 }
 \arguments{
 \item{db}{a list of data frames composing a crop experiment dataset}

@@ -2,25 +2,36 @@
 % Please edit documentation in R/map_data.R
 \name{map_data}
 \alias{map_data}
-\title{Map a data table into a standard format}
+\title{Map a Data Table to a Standard Format}
 \usage{
-map_data(df, tbl_name, map, keep_unmapped = TRUE, col_exempt = NULL)
+map_data(
+  df,
+  input_model,
+  output_model,
+  map,
+  keep_unmapped = TRUE,
+  col_exempt = NULL
+)
 }
 \arguments{
-\item{df}{a data frame of the data to be mapped}
+\item{df}{A data frame to be mapped.}
 
-\item{map}{a lookup table detailing input and target headers, units, and codes}
+\item{input_model}{Character. Name of the input data model.}
 
-\item{keep_unmapped}{a logical indicating whether to keep unmapped variables in the output}
+\item{output_model}{Character. Name of the output (target) data model.}
 
-\item{col_exempt}{a vector of column names to be kept into the output if keep_unmapped = FALSE}
+\item{map}{A lookup table detailing input and target headers, units, and codes.}
 
-\item{table_name}{the name of the focal crop experiment data section in the map}
+\item{keep_unmapped}{Logical. Whether to keep unmapped variables in the output.
+Defaults to \code{TRUE}.}
+
+\item{col_exempt}{Character vector of column names to keep in the output if
+\code{keep_unmapped = FALSE}.}
 }
 \value{
-a data frame with headers, units, and codes mapped to the format specified in the map
+A data frame with headers, units, and codes mapped to the format specified in the map.
 }
 \description{
-Currently only handles exact matches (header names, units, and codes). Future versions will handle more complex
-data mapping (e.g., conditional, concatenation, etc.)
+Maps a data frame's headers, units, and codes to a standard format using a mapping table.
+Currently supports only exact matches for header names, units, and codes.
 }

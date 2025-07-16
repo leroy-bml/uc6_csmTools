@@ -2,18 +2,31 @@
 % Please edit documentation in R/etl_utils.R
 \name{get_df_name}
 \alias{get_df_name}
-\title{Extract the name of a data frame from a list of data frame}
+\title{Get the Name of a Data Frame Within a List}
 \usage{
 get_df_name(ls, df)
 }
 \arguments{
-\item{ls}{a list of data frames containing the focal data frame}
+\item{ls}{A named list of data frames (or other objects).}
 
-\item{df}{a data frame; the focal table}
+\item{df}{A data frame to search for within the list.}
 }
 \value{
-a length 1 character vector corresponding to the name of the mother table in the original dataset
+A character vector of the name(s) of the list element(s) that are identical to \code{df}. Returns an empty character vector if no match is found.
 }
 \description{
-Extract the name of a data frame from a list of data frame
+Returns the name(s) of the element(s) in a list that are identical to a given data frame.
+}
+\details{
+The function compares each element of the list \code{ls} to the provided data frame \code{df} using \code{identical}. It returns the name(s) of the list element(s) that are exactly identical to \code{df}.
+
+This is useful for retrieving the name(s) of a data frame within a list of data frames, especially after subsetting or manipulation.
+}
+\examples{
+df1 <- data.frame(a = 1:2)
+df2 <- data.frame(a = 3:4)
+mylist <- list(first = df1, second = df2)
+get_df_name(mylist, df2)
+# Returns \"second\"
+
 }

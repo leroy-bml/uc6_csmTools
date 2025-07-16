@@ -2,16 +2,37 @@
 % Please edit documentation in R/etl_utils.R
 \name{is_date}
 \alias{is_date}
-\title{Determine whether a vector is date data}
+\title{Check if a Vector Contains Date-like Values}
 \usage{
-is_date(x)
+is_date(x, dssat_fmt = FALSE, n_check = 5, threshold = 0.8)
 }
 \arguments{
-\item{x}{a vector}
+\item{x}{A vector to check for date-like values. Can be character, factor, Date, POSIXct, POSIXlt, or integer (for DSSAT format).}
+
+\item{dssat_fmt}{Logical. If TRUE, treats integer values of length 5 as DSSAT date format (YYDDD) and converts them to standard date strings. Default is FALSE.}
+
+\item{n_check}{Integer. Number of non-missing, non-empty values to check for date-likeness. Default is 5.}
+
+\item{threshold}{Numeric. Proportion (between 0 and 1) of successfully parsed dates (among checked values) required to return TRUE. Default is 0.8.}
 }
 \value{
-a logical value indicating whether x is a date or not
+Logical. TRUE if the input vector is likely to contain date-like values, FALSE otherwise.
 }
 \description{
-Determine whether a vector is date data
+Determines whether the input vector contains values that can be interpreted as dates or datetimes, using a variety of common date formats and heuristics. Optionally, supports DSSAT-specific date format conversion.
+}
+\details{
+The function first optionally converts DSSAT-format integers (YYDDD) to standard date strings if \code{dssat_fmt} is TRUE. It then checks if the input is of a type that could represent dates (character, factor, Date, POSIXct, POSIXlt). It removes missing and empty values, and requires at least one value to contain a date-like separator ("-", "/", or "T").
+
+The function attempts to parse up to \code{n_check} values using a set of common date and datetime formats (including ISO 8601, US, European, and compact forms). If at least \code{threshold} proportion of the checked values are successfully parsed as dates, the function returns TRUE; otherwise, it returns FALSE.
+}
+\examples{
+is_date(c("2023-01-01", "2023-02-15")) # TRUE
+is_date(c("01/31/2023", "02/15/2023")) # TRUE (US format)
+is_date(c("31/01/2023", "15/02/2023")) # TRUE (European format)
+is_date(c("not a date", "2023-01-01")) # TRUE (1/2 is a date)
+is_date(c("not a date", "still not a date")) # FALSE
+is_date(23001L, dssat_fmt = TRUE) # TRUE (DSSAT format)
+is_date(12345L) # FALSE (not DSSAT format)
+
 }

@@ -2,10 +2,31 @@
 % Please edit documentation in R/format_dssat.R
 \name{write_dssat}
 \alias{write_dssat}
-\title{TODO: Needs documentation!}
+\title{Write DSSAT Input Files from a List of Data Frames}
 \usage{
-write_dssat(ls, path = getwd())
+write_dssat(ls, sol_append = TRUE, path = getwd())
+}
+\arguments{
+\item{ls}{A named list of formatted DSSAT data frames, each with a \code{file_name} attribute (e.g., as produced by \code{build_sol}, \code{build_wth}, etc.).}
+
+\item{sol_append}{Logical. Whether to append to the soil file (\code{write_sol}). Default is \code{TRUE}.}
+
+\item{path}{Character. Directory path to write files to. Default is the current working directory.}
+}
+\value{
+Invisibly returns \code{NULL}. Used for its side effect of writing files.
 }
 \description{
-TODO: Needs documentation!
+Writes DSSAT input files (X, A, T, SOL, WTH) from a list of formatted data frames, using appropriate write functions and file names.
+}
+\details{
+The function iterates over the expected DSSAT file types (X, A, T, SOL, WTH), and for each present in the list, writes the file using the corresponding write function. The soil file (\code{filesol}) is written with the \code{append} argument as specified. If a required file is missing, a warning is issued.
+
+This is useful for exporting a complete set of DSSAT input files from a processed dataset.
+}
+\examples{
+\dontrun{
+write_dssat(ls, sol_append = FALSE, path = \"./dssat_inputs\")
+}
+
 }

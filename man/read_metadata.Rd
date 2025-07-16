@@ -2,21 +2,50 @@
 % Please edit documentation in R/read_metadata.R
 \name{read_metadata}
 \alias{read_metadata}
-\title{Format metadata for use as input arguments in crop experiment data wrangling functions}
+\title{Read and format experiment metadata from an BonaRes repository metadata XML file}
 \usage{
-read_metadata(path, repo, sheet = NULL)
+read_metadata(path, repo = "bonares", sheet = NULL)
 }
 \arguments{
-\item{path}{a length 1 character vector containing the url to the metadata file}
+\item{path}{Character. Path to the metadata XML file.}
 
-\item{repo}{a length 1 character containing the name or acronym of the data repository from which the metadata was downloaded}
+\item{repo}{Character. Name of the data repository (default: "bonares"). Currently not used in the function logic, but reserved for future extensions.}
 
-\item{sheet}{\subsection{}{
-}}
+\item{sheet}{Character or NULL. Optional sheet name for variable key extraction (not currently implemented).}
 }
 \value{
-a formatted metadata item (TODO: define standard schema) ####
+A tibble (one row) with the following columns:
+\describe{
+\item{METADATA.Experiment_name}{Experiment name(s) as a single string.}
+\item{METADATA.Experiment_title}{Experiment title(s) as a single string.}
+\item{METADATA.Experiment_doi}{Experiment DOI(s) as a single string.}
+\item{METADATA.Contact_persons}{Contact person(s), separated by "; ".}
+\item{METADATA.Institutions}{Institution(s), separated by "; ".}
+\item{METADATA.Contact_email}{Contact email(s), separated by "; ".}
+\item{METADATA.Legal_constraints}{Legal constraints, separated by "; ".}
+\item{METADATA.Funding}{Funding information, separated by "; ".}
+\item{METADATA.Date_published}{Earliest date found in the metadata (as.Date).}
+\item{METADATA.Date_revised}{Most recent date found in the metadata (as.Date).}
+\item{FIELDS.Coordinate_system}{Coordinate system as a string (e.g., "EPSG:4326 v8.9").}
+\item{FIELDS.Longitude}{Mean longitude (numeric) from west/east bounds.}
+\item{FIELDS.Latitude}{Mean latitude (numeric) from north/south bounds.}
+}
 }
 \description{
-Currently handles only old xml formats of the BonaRes repository (no longer available as of 10.01.2024)
+This function reads a metadata XML file based on the BonaRes metadata schema and extracts key fields for use as input arguments in crop experiment data wrangling functions.
+It parses spatial, temporal, provenance, contact, legal, and funding information, and returns a tidy one-row tibble suitable for downstream processing.
+}
+\details{
+The function is designed for BonaRes and similar metadata standards, but can be adapted for other ISO 19139-based schemas. It uses XPath queries to extract relevant fields and collapses multiple values with "; " where appropriate. Dates are parsed as \code{Date} objects and the earliest/latest are used for publication and revision, respectively.
+}
+\examples{
+\dontrun{
+# Read metadata from XML file
+meta <- read_metadata("path/to/metadata.xml")
+print(meta)
+}
+
+}
+\seealso{
+\code{\link[xml2:read_xml]{xml2::read_xml()}}, \code{\link[tibble:tibble]{tibble::tibble()}}
 }
