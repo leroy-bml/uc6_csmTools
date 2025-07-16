@@ -40,7 +40,7 @@ Imports:
     tibble,
     tidygeocoder,
     tidyr,
-    tidyselecct,
+    tidyselect,
     units,
     utils,
     xml2,
