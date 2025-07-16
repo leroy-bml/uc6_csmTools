@@ -26,9 +26,11 @@
 #' }
 #' 
 #' @importFrom magrittr %>%
-#' @importFrom dplyr mutate relocate right_join filter arrange select across everything
+#' @importFrom tidyselect everything
+#' @importFrom dplyr mutate relocate right_join filter arrange select across
 #' @importFrom tidyr gather
 #' @importFrom ggplot2 ggplot geom_point geom_line facet_wrap theme_minimal aes
+#' 
 #' @export
 
 # soiltest <- read_sol("C:/DSSAT48/SoilGrids/dataverse_files/SoilGrids-for-DSSAT-10km v1.0 (by country)/GE.SOL", id_soil = "GE02408882")

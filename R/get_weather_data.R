@@ -13,8 +13,9 @@
 #' @return a data frame containing information on weather stations that best  meet the specified location, date range,
 #' variables, and temporal resolution parameters
 #' 
+#' @importFrom magrittr %>%
 #' @importFrom rdwd nearbyStations selectDWD dataDWD metaInfo
-#' @importFrom dplyr "%>%" filter arrange distinct left_join mutate
+#' @importFrom dplyr filter arrange distinct left_join mutate
 #' @importFrom spsUtil quiet
 #' @importFrom OSMscale earthDist
 #' @importFrom lubridate as_date
@@ -87,8 +88,9 @@ nearbyStations_solar <- function(lat, lon, res, max_radius = 50){  ##inherit
 #' @return a data frame containing information on weather stations that best  meet the specified location, date range,
 #' variables, and temporal resolution parameters
 #' 
+#' @importFrom magrittr %>%
 #' @importFrom rdwd nearbyStations
-#' @importFrom dplyr "%>%" filter
+#' @importFrom dplyr filter
 #' 
 
 
@@ -167,8 +169,9 @@ find_stations <- function(lat, lon, min_date, params){
 #' 
 #' @return a list of named data frames, each containing weather data for one of the target variable(s)
 #' 
+#' @importFrom magrittr %>%
 #' @importFrom rdwd selectDWD dataDWD
-#' @importFrom dplyr "%>%" filter arrange
+#' @importFrom dplyr filter arrange
 #' @importFrom lubridate as_date year
 #' 
 
@@ -400,8 +403,10 @@ impute_weather <- function(df, na.rm = TRUE, rule = 2) {
 #' @return a list of dataframes containing daily weather for the requested location, years and variables
 #' Each data frame contains one full year of data.
 #' 
-#' @importFrom dplyr "%>%" distinct mutate select group_by summarise pull relocate
-#' @importFrom tidyr unnest drop_na all_of everything
+#' @importFrom magrittr %>%
+#' @importFrom tidyselect everything
+#' @importFrom dplyr distinct mutate select group_by summarise pull relocate
+#' @importFrom tidyr unnest drop_na all_of 
 #' @importFrom tibble rownames_to_column
 #' @importFrom purrr map2
 #' @importFrom lubridate month

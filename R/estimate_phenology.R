@@ -87,7 +87,7 @@ estimate_phenology <- function(dataset, data_model = "dssat", method = "crop par
       message("Anthesis date retrieved from time-series data (Zadoks scale)")
     }
 
-    # Maturity: Zadok's stage 95 (!!CHECK)
+    # Maturity: Zadok's stage 95 (TOCHECK)
     if (length(mDate) == 0) {
       # Anthesis: Zadok's stage 65
       mDate <- ttables[which.min(abs(ttables$DCCD - 95)), "DATE"]
@@ -241,7 +241,7 @@ estimate_phenology <- function(dataset, data_model = "dssat", method = "crop par
           # If both planting and harvest date is not provided, estimate both with crop calendar
           
           calendar <- calcCropCalendars(lon = lon, lat = lat, mclimate = mclim, crop = crop)
-          warning("Crop calendars were used to estimate planting date, as it is missing from the data.", call. = FALSE) ##!!
+          warning("Crop calendars were used to estimate planting date, as it is missing from the data.", call. = FALSE) ##CHECK
           
           # Extract maturity date based on whether crop was irrigated
           pdoy <- ifelse(irrigated,

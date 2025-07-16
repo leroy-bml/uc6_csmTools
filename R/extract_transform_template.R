@@ -338,7 +338,8 @@ desc_to_codes <- function(df, codes) {
 #' }
 #'
 #' @importFrom magrittr %>%
-#' @importFrom dplyr mutate across everything where
+#' @importFrom tidyselect everything
+#' @importFrom dplyr mutate across where
 #' 
 
 format_treatment_str <- function(ls){
@@ -533,7 +534,8 @@ format_events <- function(ls, type, head_key, applied_key, applics_key) {
 #' # Returns a data frame with one row per id, and value1/value2 as comma-separated strings
 #'
 #' @importFrom magrittr %>%
-#' @importFrom dplyr across everything n_distinct select_if group_by summarise all_of
+#' @importFrom tidyselect everything
+#' @importFrom dplyr across n_distinct select_if group_by summarise all_of
 #' 
 
 # TODO: add_property_mapping <- function(name, unit, icasa = list(), agg_funs = list())

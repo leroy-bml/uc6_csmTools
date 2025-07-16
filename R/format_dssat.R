@@ -65,7 +65,7 @@ reset_id <- function(df, id_col) {
 split_by_year <- function(ls) {
 
   # Drop metadata common to all years
-  ls_ipt <- ls[!names(ls) %in% c("GENERAL", "FIELDS", "SOIL_Header", "SOIL_Layers")]  #!!
+  ls_ipt <- ls[!names(ls) %in% c("GENERAL", "FIELDS", "SOIL_Header", "SOIL_Layers")]  #CHECK
   
   # Split data by year
   ls_yr <- lapply(ls_ipt, function(df) split(df, f = df[["Year"]]))
@@ -102,7 +102,7 @@ split_by_year <- function(ls) {
     ls_mngt <- ls[names(ls) %in% filex_sections]
     ls_rest <- ls[!names(ls) %in% filex_sections]
     
-    # Reset management IDs in treatment matrix #!! CHECK!!! FERTILIZER
+    # Reset management IDs in treatment matrix #CHECK: FERTILIZER
     for (i in colnames(ls_mngt[["TREATMENTS"]])) {
       if (i %in% filex_trt_ids) {
         ls_mngt[["TREATMENTS"]] <- reset_id(ls_mngt[["TREATMENTS"]], i)
@@ -231,7 +231,7 @@ format_table <- function(df, template) {
 build_filex <- function(ls, title = NULL, site_code = NA_character_) {
 
   filex <- ls[["MANAGEMENT"]]
-  metadata <- attributes(filex)  #!! check for integration
+  metadata <- attributes(filex)  #CHECK for integration
   
   # Apply the template format to each section
   sec_nms <- sort(names(filex))

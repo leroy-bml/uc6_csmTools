@@ -13,7 +13,7 @@
 #' 
 #' @return the input database tagged as "management", "observed" or "other" data category (as attr(., "category"))
 #' 
-#' @importFrom magritte %>%
+#' @importFrom magrittr %>%
 #' @importFrom dplyr group_by_at summarise n_distinct across mutate ungroup select pull left_join
 #' @importFrom tidyr all_of
 #' @importFrom tibble as_tibble

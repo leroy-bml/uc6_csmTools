@@ -329,7 +329,7 @@ locate_sta_datastreams <- function(url, token = NULL, var = c("air_temperature",
                  longitude = as.numeric(ds$observedArea$coordinates[1]),
                  latitude = as.numeric(ds$observedArea$coordinates[2]),
                  phenomenonTime = ds$phenomenonTime) %>%
-            separate(phenomenonTime, into = c("start_date","end_date"), sep = "/") %>%
+            tidyr::separate(phenomenonTime, into = c("start_date","end_date"), sep = "/") %>%
             mutate(across(start_date:end_date, ~ as.Date(.x)))
         })
       )
@@ -438,6 +438,7 @@ get_all_obs <- function(url, token) {
 #' }
 #'
 #' @importFrom magrittr %>%
+#' @importFrom rlang !! :=
 #' @importFrom dplyr mutate select
 #' @importFrom lubridate ymd_hms
 #' 

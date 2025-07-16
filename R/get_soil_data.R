@@ -99,8 +99,10 @@ get_soilGrids_dataverse <- function(dir = tempdir()) {
 #' str(soil_profile)
 #' }
 #'
+#' @importFrom magrittr %>%
 #' @importFrom tidygeocoder reverse_geocode
-#' @importFrom dplyr mutate filter row_number select pull everything distinct
+#' @importFrom tidyselect everything
+#' @importFrom dplyr mutate filter row_number select pull distinct
 #' @importFrom tidyr unnest
 #' @importFrom DSSAT as_DSSAT_tbl
 #'

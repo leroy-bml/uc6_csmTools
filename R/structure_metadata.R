@@ -62,10 +62,11 @@ isValidCode <- function(x,
 #' @importFrom countrycode countrycode
 #' @importFrom elevatr get_elev_point
 #'
-#' @export  ##! keep or embed into the mapping wrapper?
+#' @export
 #'
 
 # TODO: include weather/soil data processing / naming checks
+# Keep as user function or embed into the mapping wrapper?
 structure_metadata <- function(dataset, data_model = c("icasa", "dssat")) {
   
   if (data_model == "icasa"){

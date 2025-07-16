@@ -107,9 +107,10 @@ melt_dataset <- function(db, drop_keys = FALSE, exclude_tbls = NULL, exclude_col
 #' @return a list containing the reshaped crop experiment data
 #' 
 #' @importFrom magrittr %>%
+#' @importFrom tidyselect everything
 #' @importFrom lubridate as_date parse_date_time
 #' @importFrom dplyr select group_by group_by_at ungroup mutate relocate distinct left_join arrange across cur_group_id
-#' @importFrom tidyr any_of all_of everything ends_with
+#' @importFrom tidyr any_of all_of ends_with
 #' @importFrom rlang !! :=
 #' @importFrom countrycode countrycode
 #'
@@ -305,7 +306,7 @@ reshape_exp_data <- function(db, metadata, mother_tbl_name) {
   #   Reduce(function(x, y)
   #     merge(x, y, by = intersect(names(x), names(y)), all.x = TRUE),
   #     MNGT_ids, init = DESIGN_str) %>%
-  #   select(-Rep_no) %>%  ##!! see if necessary
+  #   select(-Rep_no) %>%  #CHECK: see if necesary
   #   distinct() %>%
   #   # Append FIELDS ids
   #   left_join(FIELDS_tbl %>%
