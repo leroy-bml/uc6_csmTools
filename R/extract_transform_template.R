@@ -134,7 +134,16 @@ get_template_codes <- function(wb){
 #' @export
 #' 
 
-extract_template <- function(path, exp_id = NA_character_, headers = c("short", "long")){
+extract_template <- function(path = NULL, exp_id = NA_character_, headers = c("short", "long")){
+  
+  # Fetch template
+  if (is.null(path)) {
+    tpl <- fetch_template()
+    if (tpl$created) {
+      stop("Newly crearted template contains no data! Please fill it in and rerun.")
+    }
+    path <- tpl$path
+  }
   
   # Load workbook and set name criterion for sheets to be loaded (capitalized sheet names)
   wb <- suppressWarnings(wb_load(path))
