@@ -20,12 +20,12 @@ Depends:
     R (>= 3.5.0)
 Imports:
     DSSAT,
-    OSMscale,
     countrycode,
     cropCalendars,
     dataverse,
     dplyr,
     elevatr,
+	geosphere,
     ggplot2,
     glue,
     jsonlite,
@@ -46,10 +46,10 @@ Imports:
     xml2,
     zip,
     zoo
-Remotes:    
+Remotes: 
     AgMIP-GGCMI/cropCalendars,
     brry/rdwd,
-    palderman/DSSAT@v0.0.8
+    leroy-bml/DSSAT
 Suggests: 
     testthat (>= 3.0.0)
 Roxygen: list(markdown = TRUE)
