@@ -143,6 +143,13 @@ extract_template <- function(path = NULL, exp_id = NA_character_, headers = c("s
       stop("Newly crearted template contains no data! Please fill it in and rerun.")
     }
     path <- tpl$path
+  } else {
+    user_template <- file.path(Sys.getenv("HOME"), ".csmTools/template_icasa_vba.xlsm")
+    warning(
+      "You have supplied a custom template file path. ",
+      "Be aware that this file will not be updated automatically with package updates. ",
+      "For the latest supported version, use the default user template at: ", user_template 
+    )
   }
   
   # Load workbook and set name criterion for sheets to be loaded (capitalized sheet names)
