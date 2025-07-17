@@ -44,9 +44,9 @@ vignettes/*.pdf
 # pkgdown site
 docs/
 
-# archived and temp devscripts
+# archived and dev scripts
 /archive/
-inst/dev_utils
+/dev/
 
 # test data
 inst/extdata/test_data/
