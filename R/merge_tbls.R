@@ -1,3 +1,19 @@
+#' Normalize a character vector by trimming whitespace
+#'
+#' Converts input to character and removes leading and trailing whitespace.
+#'
+#' @param x A vector to normalize.
+#' 
+#' @return A character vector with whitespace trimmed.
+#' 
+#' @examples
+#' normalize("  hello world  ")
+#' normalize(c("  a", "b  ", "  c  "))
+#' 
+
+normalize <- function(x) trimws(as.character(x))
+
+
 #' Test if Two Vectors are Identical (with NA Handling and Normalization)
 #'
 #' Compares two vectors to determine if they are identical, allowing for NA values and normalizing by trimming whitespace and coercing to character.
@@ -30,10 +46,7 @@ are_identical_cols <- function(a, b) {
   if (length(a) != length(b)) return(FALSE)
   # Return TRUE if both vectors are entirely NA
   if (all(is.na(a)) && all(is.na(b))) return(TRUE)
-  
-  # Helper: trim whitespace and coerce to character
-  normalize <- function(x) trimws(as.character(x))
-  
+
   a <- normalize(a)
   b <- normalize(b)
   # Compare elements, treating NA in the same position as equal
