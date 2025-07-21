@@ -247,18 +247,19 @@ check_consecutive_treatment_blocks <- function(df, col_name, plot_col, year_col,
 #' Determines whether a column in a data frame is "treatment-like" based on two criteria:
 #' \enumerate{
 #'   \item For each year, the column must have at least two unique non-NA values and at least one value must be reused across plots (i.e., not all values are unique within a year).
-#'   \item Plot-to-treatment associations must be consistent within blocks of consecutive years, as determined by \code{\link{check_consecutive_treatment_blocks}}.
+#'   \item plot-column associations must be consistent within blocks of consecutive years, as determined by \code{\link{check_consecutive_treatment_blocks}}.
 #' }
 #'
 #' @param df A data frame containing the data to be checked.
-#' @param col_name The name of the treatment column (as a string).
+#' @param col_name The name of the focal column (as a string).
 #' @param plot_col The name of the plot column (as a string).
 #' @param year_col The name of the year column (as a string).
 #'
 #' @return Logical. \code{TRUE} if the column is treatment-like, \code{FALSE} otherwise.
 #'
 #' @details
-#' The function first checks that, for each year, the treatment column has at least two unique non-NA values and that at least one value is reused across plots. It then checks that plot-to-treatment associations are consistent within blocks of consecutive years using \code{\link{check_consecutive_treatment_blocks}}.
+#' The function first checks that, for each year, the focal column has at least two unique non-NA values and that at least one value is reused across plots.
+#' It then checks that plot-column associations are consistent within blocks of consecutive years using \code{\link{check_consecutive_treatment_blocks}}.
 #'
 #' @seealso \code{\link{check_consecutive_treatment_blocks}}
 #'
@@ -274,6 +275,7 @@ check_consecutive_treatment_blocks <- function(df, col_name, plot_col, year_col,
 #' @export
 
 is_treatment_like <- function(df, col_name, plot_col, year_col) {
+
   years <- unique(df[[year_col]])
   
   # Criterion #1: Treatment must have ≥2 unique non-NA values per year and be reused across plots
@@ -287,6 +289,72 @@ is_treatment_like <- function(df, col_name, plot_col, year_col) {
   # Criteria #2: Plot → treatment must be consistent across years
   # (allowing distinct blocks of consecutive years)
   is_conserved <- check_consecutive_treatment_blocks(df, col_name, plot_col, year_col)
+  
+  return(is_conserved)
+}
+
+
+#' Check if a Column is Crop-Like
+#'
+#' Determines whether a column in a data frame is "crop-like" based on two criteria:
+#' \enumerate{
+#'   \item For each year, the column must have at least two unique non-NA values and at least one value must be reused across plots (i.e., not all values are unique within a year).
+#'   \item plot-column associations must change within blocks of consecutive years (crop rotation), as determined by \code{\link{check_consecutive_treatment_blocks}}.
+#' }
+#'
+#' @param df A data frame containing the data to be checked.
+#' @param col_name The name of the focal column (as a string).
+#' @param plot_col The name of the plot column (as a string).
+#' @param year_col The name of the year column (as a string).
+#'
+#' @return Logical. \code{TRUE} if the column is crop-like, \code{FALSE} otherwise.
+#'
+#' @details
+#' The function first checks that, for each year, the focal column has at least two unique non-NA values and that at least one value is reused across plots.
+#' It then checks that plot-column associations change between consecutive years using \code{\link{check_consecutive_treatment_blocks}}.
+#'
+#' @seealso \code{\link{check_consecutive_treatment_blocks}}
+#'
+#' @examples
+#' # Example usage:
+#' # df <- data.frame(
+#' #   Plot = c(1,1,2,2,1,1,2,2),
+#' #   Year = c(2000,2001,2000,2001,2003,2004,2003,2004),
+#' #   Treatment = c('A','B','B','C','C','D','D','A')
+#' # )
+#' # is_crop_like(df, col_name = "Treatment", plot_col = "Plot", year_col = "Year")
+#'
+#' @export
+
+is_crop_like <- function(df, col_name, plot_col, year_col) {
+
+  plots <- unique(df[[plot_col]][!is.na(df[[col_name]])])
+  years <- unique(df[[year_col]][!is.na(df[[col_name]])])  # drop NAs to account for potential "pause" years
+  
+  # Criterion #1: Crops must have ≥2 unique non-NA values per plot across years
+  per_plot_check <- all(sapply(plots, function(plt) { ##yr plt
+    subset <- df[df[[plot_col]] == plt, ]
+    vals <- unique(na.omit(subset[[col_name]]))
+    length(vals) >= 2
+  }))
+  if (!per_plot_check) return(FALSE)
+  
+  # Criterion #2: Crops must be used in multiple plots within years
+  per_year_check <- all(sapply(years, function(yr) {
+    subset <- df[df[[year_col]] == yr, ]
+    # For each crop in this year, how many plots is it in?
+    crops <- unique(na.omit(subset[[col_name]]))
+    any(sapply(crops, function(crp) {
+      sum(subset[[col_name]] == crp, na.rm = TRUE) >= 2
+    }))
+  }))
+  if (!per_year_check) return(FALSE)
+  
+  # Criterion #2: Plot-value association must differ between consecutive years
+  # (rotation: no crop used in consecutive year)
+  is_conserved <- check_consecutive_treatment_blocks(df, col_name, plot_col, year_col)
+  
+  return(!is_conserved)
 }
 
 
@@ -316,6 +384,36 @@ is_treatment_like <- function(df, col_name, plot_col, year_col) {
 find_treatment_col <- function(df, plot_col, year_col) {
   candidate_cols <- setdiff(names(df), c(plot_col, year_col))
   Filter(function(col) is_treatment_like(df, col, plot_col, year_col), candidate_cols)
+}
+
+
+#' Find crop-Like Columns in a Data Frame
+#'
+#' Identifies columns in a data frame that are "crop-like" according to the \code{\link{is_crop_like}} function.
+#' A crop-like column is one that has at least two unique non-NA values per year, at least one value reused across plots within a year, and changing plot-column associations in consecutive years.
+#'
+#' @param df A data frame to search for crop-like columns.
+#' @param plot_col The name of the plot column (as a string).
+#' @param year_col The name of the year column (as a string).
+#'
+#' @return A character vector of column names in \code{df} that are crop-like.
+#'
+#' @seealso \code{\link{is_crop_like}}
+#'
+#' @examples
+#' # Example usage (assuming is_crop_like and check_consecutive_crop_blocks are defined):
+#' # df <- data.frame(
+#' #   Plot = c(1,1,2,2,1,1,2,2),
+#' #   Year = c(2000,2001,2000,2001,2003,2004,2003,2004),
+#' #   crop = c('A','B','B','C','C','D','C','D')
+#' # )
+#' # find_crop_col(df, plot_col = "Plot", year_col = "Year")
+#'
+
+find_crop_col <- function(df, plot_col, year_col) {
+
+  candidate_cols <- setdiff(names(df), c(plot_col, year_col))
+  Filter(function(col) is_crop_like(df, col, plot_col, year_col), candidate_cols)
 }
 
 
@@ -460,7 +558,7 @@ identify_exp_design <- function(db, design_tbl) {
   plot_tbl_nm <- get_df_name(db, plot_tbl)
   cat("\033[31m>> PLOTS - Table \"", plot_tbl_nm, "\"; ID: \"", plot_nm, "\"; n = ", plot_n_disp, "\033[0m\n", sep = "")
   print(as_tibble(plot_tbl))
-  
+
   #--- Treatment attribute
   treat_nm <- find_treatment_col(design_tbl, plot_col = plot_nm, year_col = year_nm)
   treat_n <- count_per_year(treat_nm, design_tbl, year_nm)
@@ -471,12 +569,27 @@ identify_exp_design <- function(db, design_tbl) {
   cat("\033[31m>> TREATMENTS - Table \"", treat_tbl_nm, "\"; ID: \"", treat_nm, "\"; n = ", treat_n_disp, "\033[0m\n", sep = "")
   print(as_tibble(treat_tbl))
   
+  #--- Crop attribute
+  crop_nm <- find_crop_col(design_tbl, plot_col = plot_nm, year_col = year_nm)
+  # HACK: deal with instance where crop and cultivar are both in design table 
+  # crop_nm returns > 1 chr
+  if (length(crop_nm) > 1) {
+    crop_nm <- crop_nm[1]
+  }
+  crop_n <- count_per_year(crop_nm, design_tbl, year_nm)
+  crop_ranges <- get_value_ranges(crop_n)
+  crop_n_disp <- paste0(names(crop_ranges), " [", crop_ranges, "]", collapse = ", ")
+  crop_tbl <- get_tbl(db, crop_nm)
+  crop_tbl_nm <- get_df_name(db, crop_tbl)
+  cat("\033[31m>> CROPS - Table \"", crop_tbl_nm, "\"; ID: \"", crop_nm, "\"; n = ", crop_n_disp, "\033[0m\n", sep = "")
+  print(as_tibble(crop_tbl))
+  
   #--- Output summary
   out <- data.frame(
-    comp = c("year", "plot", "treatment"),
-    tbl_name = c(NA_character_, plot_tbl_nm, treat_tbl_nm),
-    id_name = c(year_nm, plot_nm, treat_nm),
-    n = c(year_n, plot_n_disp, treat_n_disp),
+    comp = c("year", "plot", "treatment", "crop"),
+    tbl_name = c(NA_character_, plot_tbl_nm, treat_tbl_nm, crop_tbl_nm),
+    id_name = c(year_nm, plot_nm, treat_nm, crop_nm),
+    n = c(year_n, plot_n_disp, treat_n_disp,crop_n_disp),
     stringsAsFactors = FALSE
   )
   invisible(out)
