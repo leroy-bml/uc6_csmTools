@@ -510,25 +510,25 @@ identify_exp_design <- function(db, design_tbl) {
 
   # Helper: summarize value ranges for a named vector
   get_value_ranges <- function(x) {
-    years <- names(x)
+
+    years <- as.integer(names(x))
     vals <- as.vector(x)
-    unique_vals <- unique(vals)
-    result <- setNames(vector("character", length(unique_vals)), unique_vals)
-    
-    for (val in unique_vals) {
-      idx <- which(vals == val)
-      # Find runs
-      runs <- split(idx, cumsum(c(1, diff(idx) != 1)))
-      ranges <- sapply(runs, function(run_idx) {
-        yrs <- years[run_idx]
-        if (length(yrs) == 1) {
-          yrs
-        } else {
-          paste0(yrs[1], "-", yrs[length(yrs)])
-        }
-      })
-      result[as.character(val)] <- paste(ranges, collapse = "; ")
-    }
+    # Order by year
+    ord <- order(years)
+    years <- years[ord]
+    vals <- vals[ord]
+
+    # Find runs of consecutive years with the same value
+    runs <- split(seq_along(vals), cumsum(c(TRUE, vals[-1] != vals[-length(vals)] | years[-1] != years[-length(years)] + 1)))
+    result <- sapply(runs, function(idx) {
+      val <- vals[idx[1]]
+      yrs <- years[idx]
+      if (length(yrs) == 1) {
+        paste0(val, " [", yrs, "]")
+      } else {
+        paste0(val, " [", yrs[1], "-", yrs[length(yrs)], "]")
+      }
+    })
     result
   }
   
@@ -553,20 +553,20 @@ identify_exp_design <- function(db, design_tbl) {
   plot_nm <- find_plot_col(design_tbl, year_col_name = year_nm)
   plot_n <- count_per_year(plot_nm, design_tbl, year_nm)
   plot_ranges <- get_value_ranges(plot_n)
-  plot_n_disp <- paste0(names(plot_ranges), " [", plot_ranges, "]", collapse = ", ")
+  plot_ranges <- paste(plot_ranges, collapse = ", ")
   plot_tbl <- get_tbl(db, plot_nm)
   plot_tbl_nm <- get_df_name(db, plot_tbl)
-  cat("\033[31m>> PLOTS - Table \"", plot_tbl_nm, "\"; ID: \"", plot_nm, "\"; n = ", plot_n_disp, "\033[0m\n", sep = "")
+  cat("\033[31m>> PLOTS - Table \"", plot_tbl_nm, "\"; ID: \"", plot_nm, "\"; n = ", plot_ranges, "\033[0m\n", sep = "")
   print(as_tibble(plot_tbl))
 
   #--- Treatment attribute
   treat_nm <- find_treatment_col(design_tbl, plot_col = plot_nm, year_col = year_nm)
   treat_n <- count_per_year(treat_nm, design_tbl, year_nm)
   treat_ranges <- get_value_ranges(treat_n)
-  treat_n_disp <- paste0(names(treat_ranges), " [", treat_ranges, "]", collapse = ", ")
+  treat_ranges <- paste(treat_ranges, collapse = ", ")
   treat_tbl <- get_tbl(db, treat_nm)
   treat_tbl_nm <- get_df_name(db, treat_tbl)
-  cat("\033[31m>> TREATMENTS - Table \"", treat_tbl_nm, "\"; ID: \"", treat_nm, "\"; n = ", treat_n_disp, "\033[0m\n", sep = "")
+  cat("\033[31m>> TREATMENTS - Table \"", treat_tbl_nm, "\"; ID: \"", treat_nm, "\"; n = ", treat_ranges, "\033[0m\n", sep = "")
   print(as_tibble(treat_tbl))
   
   #--- Crop attribute
@@ -578,10 +578,10 @@ identify_exp_design <- function(db, design_tbl) {
   }
   crop_n <- count_per_year(crop_nm, design_tbl, year_nm)
   crop_ranges <- get_value_ranges(crop_n)
-  crop_n_disp <- paste0(names(crop_ranges), " [", crop_ranges, "]", collapse = ", ")
+  crop_ranges <- paste(crop_ranges, collapse = ", ")
   crop_tbl <- get_tbl(db, crop_nm)
   crop_tbl_nm <- get_df_name(db, crop_tbl)
-  cat("\033[31m>> CROPS - Table \"", crop_tbl_nm, "\"; ID: \"", crop_nm, "\"; n = ", crop_n_disp, "\033[0m\n", sep = "")
+  cat("\033[31m>> CROPS - Table \"", crop_tbl_nm, "\"; ID: \"", crop_nm, "\"; n = ", crop_ranges, "\033[0m\n", sep = "")
   print(as_tibble(crop_tbl))
   
   #--- Output summary
