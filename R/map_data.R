@@ -237,7 +237,7 @@ make_mapping <- function(path = NULL,
 #'     \item{target}{Standardized data values}
 #'   }
 #'
-#' @importFrom rlang eval_tidy parse_expr
+#' @importFrom rlang eval_tidy parse_exprs
 #' 
 
 make_code_lookup <- function(vec){
