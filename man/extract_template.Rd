@@ -4,7 +4,11 @@
 \alias{extract_template}
 \title{Extract and Process Data from a the ICASA Template Workbook}
 \usage{
-extract_template(path, exp_id = NA_character_, headers = c("short", "long"))
+extract_template(
+  path = NULL,
+  exp_id = NA_character_,
+  headers = c("short", "long")
+)
 }
 \arguments{
 \item{path}{Character. Path to the template Excel workbook.}
