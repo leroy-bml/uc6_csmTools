@@ -344,3 +344,17 @@ intersect_dfs <- function(list1, list2) {
   # Return the data frames from list1 that are in the intersection
   list1[which(str1 %in% common_strs)]
 }
+
+
+#' Remove columns containing only NAs from a data frame
+#'
+#' @param df A data frame.
+#' @return A data frame with columns containing only NAs removed.
+#' @examples
+#' df <- data.frame(a = c(NA, NA), b = c(1, NA), c = c(NA, NA))
+#' remove_all_na_columns(df)
+#' 
+
+remove_all_na_cols <- function(df) {
+  df[, colSums(!is.na(df)) > 0, drop = FALSE]
+}
