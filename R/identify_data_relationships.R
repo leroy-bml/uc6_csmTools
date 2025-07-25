@@ -30,13 +30,20 @@ is_unique_id <- function(df, col_name, type = c("int","all")) {
 #' @export
 #'
 
-get_pkeys <- function(df, alternates = FALSE){
+get_pkeys <- function(df, alternates = FALSE, ignore_na = FALSE) {
   
   is_unique <- sapply(names(df), function(col_name) { 
-    is_unique_id(df, col_name, type = "all")
+    col <- df[[col_name]]
+    if (ignore_na) {
+      col <- col[!is.na(col)]
+      # Check if all values are unique among non-NAs
+      length(unique(col)) == length(col)
+    } else {
+      nrow(df) == length(unique(col))
+    }
   })
   
-  is_pk <- is_unique[is_unique == TRUE]
+  is_pk <- is_unique[is_unique]
   
   if(alternates == FALSE && length(is_pk) > 1){ 
     pk <- names(is_pk)[1]
