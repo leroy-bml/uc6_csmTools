@@ -129,19 +129,19 @@ get_dataset_varkeys <- function(mother_path, schema = "bonares") {
 #'
 #' @return A tibble (one row) with the following columns:
 #' \describe{
-#'   \item{METADATA.Experiment_name}{Experiment name(s) as a single string.}
-#'   \item{METADATA.Experiment_title}{Experiment title(s) as a single string.}
-#'   \item{METADATA.Experiment_doi}{Experiment DOI(s) as a single string.}
-#'   \item{METADATA.Contact_persons}{Contact person(s), separated by "; ".}
-#'   \item{METADATA.Institutions}{Institution(s), separated by "; ".}
-#'   \item{METADATA.Contact_email}{Contact email(s), separated by "; ".}
-#'   \item{METADATA.Legal_constraints}{Legal constraints, separated by "; ".}
-#'   \item{METADATA.Funding}{Funding information, separated by "; ".}
-#'   \item{METADATA.Date_published}{Earliest date found in the metadata (as.Date).}
-#'   \item{METADATA.Date_revised}{Most recent date found in the metadata (as.Date).}
-#'   \item{FIELDS.Coordinate_system}{Coordinate system as a string (e.g., "EPSG:4326 v8.9").}
-#'   \item{FIELDS.Longitude}{Mean longitude (numeric) from west/east bounds.}
-#'   \item{FIELDS.Latitude}{Mean latitude (numeric) from north/south bounds.}
+#'   \item{Experiment_name}{Experiment name(s) as a single string.}
+#'   \item{Experiment_title}{Experiment title(s) as a single string.}
+#'   \item{Experiment_doi}{Experiment DOI(s) as a single string.}
+#'   \item{Contact_persons}{Contact person(s), separated by "; ".}
+#'   \item{Institutions}{Institution(s), separated by "; ".}
+#'   \item{Contact_email}{Contact email(s), separated by "; ".}
+#'   \item{Legal_constraints}{Legal constraints, separated by "; ".}
+#'   \item{Funding}{Funding information, separated by "; ".}
+#'   \item{Date_published}{Earliest date found in the metadata (as.Date).}
+#'   \item{Date_revised}{Most recent date found in the metadata (as.Date).}
+#'   \item{Coordinate_system}{Coordinate system as a string (e.g., "EPSG:4326 v8.9").}
+#'   \item{Longitude}{Mean longitude (numeric) from west/east bounds.}
+#'   \item{Latitude}{Mean latitude (numeric) from north/south bounds.}
 #' }
 #'
 #' @details
@@ -152,7 +152,7 @@ get_dataset_varkeys <- function(mother_path, schema = "bonares") {
 #' @examples
 #' \dontrun{
 #' # Read metadata from XML file
-#' meta <- read_metadata("path/to/metadata.xml")
+#' meta <- read_metadata("path/to/xml")
 #' print(meta)
 #' }
 #'
@@ -240,19 +240,19 @@ read_metadata <- function(mother_path, schema = "bonares") {
   
   ##---- Output ----
   exp_metadata <- tibble(
-    METADATA.Experiment_name   = exp_name,
-    METADATA.Experiment_title  = exp_title,
-    METADATA.Experiment_doi    = exp_doi,
-    METADATA.Contact_persons   = persons,
-    METADATA.Institutions      = institutions,
-    METADATA.Contact_email     = emails,
-    METADATA.Legal_constraints = legalConstraints,
-    METADATA.Funding           = funding,
-    METADATA.Date_published    = date_published,
-    METADATA.Date_revised      = date_revised,
-    FIELDS.Coordinate_system   = coord_system,
-    FIELDS.Longitude           = mean(c(west_bound, east_bound), na.rm = TRUE),
-    FIELDS.Latitude            = mean(c(north_bound, south_bound), na.rm = TRUE)
+    Experiment_name   = exp_name,
+    Experiment_title  = exp_title,
+    Experiment_doi    = exp_doi,
+    Contact_persons   = persons,
+    Institutions      = institutions,
+    Contact_email     = emails,
+    Legal_constraints = legalConstraints,
+    Funding           = funding,
+    Date_published    = date_published,
+    Date_revised      = date_revised,
+    Coordinate_system   = coord_system,
+    Longitude           = mean(c(west_bound, east_bound), na.rm = TRUE),
+    Latitude            = mean(c(north_bound, south_bound), na.rm = TRUE)
   )
   
   list(
