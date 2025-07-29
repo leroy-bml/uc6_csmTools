@@ -1,11 +1,131 @@
-#' Read and format experiment metadata from an BonaRes repository metadata XML file
+#' Extract Leaf Table Identifiers from Dataset Metadata
+#'
+#' @importFrom xml2 read_xml xml_ns xml_find_all xml_find_first xml_text
+#' @importFrom dplyr bind_rows
+#' @importFrom purrr map
+#'
+#' @param mother_path Character. The path or URL to the main dataset metadata XML file.
+#' @param schema Character. The database schema to use for extraction. Default is 'bonares'.
+#'
+#' @return A data frame (tibble) with columns: \code{identifier}, \code{tbl_name}, and \code{foreign_key}, one row per linked table.
+#'
+#' @importFrom xml2 read_xml xml_ns xml_find_all xml_text xml_find_first
+#' @importFrom purrr map
+#' @importFrom dplyr bind_rows
+#' 
+#' @export
+
+get_leaf_ids <- function(mother_path, schema = "bonares") {
+  
+  metadata <- xml2::read_xml(mother_path)
+  ns <- xml2::xml_ns(metadata)  # Namespace mapping
+  
+  # Find all variable nodes linked to mother table's foreign keys
+  var_nodes <- xml2::xml_find_all(metadata, "//bnr:MD_ForeignKey")
+  
+  leaves <- map(var_nodes, function(x) {
+    id <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:identifier"))
+    tbl_name <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:table"))
+    fkey <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:column"))
+    # Group into a list
+    list(identifier = id, tbl_name = tbl_name, foreign_key = fkey)
+  })
+  bind_rows(leaves)
+}
+
+#' Extract Variable Key Metadata from Table XML
+#'
+#' Parses a table metadata XML file to extract variable (column) information, including names, descriptions, methods, units, data types, and missing value codes.
+#'
+#' @param path Character. The path or URL to the table metadata XML file.
+#' @param schema Character. The database schema to use for extraction. Default is 'bonares'.
+#'
+#' @return A data frame (tibble) with columns: \code{file_name}, \code{name}, \code{description}, \code{methods}, \code{unit}, \code{data_type}, and \code{missing_vals}, one row per variable.
+#'
+#' @details
+#' This function reads the provided XML file, finds all column nodes, and extracts relevant metadata for each variable. The result is a tidy data frame suitable for further processing or documentation.
+#'
+#' @importFrom xml2 read_xml xml_ns xml_find_all xml_find_first xml_text
+#' @importFrom purrr map
+#' @importFrom dplyr bind_rows
+#'
+#' @export
+
+get_varkey <- function(path, schema = "bonares") {
+  
+  metadata <- xml2::read_xml(path)
+  ns <- xml2::xml_ns(metadata)  # Namespace mapping
+  
+  # Find all nodes macthing table column descriptions
+  var_nodes <- xml2::xml_find_all(metadata, "//bnr:MD_Column")
+  # Extract the data for each variable as a named vector
+  vars <- map(var_nodes, function(x) {
+    file_name <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:tableName"))
+    name <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:name"))
+    descript <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:description"))
+    methods <- xml2::xml_text(xml2::xml_find_first(x, "//bnr:methods"))
+    unit <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:unit"))
+    data_type <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:dataType"))
+    nas <- xml2::xml_text(xml2::xml_find_first(x, "//bnr:missingValue"))
+    # Group into a list
+    list(file_name = file_name,
+         name = name,
+         description = descript,
+         methods = methods,
+         unit = unit,
+         data_type = data_type,
+         missing_vals = nas)
+  })
+  # Combine the list of named vectors into a data frame
+  key <- bind_rows(vars)
+  
+  return(key)
+}
+
+#' Retrieve and Process Variable Keys for Dataset Tables
+#'
+#' Retrieves variable key metadata for all tables associated with a given dataset path, processes the table names, and returns a combined data frame of variable keys.
+#'
+#' @param mother_path Character. The root URL or path to the main dataset metadata XML file.
+#' @param schema Character. The database schema to use for variable key extraction. Default is 'bonares'.
+#'
+#' @return A data frame containing processed variable key information for each table, including file names and simplified table names. Duplicate rows are removed.
+#'
+#' @details
+#' This function collects all table metadata XMLs linked to the provided `mother_path`, extracts their variable keys, and processes the table names by removing common prefixes, file extensions, and optional table numbers. The result is a data frame suitable for further data import or processing tasks.
+#'
+#' @export
+
+get_dataset_varkeys <- function(mother_path, schema = "bonares") {
+  
+  # Build URL for all table metadata xml
+  leaves <- get_leaf_ids(mother_path)
+  paths <- paste0("https://maps.bonares.de/finder/resources/dataform/xml/", leaves$identifier)
+  paths <- c(mother_path, paths)
+  
+  keys <- lapply(paths, function(id) get_varkey(path = id, schema = "bonares"))
+  names(keys) <- sapply(keys, function(df) as.character(df$file_name[1]))
+  keys <- do.call(rbind, keys)
+  
+  # Simplify table names
+  prefix <- find_common_prefix(keys$file_name)  # find common prefix
+  tbl_name <- sub(paste0("^", prefix), "", keys$file_name)  # drop common prefix
+  tbl_name <- sub("\\..*$", "", tbl_name)  # drop file extension
+  tbl_name <- sub("^\\d+_V\\d+_\\d+_", "", tbl_name)  # (optional) table number
+  file_name <- paste0(keys$file_name, ".csv")
+  
+  out <- cbind(file_name, tbl_name, keys[,2:ncol(keys)])
+  out[!duplicated(out),]
+}
+
+
+#' Read and format experiment metadata from the BonaRes repository metadata XML file
 #'
 #' This function reads a metadata XML file based on the BonaRes metadata schema and extracts key fields for use as input arguments in crop experiment data wrangling functions.
 #' It parses spatial, temporal, provenance, contact, legal, and funding information, and returns a tidy one-row tibble suitable for downstream processing.
 #'
 #' @param path Character. Path to the metadata XML file.
-#' @param repo Character. Name of the data repository (default: "bonares"). Currently not used in the function logic, but reserved for future extensions.
-#' @param sheet Character or NULL. Optional sheet name for variable key extraction (not currently implemented).
+#' @param schema Character. Name of the metadata schema (default: "bonares"). Currently not used in the function logic, but reserved for future extensions.
 #'
 #' @return A tibble (one row) with the following columns:
 #' \describe{
@@ -42,7 +162,7 @@
 #' @export
 #' 
 
-read_metadata <- function(path, repo = "bonares", sheet = NULL) {
+read_metadata <- function(mother_path, schema = "bonares") {
   
   # Helper to extract, filter, and collapse text
   extract_collapse <- function(doc, xpath, ns, collapse = "; ") {
@@ -56,16 +176,16 @@ read_metadata <- function(path, repo = "bonares", sheet = NULL) {
   }
   
   # Read metadata file
-  metadata <- xml2::read_xml(path)
+  metadata <- xml2::read_xml(mother_path)
   # Get namespace mapping
   ns <- xml2::xml_ns(metadata)
   
   
   ##---- Spatial coverage ----
   coord_system <- paste0(
-    extract_first(extent, ".//gmd:referenceSystemIdentifier/gmd:RS_Identifier/gmd:codeSpace/gco:CharacterString", ns), ":",
-    extract_first(extent, ".//gmd:referenceSystemIdentifier/gmd:RS_Identifier/gmd:code/gco:CharacterString", ns), " v",
-    extract_first(extent, ".//gmd:referenceSystemIdentifier/gmd:RS_Identifier/gmd:version/gco:CharacterString", ns)
+    extract_first(metadata, ".//gmd:referenceSystemIdentifier/gmd:RS_Identifier/gmd:codeSpace/gco:CharacterString", ns), ":",
+    extract_first(metadata, ".//gmd:referenceSystemIdentifier/gmd:RS_Identifier/gmd:code/gco:CharacterString", ns), " v",
+    extract_first(metadata, ".//gmd:referenceSystemIdentifier/gmd:RS_Identifier/gmd:version/gco:CharacterString", ns)
   )
   west_bound <- as.numeric(extract_first(metadata, ".//gmd:westBoundLongitude/gco:Decimal", ns))
   east_bound <- as.numeric(extract_first(metadata, ".//gmd:eastBoundLongitude/gco:Decimal", ns))
@@ -113,12 +233,13 @@ read_metadata <- function(path, repo = "bonares", sheet = NULL) {
   
   
   ##---- Variable key ----
-  # TODO: on pause
-  # var_key <- read_var_key(path, repo, sheet)
+  var_key <- as_tibble(
+    get_dataset_varkeys(mother_path, schema = "bonares")
+  )
   
   
   ##---- Output ----
-  tibble(
+  exp_metadata <- tibble(
     METADATA.Experiment_name   = exp_name,
     METADATA.Experiment_title  = exp_title,
     METADATA.Experiment_doi    = exp_doi,
@@ -133,85 +254,9 @@ read_metadata <- function(path, repo = "bonares", sheet = NULL) {
     FIELDS.Longitude           = mean(c(west_bound, east_bound), na.rm = TRUE),
     FIELDS.Latitude            = mean(c(north_bound, south_bound), na.rm = TRUE)
   )
+  
+  list(
+    metadata = exp_metadata,
+    variable_key = var_key
+  )
 }
-
-#' OUTDATE; To revise
-#' 
-#' 
-
-# TODO: revise var key; redefine objectives?
-#
-# read_var_key <- function(path, repo, sheet = NULL){
-#   
-#   # Read metadata file
-#   metadata <- xml2::read_xml(path)
-#   # Get namespace mapping
-#   ns <- xml2::xml_ns(metadata)
-#   
-#   # Extract variable key
-#   key <- switch(repo,
-#                 "bnr" = {
-#                   # Find all nodes that match a given XPath expression
-#                   var_nodes <- xml2::xml_find_all(metadata, "//bnr:MD_Column")
-#                   # Extract the data for each variable as a named vector
-#                   vars <- map(var_nodes, function(x) {
-#                     tbl_name <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:tableName"))
-#                     name <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:name"))
-#                     descript <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:description"))
-#                     methods <- xml2::xml_text(xml2::xml_find_first(x, "//bnr:methods"))
-#                     unit <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:unit"))
-#                     data_type <- xml2::xml_text(xml2::xml_find_first(x, ".//bnr:dataType"))
-#                     nas <- xml2::xml_text(xml2::xml_find_first(x, "//bnr:missingValue"))
-#                     # Group into a list
-#                     list(tbl_name = tbl_name, name = name, description = descript, methods = methods, unit = unit, 
-#                          data_type = data_type, missing_vals = nas)
-#                   })
-#                   # Combine the list of named vectors into a data frame
-#                   key <- bind_rows(vars)
-#                 },
-#                 "dwd" = {
-#                   # Find all nodes that match a given XPath expression
-#                   var_nodes <- xml2::xml_find_all(metadata, "//MetElement")
-#                   # Extract the data for each variable as a named vector
-#                   vars <- map(var_nodes, function(x) {
-#                     name <- xml2::xml_text(xml2::xml_find_first(x, ".//ShortName"))
-#                     unit <- xml2::xml_text(xml2::xml_find_first(x, ".//UnitOfMeasurement"))
-#                     descript <- xml2::xml_text(xml2::xml_find_first(x, ".//Description"))
-#                     # Group into a list
-#                     list(name = name, description = descript, unit = unit)
-#                   })
-#                   # Combine the list of named vectors into a data frame
-#                   key <- bind_rows(vars)
-#                 },
-#                 c("hdv","zdp","opa","sradi","odja") %in% {
-#                   # Determine file format
-#                   ext <- gsub("\\.", "", substr(metadata, nchar(metadata)-4+1, nchar(metadata)))
-#                   # Read key
-#                   switch(ext,
-#                          "txt" = {
-#                            key <- read.delim(metadata, header = TRUE, sep = "\t", fill = TRUE)
-#                          },
-#                          "csv" = {
-#                            lines <- readLines(metadata, n = 1)
-#                            if (grepl(",", lines)) { 
-#                              key <- read.csv(metadata, header = TRUE, sep = ",", fill = TRUE)
-#                            } else if (grepl(";", lines)) {
-#                              key <- read.csv(metadata, header = TRUE, sep = ";", fill = TRUE)
-#                            }
-#                          },
-#                          "xlsx" = {
-#                            key <- read_excel(metadata, sheet = sheet)
-#                          },
-#                          "ods" = {
-#                            key <- read_ods(metadata, sheet = sheet)
-#                          },
-#                          {
-#                            print("Invalid file format") # add json/xml
-#                          }
-#                   )
-#                   
-#                 }
-#   )
-#   
-#   return(key)
-# }
