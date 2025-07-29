@@ -46,7 +46,7 @@ are_identical_cols <- function(a, b) {
   if (length(a) != length(b)) return(FALSE)
   # Return TRUE if both vectors are entirely NA
   if (all(is.na(a)) && all(is.na(b))) return(TRUE)
-
+  
   a <- normalize(a)
   b <- normalize(b)
   # Compare elements, treating NA in the same position as equal
@@ -177,19 +177,18 @@ fuse_identical_columns <- function(df, sep = "-") {
 #'
 #' @param parent_list A named list of parent data frames.
 #' @param child_list A named list of child data frames.
-#' @param type Character. The type of relationship to use for merging: \code{"parent-child"}, \code{"child-parent"}, or \code{"bidirectional"} (default: all).
+#' @param type Character. The type of relationship to use for merging: \code{"parent-child"}, \code{"child-parent"}, \code{"bidirectional"}, or \code{"any-common"} (default: all).
 #' @param drop_keys Logical. If \code{TRUE}, drops the join key columns after merging (default: \code{TRUE}).
 #' @param suffixes Character vector of length 2. Suffixes to append to duplicate column names (default: \code{c("-x", "-y")}).
 #' @param exclude_cols Optional character vector of column names to exclude from being used as join keys.
 #'
-#' @return A list with two elements:
-#'   \item{db}{A named list of merged parent data frames, each with an attribute \code{join_tbls} listing the child tables merged into it.}
-#'   \item{merged_leaves}{A character vector of names of child tables that were merged.}
+#' @return A named list of merged parent data frames, each with an attribute \code{join_tbls} listing the child tables merged into it.
 #'
 #' @details
 #' The function:
 #' \itemize{
 #'   \item Identifies common columns between parent and child tables according to the specified relationship type.
+#'   \item Skips merging if there are no common columns between a parent and child table.
 #'   \item Merges tables by these columns, optionally excluding specified columns.
 #'   \item Fuses identical columns and flags inconsistencies using \code{\link{fuse_identical_columns}}.
 #'   \item Optionally drops join key columns after merging.
@@ -209,13 +208,32 @@ fuse_identical_columns <- function(df, sep = "-") {
 #' @importFrom magrittr %>%
 #'
 #' @export
-#' 
 
-merge_tbls <- function(parent_list, child_list,
-                       type = c("parent-child","child-parent","bidirectional"),
+merge_tbls <- function(parent_list,
+                       child_list,
+                       type = c("parent-child","child-parent","bidirectional","any-common"),
                        drop_keys = TRUE,
                        suffixes = c("-x", "-y"),
                        exclude_cols = NULL) {
+  
+  type <- match.arg(type)
+  
+  # Helper: find join keys (jkeys) based on names and nested content
+  get_nested_cols <- function(df1, df2, candidates, direction = c("df1_in_df2", "df2_in_df1", "either")) {
+    if (length(candidates) == 0) return(character(0))  # Return empty character if no candidates
+    direction <- match.arg(direction)
+    candidates[sapply(candidates, function(col) {
+      vals1 <- unique(na.omit(df1[[col]]))
+      vals2 <- unique(na.omit(df2[[col]]))
+      if (direction == "df1_in_df2") {
+        all(vals1 %in% vals2)
+      } else if (direction == "df2_in_df1") {
+        all(vals2 %in% vals1)
+      } else { # either
+        all(vals1 %in% vals2) || all(vals2 %in% vals1)
+      }
+    })]
+  }
   
   # Sort parent and child lists by name for reproducibility
   parent_list <- parent_list[order(names(parent_list))]
@@ -230,40 +248,44 @@ merge_tbls <- function(parent_list, child_list,
   out_list <- list()
   join_tbls_list <- vector("list", length(parent_list))
   names(join_tbls_list) <- names(parent_list)
-  merged_leaves <- character(0)
   
   # Loop over parent tables
   for (i in seq_along(parent_list)) {
     parent_df <- parent_list[[i]]
     # Loop over child tables
     for (j in seq_along(child_list)) {
-      # Determine common columns for merging based on relationship type
-      if(type == "parent-child"){
-        common_cols <- intersect(parent_pkeys[[i]], child_cols[[j]])
-      } else if(type == "child-parent"){
-        common_cols <- intersect(parents_cols[[i]], child_pkeys[[j]])
-      } else if(type == "bidirectional"){
-        common_cols <- unique(
-          c(intersect(parent_pkeys[[i]], child_cols[[j]]),
-            intersect(parents_cols[[i]], child_pkeys[[j]]) )
-        )
+      # Determine join keys for merging based on relationship type and nested content
+      if (type == "parent-child") {
+        candidates <- intersect(parent_pkeys[[i]], child_cols[[j]])
+        jkeys <- get_nested_cols(parent_df, child_list[[j]], candidates, "df1_in_df2")
+      } else if (type == "child-parent") {
+        candidates <- intersect(parents_cols[[i]], child_pkeys[[j]])
+        jkeys <- get_nested_cols(parent_df, child_list[[j]], candidates, "df2_in_df1")
+      } else if (type == "bidirectional") {
+        candidates1 <- intersect(parent_pkeys[[i]], child_cols[[j]])
+        jkeys1 <- get_nested_cols(parent_df, child_list[[j]], candidates1, "df1_in_df2")
+        candidates2 <- intersect(parents_cols[[i]], child_pkeys[[j]])
+        jkeys2 <- get_nested_cols(parent_df, child_list[[j]], candidates2, "df2_in_df1")
+        jkeys <- unique(c(jkeys1, jkeys2))
+      } else if (type == "any-common") {
+        candidates <- intersect(parents_cols[[i]], child_cols[[j]])
+        jkeys <- get_nested_cols(parent_df, child_list[[j]], candidates, "either")
       }
       # Exclude specified join columns
       if (!is.null(exclude_cols)) {
-        common_cols <- setdiff(common_cols, exclude_cols)
-      }      
-      # If there are common columns, perform the merge
-      if (length(common_cols) > 0) {
+        jkeys <- setdiff(jkeys, exclude_cols)
+      }
+      # If there are join keys, perform the merge
+      if (length(jkeys) > 0) {
         parent_df <- merge(parent_df, child_list[[j]],
-                           by = common_cols, all.x = TRUE, all.y = FALSE,
+                           by = jkeys, all.x = TRUE, all.y = FALSE,
                            suffixes = suffixes)
         # Fuse identical columns and flag inconsistencies
         parent_df <- fuse_identical_columns(parent_df)
         # Record which child tables were merged
         join_tbls_list[[i]] <- c(join_tbls_list[[i]], names(child_list)[j])
-        merged_leaves <- union(merged_leaves, names(child_list)[j])
         # Optionally drop join key columns
-        if(drop_keys == TRUE) { parent_df[common_cols] <- NULL }
+        if (drop_keys == TRUE) { parent_df[jkeys] <- NULL }
       }
     }
     out_list[[i]] <- parent_df
@@ -273,6 +295,5 @@ merge_tbls <- function(parent_list, child_list,
     attr(out_list[[i]], "join_tbls") <- join_tbls_list[[i]]
   }
   names(out_list) <- names(parent_list)
-  # Return merged tables and merged child table names
-  return(list(db = out_list, merged_leaves = merged_leaves))
+  return(out_list)
 }
