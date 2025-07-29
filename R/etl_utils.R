@@ -358,3 +358,27 @@ intersect_dfs <- function(list1, list2) {
 remove_all_na_cols <- function(df) {
   df[, colSums(!is.na(df)) > 0, drop = FALSE]
 }
+
+
+#' Find the longest common prefix in a character vector
+#'
+#' This function takes a character vector and returns the longest common prefix shared by all elements.
+#'
+#' @param strings A character vector of strings to compare.
+#'
+#' @return A character string representing the longest common prefix among the input strings.
+#'
+#' @examples
+#' find_common_prefix(c("apple", "apricot", "ape")) # returns "ap"
+#' find_common_prefix(c("dog", "cat", "mouse")) # returns ""
+#'
+
+find_common_prefix <- function(strings) {
+  common_prefix <- strings[1]
+  for (str in strings) {
+    while (!startsWith(str, common_prefix) && nchar(common_prefix) > 0) {
+      common_prefix <- substr(common_prefix, 1, nchar(common_prefix) - 1)
+    }
+  }
+  return(common_prefix)
+}
