@@ -151,15 +151,15 @@ get_soilGrids_profile <- function(lat, lon, dir = tempdir()) {
     data_map <- load_map()
     
     prov_attr <- data_map %>%
-      filter(dataModel == "dssat" & template_section == "SOIL_METADATA") %>%
+      filter(data_model == "dssat" & template_section == "SOIL_METADATA") %>%
       pull(header)
     
     profile_attr <- data_map %>%
-      filter(dataModel == "dssat" & template_section == "SOIL_PROFILES") %>%
+      filter(data_model == "dssat" & template_section == "SOIL_PROFILES") %>%
       pull(header)
     
     layers_attr <- data_map %>%
-      filter(dataModel == "dssat" & template_section == "SOIL_PROFILE_LAYERS") %>%
+      filter(data_model == "dssat" & template_section == "SOIL_PROFILE_LAYERS") %>%
       pull(header)
     
     # Split sections

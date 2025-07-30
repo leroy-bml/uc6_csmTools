@@ -664,7 +664,7 @@ reshape_to_model_dssat <- function(vector, map_path, input_model = "icasa", outp
   # NB: temporary approach; later integrate to a generic melt-explode-map sequence
   
   map <- load_map(map_path) %>%
-    filter(dataModel == output_model) %>%
+    filter(data_model == output_model) %>%
     select(template_section, section) %>%
     distinct()
   

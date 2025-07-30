@@ -198,7 +198,7 @@ check_data_requirements <- function(mngt, soil, obs, wth,
   # Get map 
   map <- load_map()  # tmp! set map path internal to package
   
-  map <- map[map$dataModel == framework,]  #TODO: CHECK IF IN SUBFUNCTIONS
+  map <- map[map$data_model == framework,]  #TODO: CHECK IF IN SUBFUNCTIONS
   
   if (std == "minimum") {
     map <- map[map$DQ_mindat == 2,]

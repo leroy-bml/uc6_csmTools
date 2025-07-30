@@ -113,7 +113,7 @@ make_mapping <- function(path = NULL,
   
   # Create the new record dynamically
   new_record <- list(
-    dataModel = standard,
+    data_model = standard,
     section = section,
     header = header,
     description = description,
@@ -594,6 +594,13 @@ map_data <- function(df, input_model, output_model, map, keep_unmapped = TRUE, c
   #   
   #   print(paste(i, names(template_icasa)[i]))
   # }
+  
+  # df = tmp1$AUSSAAT
+  # input_model = "bonares-lte_de"
+  # output_model = "icasa"
+  # map = map_tmp
+  # keep_unmapped = TRUE
+  # col_exempt = NULL
 
   
   metadata <- attributes(df)$metadata  # store metadata
@@ -603,16 +610,16 @@ map_data <- function(df, input_model, output_model, map, keep_unmapped = TRUE, c
     # Perform the mapping
     if ("icasa" %in% output_model){
       df0 <- df  # store original data
-      map <- map[map$dataModel == input_model & map$header %in% colnames(df),]
+      map <- map[map$data_model == input_model & map$header %in% colnames(df),]
       headers <- map_headers(df, map, "to_icasa")  # map headers
       df <- headers$data
       mapped_cols <- unique(headers$mapped)
-      df <- map_codes(df, map, "to_icasa")  # map codes
-      df <- convert_units(df, metadata, map, "to_icasa")  # convert units
-      df <- transform_data(df, map)  # apply transformations
+      #df <- map_codes(df, map, "to_icasa")  # map codes
+      #df <- convert_units(df, metadata, map, "to_icasa")  # convert units
+      #df <- transform_data(df, map)  # apply transformations
     } else if ("icasa" %in% input_model){
       df0 <- df  # store original data
-      map <- map[map$dataModel == output_model & map$icasa_header_short %in% colnames(df),]
+      map <- map[map$data_model == output_model & map$icasa_header_short %in% colnames(df),]
       headers <- map_headers(df, map, "from_icasa")  # map headers
       df <- headers$data
       mapped_cols <- unique(headers$mapped)
@@ -620,8 +627,8 @@ map_data <- function(df, input_model, output_model, map, keep_unmapped = TRUE, c
       df <- convert_units(df, metadata, map, "from_icasa")  # convert units
     } else {
       df0 <- df  # store original data
-      map_icasa <- map[map$dataModel == input_model & map$header %in% colnames(df),]
-      map <- map[map$dataModel == output_model & map$icasa_header_short %in% colnames(df),]
+      map_icasa <- map[map$data_model == input_model & map$header %in% colnames(df),]
+      map <- map[map$data_model == output_model & map$icasa_header_short %in% colnames(df),]
       headers <- map_headers(df, , "to_icasa")
       df_icasa <- headers$data
       mapped_cols <- unique(headers$mapped)
