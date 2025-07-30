@@ -1,82 +1,91 @@
 #' Iteratively Merge Leaf Tables into a Database Backbone
 #'
-#' Iteratively merges "leaf" tables (those without parents) into their parent tables in a database, 
-#' using primary keys and the \code{\link{merge_tbls}} function. The process continues until no mergeable leaves remain.
+#' Iteratively merges "leaf" tables (those without children and potentially standalone tables) into their parent tables in a database,
+#' using primary keys and a referential merging strategy. The process continues until no mergeable tables remain.
+#' This function aims to "flatten" a relational database structure into a more consolidated format.
 #'
-#' @param db A named list of data frames representing the database.
-#' @param drop_keys Logical. If \code{TRUE}, drops the join key columns after merging (default: \code{FALSE}).
-#' @param exclude_tbls Optional character vector of table names to exclude from merging as leaves.
-#' @param exclude_cols Optional character vector of column names to exclude from being used as join keys.
+#' @param db A named list of data frames representing the database. Each data frame corresponds to a table.
+#' @param drop_keys Logical. If \code{TRUE}, drops the join key columns after successful merges (default: \code{FALSE}).
+#' @param exclude_cols Optional character vector of column names to exclude from being considered or used as join keys during the merge process.
 #'
-#' @return A list of data frames representing the melted (fully merged) database.
+#' @return A list of data frames representing the melted (fully merged) database. The number of tables in the output
+#'         will typically be less than or equal to the input, with related data consolidated.
 #'
 #' @details
-#' The function:
-#' \itemize{
-#'   \item Identifies leaf tables (those with no parent in the database).
-#'   \item Merges mergeable leaves into their parent tables using \code{\link{merge_tbls}}.
-#'   \item Repeats the process until no mergeable leaves remain.
-#'   \item Optionally drops join key columns after merging.
-#'   \item Removes the \code{flag} column from tables if all values are \code{NA}.
-#' }
+#' The function operates in an iterative loop, attempting to merge tables based on their relationships:
 #'
-#' @examples
-#' # Example usage (assuming get_pkeys, get_parent, and merge_tbls are defined):
-#' # db <- list(
-#' #   parent = data.frame(ID = 1:3, Value = c("A", "B", "C")),
-#' #   child = data.frame(ID = 1:3, Data = c("X", "Y", "Z"))
-#' # )
-#' # melt_dataset(db)
+#' * **Initial Root Merge:** It first identifies and merges tables categorized as "root" (tables that are referenced by other tables but do not themselves reference any other tables within the database backbone). This initial step helps to consolidate base data.
+#' * **Iterative Branch and Leaf Merging:** In a `repeat` loop, the function continuously categorizes tables as "branch" (tables that reference other tables and are referenced by others) or "leaf"/"standalone" (tables that reference other tables but are not referenced by any).
+#'     * It identifies "leaf" and "standalone" tables that can be merged into existing "branch" tables based on referential integrity.
+#'     * These identified mergeable tables are then merged into the `db` using `merge_db_tables` with a "referential" type.
+#'     * The loop continues until no more "leaf" or "standalone" tables can be merged, indicating that the database structure has been consolidated as much as possible through this method.
+#' * **Flag Column Cleanup:** Finally, after all merges are complete, it checks for a `flag` column in each resulting data frame. If the `flag` column contains only `NA` values, it is removed, otherwise it is retained and moved to the end of the data frame.
+#'
+#' This function relies on several internal helper functions: `categorize_tables()`, `merge_db_tables()`, `get_pkeys()`, and `check_ref_integrity()`.
 #'
 #' @export
-#' 
+#'
 
-melt_dataset <- function(db, drop_keys = FALSE, exclude_tbls = NULL, exclude_cols = NULL) {
+recursive_merge <- function(db, drop_keys = FALSE, exclude_cols = NULL) {
+
+  cat("Merging dataset recursively....\n")
+  
+  # Sort tables based on referencing
+  cats <- categorize_tables(db)
+  roots <- names(cats[cats %in% "root"])
+  
+  # Merge all roots to prevent downstream redundancies
+  res <- merge_db_tables(
+    db_tables = db[roots],
+    start_table = db,
+    type = "referential",
+    drop_keys = drop_keys,
+    exclude_cols = exclude_cols
+  )
+  db <- res$results_df
+    
   iteration <- 0
   
   repeat {
     iteration <- iteration + 1
     cat(sprintf("Iteration %d\n", iteration))
     
-    # Identify parent for each table
-    all_parents <- lapply(db, function(df) get_parent(df, db))
+    # Sort tables based on referencing
+    cats <- categorize_tables(db)
+    branches <- names(cats[cats %in% "branch"])
+    branch_tbls <- db[branches]
+    unrefs <- names(cats[cats %in% c("leaf", "standalone")])
+    unref_tbls <- db[unrefs]
     
-    # Identify leaf tables (no parent)
-    leaf_tbls <- db[sapply(all_parents, is.null)]
-    leaf_tbls <- leaf_tbls[!names(leaf_tbls) %in% exclude_tbls]
-    branch_tbls <- db[!names(db) %in% names(leaf_tbls)]
-    
-    if (length(leaf_tbls) > 0) {
-      # Identify which leaves are mergeable (their primary key is present in a branch table)
-      leaves_mergeable <- leaf_tbls[
-        sapply(leaf_tbls, function(df1) {
+    if (length(unref_tbls) > 0) {
+      # Identify which leaves reference a branch table
+      # NB: include standalone tables so they are not dropped from the output
+      unref_mergeable <- unref_tbls[
+        sapply(unref_tbls, function(df1) {
           pk <- get_pkeys(df1)
-          any(sapply(branch_tbls, function(df2) any(pk %in% names(df2))))
+          any(sapply(branch_tbls, function(df2) check_ref_integrity(df1, df2, pk)))
         })
       ]
-      leaves_unmergeable <- leaf_tbls[!names(leaf_tbls) %in% names(leaves_mergeable)]
     } else {
-      leaves_mergeable <- character(0)
+      unref_mergeable <- character(0)
     }
     
-    n_left <- length(leaves_mergeable)
+    n_left <- length(unref_mergeable)
     
     if (n_left == 0) {
       cat("No mergeable leaves left. Stopping.\n")
       break
     }
     
-    # Merge mergeable leaves into the database
-    res <- merge_tbls(
-      db, leaves_mergeable,
-      type = "child-parent",
+    # Merge mergeable roots into the database
+    res <- merge_db_tables(
+      db_tables = db,
+      start_table = unref_mergeable,
+      type = "referential",
       drop_keys = drop_keys,
       exclude_cols = exclude_cols
     )
-    db <- res$db  # Update db with merged tables
-    
-    # Remove merged leaves from db
-    db <- db[!names(db) %in% names(leaves_mergeable)]
+    db <- res$results_df
   }
   
   # Drop DQ flags if no rows are flagged (all NAs)
@@ -87,108 +96,225 @@ melt_dataset <- function(db, drop_keys = FALSE, exclude_tbls = NULL, exclude_col
         df$flag <- NULL
       }
     }
-    return(df)
+    df
   })
   return(db)
 }
 
-#' TODO: UPDATE DOCUMENTATION Reshape crop experiment data into a standard ICASA format
+
+#' Split a Data Frame into Multiple Sub-Data Frames by Group Mapping
+#'
+#' This function splits a data frame into a list of sub-data frames based on groupings defined in a mapping data frame.
+#' Each sub-data frame contains columns associated with a specific group, as well as any columns not assigned to any group (i.e., with \code{NA} as group).
+#'
+#' @param df A data frame to be split. Columns in this data frame should correspond to the \code{icasa_header_short} values in \code{map}.
+#' @param map A data frame containing at least the columns \code{icasa_group} and \code{icasa_header_short}. This mapping defines which columns in \code{df} belong to which group.
+#'
+#' @details
+#' The function works as follows:
+#'
+#' * It filters the `map` data frame to include only those rows where `icasa_header_short` matches a column in `df`.
+#' * It identifies all unique, non-`NA` group names from `icasa_group`.
+#' * Columns with `NA` in `icasa_group` are considered "no-group" columns and are included in every sub-data frame.
+#' * For each identified group, a sub-data frame is created containing all columns mapped to that group, plus all "no-group" columns.
+#' * The result is a named list of sub-data frames, with names corresponding to the group names.
+#'
+#' @return
+#' A named list of data frames. Each element corresponds to a group defined in `map$icasa_group`, containing the relevant columns from `df`.
+#'
+#' @importFrom magrittr %>%
+#' @importFrom dplyr filter select distinct
+#'
+
+project_dataframe <- function(df, map) {
+  
+  groups_df <- map %>%
+    filter(icasa_header_short %in% colnames(df)) %>%
+    select(icasa_group, icasa_header_short) %>%
+    distinct()
+  
+  group_names <- na.omit(unique(groups_df$icasa_group))
+  
+  # Get columns with no group (NA; to include in all splits)
+  na_cols <- groups_df$icasa_header_short[is.na(groups_df$icasa_group)]
+  
+  # Split df by group (keep no-group cols in each sub-df)
+  split_dfs <- lapply(group_names, function(grp) {
+    group_cols <- groups_df$icasa_header_short[groups_df$icasa_group == grp]
+    cols <- unique(c(na_cols, group_cols))
+    cols <- cols[cols %in% colnames(df)]
+    df[, cols, drop = FALSE]
+  })
+  names(split_dfs) <- group_names
+  
+  return(split_dfs)
+}
+
+
+#' Split and Merge a List of Data Frames by Group Mapping
+#'
+#' This function takes a named list of data frames (typically representing sections of a dataset, already mapped to ICASA headers)
+#' and further structures them into distinct ICASA groups (sections) by splitting and then merging fragments.
+#'
+#' @param db A named list of data frames, where each data frame represents a section of a dataset
+#'           (e.g., "PLOT_DETAILS", "SOIL_MEASUREMENTS"), with column names already mapped to ICASA headers.
+#' @param map A data frame containing the mapping information, typically loaded via `load_map()`.
+#'            It must contain at least `section`, `header`, `icasa_header_short`, and `icasa_group` columns,
+#'            which define how columns in input data frames should be grouped into output sections.
+#'
+#' @details
+#' The function processes the input `db` list to consolidate data into final ICASA sections.
+#'
+#' **Processing Steps:**
+#'
+#' * **Metadata Handling:** The "METADATA" section (if present) is temporarily set aside and re-added at the end.
+#' * **Data Projection:** For each remaining data frame in `db`, the `project_dataframe()` helper function is called.
+#'     This function is expected to split the input data frame into multiple sub-data frames (fragments),
+#'     each corresponding to a specific ICASA group (e.g., "SOIL_PROFILE", "WEATHER_DAILY") based on the `map`.
+#' * **Flattening and Grouping:** All resulting sub-data frames from all input sections are combined into a single flat list.
+#'     These fragments are then grouped by their target ICASA group names.
+#' * **Merging Fragments:** For each unique ICASA group (e.g., "SOIL_PROFILE"), all data frame fragments belonging to that group
+#'     are merged using a full outer join (`merge(..., all = TRUE)`) on their common columns.
+#'     Duplicate rows resulting from the merge are then removed.
+#' * **Data Cleaning and Key Filtering:**
+#'     * For all merged sections *except* "TREATMENTS", columns that contain only `NA` values are removed using `remove_all_na_cols()`.
+#'     * Rows with missing values in their primary key (as determined by `get_pkeys()`) are filtered out from these sections.
+#' * **Final Assembly:** The initially extracted "METADATA" section, the cleaned data sections, and the "TREATMENTS" section
+#'     (which is not subjected to primary key filtering by this function) are combined into the final output list.
+#'
+#' This function is crucial for transforming section-based data into the hierarchical ICASA group structure.
+#'
+#' @return
+#' A named list of data frames, where each element represents a consolidated ICASA group (section).
+#' For example, `output$SOIL_PROFILE` would contain all soil profile data gathered from various input sections.
+#'
+#'
+#' @importFrom magrittr %>%
+#' @importFrom dplyr filter
+#' @importFrom rlang !! sym
+#'
+
+project_dataset <- function(db, map = load_map()) {
+
+  # db <- db_icasa  #tmp
+  # map <- load_map()
+  
+  # Exclude metadata from breakdown
+  metadata <- db["METADATA"]
+  db <- db[setdiff(names(db), "METADATA")]
+
+  # Explode each section using the map
+  projected_sec <- lapply(names(db), function(sec) {
+    project_dataframe(db[[sec]], map)
+  })
+  
+  # Flatten the list and assign names
+  sec_tbls <- do.call(c, projected_sec)
+  names(sec_tbls) <- unlist(lapply(projected_sec, names))
+  sec_tbls <- split(sec_tbls, names(sec_tbls))
+  
+  db_out <- do.call(c, db_exploded)
+  names(db_out) <- unlist(lapply(db_exploded, names))
+  db_out <- split(db_out, names(db_out))
+  
+  # Merge fragments within each section (full join on common columns)
+  merged_sec <- lapply(sec_tbls, function(tbl_list) {
+    merged <- Reduce(function(x, y) {
+      cmn <- intersect(names(x), names(y))
+      merge(x, y, by = cmn, all = TRUE)
+    }, tbl_list)
+    unique(merged)
+  })
+  
+  # Clean up: remove all-NA columns and handle primary keys
+  data_tbls <- merged_sec[setdiff(names(merged_sec), "TREATMENTS")]
+  data_tbls <- lapply(names(data_tbls), function(nm) {
+    df <- data_tbls[[nm]]
+    df <- remove_all_na_cols(df)
+    pkey <- get_pkeys(df, alternates = FALSE, ignore_na = TRUE)
+    if (length(pkey) > 0) {
+      df <- df %>% filter(!is.na(!!sym(pkey)))
+    } 
+    df
+  })
+  names(data_tbls) <- setdiff(names(merged_sec), "TREATMENTS")
+  
+  out <- c(metadata, data_tbls, merged_sec["TREATMENTS"])
+  
+  return(out)
+}
+
+
+#' Transform BonaRes LTE dataset into the ICASA-format
 #' 
-#' This function identifies the components of a crop experiment data set and re-arrange them into ICASA sections
-#' (see ICASA standards: https://docs.google.com/spreadsheets/u/0/d/1MYx1ukUsCAM1pcixbVQSu49NU-LfXg-Dtt-ncLBzGAM/pub?output=html)
-#' Note that the function does not handle variable mapping but only re-arranges the data structure.
-#' 
+#' This function identifies the components of a crop experiment data set, map terms into ICASA terminology 
+#' and re-arranges the table according to the ICASA data model
+#' (see ICASA standards: https://github.com/DSSAT/ICASA-Dictionary).
+#'
+#' @details
+#' The `reshape_exp_data` function performs a series of steps to transform a raw crop experiment dataset,
+#' typically provided as a list of data frames, into a structure compliant with the ICASA standards.
+#'
+#' **Workflow:**
+#'
+#' * **Metadata Extraction:** Reads metadata from a specified XML file (`mother_xml`) and appends it to the `db` list.
+#' * **Experimental Design Identification:** Uses the `design_tbl_name` to identify the core components 
+#'     of the experimental design, such as years, plots, and treatments. It also identifies primary and foreign keys and data attributes within the dataset.
+#' * **Data Merging and Cleaning:** Recursively merges data frames in `db` based on identified keys
+#'     and removes columns that contain only `NA` values.
+#' * **Date Formatting:** Standardizes all date columns across the dataset to the 'yyyy-mm-dd' format.
+#' * **ICASA Mapping:** Maps column names within each data frame to their corresponding ICASA headers
+#'     based on the specified `data_model`. This step uses `load_map()` and `map_data()`.
+#' * **Dataset Projection:** Further structures the data into distinct ICASA sections (e.g., 'PLOT_DETAILS', 'METADATA',
+#'     'SUMMARY', 'TIME_SERIES', 'WEATHER_METADATA', 'WEATHER_DAILY', 'SOIL_METADATA', 'SOIL_LAYERS', and various 'MANAGEMENT' sections) using `project_dataset()`.
+#' * **Management Data Formatting:** A crucial step is the reformatting of management data.
+#'     This involves identifying unique event regimes within each experimental year and assigning unique IDs. It also creates a "TREATMENTS" matrix that links experimental years, plots, treatments, and their associated management regimes.
+#'
+#' The function aims to automate the structural transformation, assuming that variable content is consistent with the chosen `data_model`. Users may need to perform additional variable mapping or data cleaning outside this function if their data deviates significantly from the expected structure or if more granular control over variable transformation is required.
+#'
+#'
+#' @param db a list of data frames composing a crop experiment dataset.
+#' @param mother_xml a path or URL to the metadata XML file of the mother table.
+#' @param design_tbl_name a character string specifying the name of the data frame within `db` that serves as the mother table (experimental design).
+#' @param data_model a character string specifying the data model of the input dataset (e.g., "bonares-lte_de").
+#'
+#' @return a list containing the reshaped crop experiment data in ICASA format.
+#'
+#' @importFrom magrittr %>%
+#' @importFrom tidyselect all_of
+#' @importFrom dplyr filter mutate select arrange group_by ungroup distinct left_join
+#' @importFrom rlang !! !!! := sym syms
+#'
 #' @export
 #' 
-#' @param db a list of data frames composing a crop experiment dataset
-#' @param metadata a metadata table described the dataset, as returned by read_metadata (BonaRes-LTFE format)
-#' @param mother_tbl a data frame; the mother table of the dataset, i.e., describing the experimental design (years, plots_id, treatments_ids, replicates)
-#' 
-#' @return a list containing the reshaped crop experiment data
-#' 
-#' @importFrom magrittr %>%
-#' @importFrom tidyselect everything
-#' @importFrom lubridate as_date parse_date_time
-#' @importFrom dplyr select group_by group_by_at ungroup mutate relocate distinct left_join arrange across cur_group_id
-#' @importFrom tidyr any_of all_of ends_with
-#' @importFrom rlang !! :=
-#' @importFrom countrycode countrycode
-#'
-#'
 
-# seehausen <- read_exp_data(dir = "./inst/extdata/lte_seehausen/0_raw", extension = "csv")  #check
-# muencheberg <- read_exp_data(dir = "./inst/extdata/lte_muencheberg/0_raw", extension = "csv")  #check
-# grossbeeren <- read_exp_data(dir = "./inst/extdata/lte_grossbeeren/0_raw", extension = "csv")  #check
-# duernast <- read_exp_data(dir = "./inst/extdata/lte_duernast/0_raw", extension = "csv")  #check
-# westerfeld <- read_exp_data(dir = "./inst/extdata/lte_westerfeld/0_raw", extension = "csv")  #check
-# rauischholzhausen <- read_exp_data(dir = "./inst/extdata/lte_rauischholzhausen/0_raw", extension = "csv")  #check
-# rostock <- read_exp_data(dir = "./inst/extdata/lte_rostock/0_raw", extension = "csv")  #check
-# darmstadt_a <- read_exp_data(dir = "./inst/extdata/lte_darmstadt_a/0_raw", extension = "csv")  #check
-# darmstadt_e <- read_exp_data(dir = "./inst/extdata/lte_darmstadt_e/0_raw", extension = "csv")  #data problem: PRUEFGLIED table missing
-# + dikopshof
-# + bad lauchstadt
+reshape_exp_data <- function(db, mother_xml, design_tbl_name, data_model = "bonares-lte_de") {
 
-
-reshape_exp_data <- function(db, metadata, mother_tbl_name) {
+  # Extract metadata --------------------------------------------------------
+  
+  xml <- read_metadata(mother_path = mother_xml, schema = "bonares")
+  db <- c(db, list(METADATA = xml$metadata))  # append
+  
+  
+  # Identify experimental design --------------------------------------------
   
   # Identify the components of the experimental design ----------------------
   
-  # db <- duernast  #tmp
-  # mother_tbl_name <- "VERSUCHSAUFBAU"  #tmp
-  
-  design_tbl <- db[[mother_tbl_name]]
+  design_tbl <- db[[design_tbl_name]]
   
   # Identify core design elements: years, plots, treatments
   exp_str <- identify_exp_design(db, design_tbl)
   exp_str_ids <- exp_str$id_name  # unique identifiers
-  exp_str_tbl_nms <- c(exp_str$tbl_name[!is.na(exp_str$tbl_name)], mother_tbl_name)  # table names
   
   # Identify column properties (primary/foreign keys, data attributes)
   # > Labels data attributes with table name as prefix to make them unique
   db <- identify_exp_attributes(db, str_cols = exp_str_ids)
   nokeys <- do.call(c, attr(db, "attributes"))  # list of unique data attributes
   
-  # Get design tables
-  exp_str_tbls <- db[exp_str_tbl_nms]
+  db <- recursive_merge(db, drop_keys = FALSE, exclude_cols = nokeys)
+  db <- lapply(db, remove_all_na_cols)  # Remove only-NA artefact columns
   
 
-  # Melt dataset ------------------------------------------------------------
-  
-  # Melt structural tables into one table
-  design_str <- melt_dataset(exp_str_tbls, drop_keys = FALSE)
-  
-  # Calculate replicate number (inconsistent concept across datasets)
-  # TODO: CHECK variety/crop as treatment levels? not consistently?
-  design_str <- lapply(design_str, function(df) {
-    df %>%
-      group_by(!!sym(exp_str_ids[1]), !!sym(exp_str_ids[3])) %>%
-      mutate(Rep_no = row_number())
-  })
-  
-  # Replace structural tables by unique merged design table
-  db <- db[!names(db) %in% exp_str_tbl_nms]
-  db <- c(design_str, db)
-  
-  # Melt dataset into immediate children only (tables linked directly to the design table)
-  # TODO: double check get_parent
-  db <- melt_dataset(db, drop_keys = TRUE, exclude_tbls = exp_str_tbl_nms, exclude_cols = c(exp_str_ids, nokeys))
-  
-
-  # # Give standard name to design variables ----------------------------------
-  # 
-  # 
-  # raw_str_names <- c(YEARS_nm, PLOTS_nm, TREATMENTS_nm, REPS_nm)
-  # std_str_names <- c("Year", "Plot_id", "Treatment_id", "Rep_no")
-  # 
-  # for (i in seq_along(db)) {
-  #   for (j in seq_along(raw_str_names)) {
-  #     if (raw_str_names[j] %in% colnames(db[[i]])) {
-  #       colnames(db[[i]])[colnames(db[[i]]) == raw_str_names[j]] <- std_str_names[j]
-  #     }
-  #   }
-  # }
-  
-  
   # Format dates ------------------------------------------------------------
   
   # Identify dates and convert into a usable format (yyyy-mm-dd; vMapper default)
@@ -205,199 +331,140 @@ reshape_exp_data <- function(db, metadata, mother_tbl_name) {
     )
   })
   
-  return(db)  #tmp
+  
+  # Map data to ICASA -------------------------------------------------------
+
+  db_icasa <- lapply(names(db), function(sec) {
+    df <- db[[sec]]
+    
+    # TODO: prevent retaining unused section OBSERV_DATA_LINKS (why??) and GENERAL
+    map_sub <- load_map() %>%
+      filter(data_model == data_model) %>%
+      filter(!is.na(icasa_header_short)) %>%
+      filter(section %in% c(!!sec, "ACROSS") & header %in% colnames(df))
+    
+    # NB: tmp version before codes and units are properly formatted
+    map_data(df,
+             input_model = data_model,
+             output_model = "icasa",
+             map = map_sub,
+             keep_unmapped = FALSE)  # TODO: TRUE does not work?
+  })
+  names(db_icasa) <- names(db)
+  
+  
+  # Explode data frame into ICASA sections ----------------------------------
+  
+  db_icasa <- project_dataset(db_icasa, map = load_map())   # here we stand
+  
+  
+  # Explode data frame into ICASA sections ----------------------------------
+  
+  format_management <- function(ls) {
+    
+    # Format management tables and matrix as ICASA
+    # >> Tables: unique event regimes within year
+    # >> Matrix: link between year, plot, and treatment and management regimes
+    #ls <- management
+    management_fmt <- list()
+    management_matrix <- ls[["TREATMENTS"]]
+    management <- ls[setdiff(names(ls), "TREATMENTS")]
+    
+    for (i in 1:length(management)) {
+      df <- management[[i]]
+      
+      pkey <- setdiff(intersect(colnames(df), colnames(management_matrix)), c("EXP_YEAR","TRTNO","PLOT_ID"))
+      # Handle special case when 2 keys are present (GE and another)
+      if (length(pkey) > 1) pkey <- get_pkeys(df)
+      
+      # Exclude comments from event columns
+      comment_cols <- colnames(df[grepl("NOTES|COMMENT", colnames(df))])
+      grp_cols <- setdiff(colnames(df), c("EXP_YEAR", "TRTNO", "PLOT_ID", pkey, comment_cols))
+      is_date_col <- apply(df, 2, is_date)
+      date_cols <- names(is_date_col[is_date_col])
+      
+      # Go next if tables have no attributes besides structural cols and pkeys
+      # TODO: not correct
+      if (length(grp_cols) == 0) {
+        management_fmt[[i]] <- df
+        next 
+      }
+      
+      # Create a signature for each event (row) ---
+      df <- df %>%
+        mutate(event_signature = do.call(paste, c(.[grp_cols], sep = "_")))
+      
+      # For each plot-EXP_YEAR, concatenate all event_signatures (ordered by PDATE or row order) ---
+      df <- df %>%
+        arrange(EXP_YEAR, PLOT_ID, !!!syms(date_cols)) %>%  # TODO: arrange by date only when applicable
+        group_by(EXP_YEAR, PLOT_ID) %>%
+        mutate(event_regime_signature = paste(event_signature, collapse = "|")) %>%
+        ungroup()
+      
+      # Assign event_regime_IDs per EXP_YEAR (identical regimes get same ID within EXP_YEAR) ---
+      regime_ids <- df %>%
+        select(EXP_YEAR, event_regime_signature) %>%
+        distinct() %>%
+        group_by(EXP_YEAR) %>%
+        mutate(!!sym(pkey) := as.integer(factor(event_regime_signature))) %>%
+        ungroup()
+      
+      # Join event_regime_ID back to main table ---
+      df <- df %>%
+        select(-!!sym(pkey)) %>%
+        left_join(regime_ids, by = c("EXP_YEAR", "event_regime_signature"))
+      
+      # Treatment-to-event_regime mapping (one row per plot per EXP_YEAR)
+      mngt_event_regime <- df %>%
+        select(EXP_YEAR, TRTNO, PLOT_ID, !!sym(pkey)) %>%
+        distinct()
+      management_matrix <- management_matrix %>%
+        select(-!!sym(pkey)) %>%
+        left_join(mngt_event_regime, by = c("EXP_YEAR", "TRTNO", "PLOT_ID"))
+      
+      # B. Event details table (one row per event, grouped by event_regime_ID within EXP_YEAR)
+      management_fmt[[i]] <- df %>%
+        select(EXP_YEAR, !!sym(pkey), all_of(grp_cols)) %>%
+        distinct()
+    }
+    names(management_fmt) <- names(management)
+    
+    management_matrix <- management_matrix %>% distinct()
+    
+    list(management = management_fmt, management_matrix = management_matrix)
+  }
+  
+  metadata <- db_icasa[intersect(c("PLOT_DETAILS", "METADATA"), names(db_icasa))]
+  measured <- db_icasa[intersect(c("SUMMARY", "TIME_SERIES"), names(db_icasa))]
+  tofix <- db_icasa[intersect(c("GENERAL", "OBSERV_DATA_LINKS"), names(db_icasa))]
+  #TODO: prevent mapping
+  weather <- db_icasa[intersect(c("WEATHER_METADATA", "WEATHER_DAILY"), names(db_icasa))]
+  soil <- db_icasa[intersect(c("SOIL_METADATA", "SOIL_LAYERS"), names(db_icasa))]
+  #TODO: handle soil data: unpractical profile/analysis/measured split in ICASA
+  management <- db_icasa[setdiff(names(db_icasa),
+                                 unlist(sapply(list(metadata, measured, weather, soil, tofix), names)))]
+  
+  management_fmt <- format_management(management)
+  management <- management_fmt$management
+  management_matrix <- management_fmt$management_matrix
+  
+  out <- list(metadata, management, list(TREATMENTS = management_matrix), weather, soil, measured)
+  out <- do.call(c, out)
+  
+  return(out)
 }
 
 
-  
-  # Identify management and observed data -----------------------------------
-  
-  # # Distinguish management and observed data
-  # DATA_tbls_ident <- tag_data_type(db = db,
-  #                                  years_col = exp_str$id_name[1],
-  #                                  plots_col = exp_str$id_name[2],
-  #                                  plots_len = 240,
-  #                                  max_mods = mean(4, na.rm = TRUE))
-  # # TODO: >2 date vars?
-  # 
-  # # Separate management and observed data
-  # data_cats <- sapply(DATA_tbls_ident, function(df) attr(df, "category"))
-  # 
-  # MNGT_ipt <- DATA_tbls_ident[["management"]]
-  # DOBS_suma_ipt <- DATA_tbls_ident[["observed_summary"]]
-  # DOBS_tser_ipt <- DATA_tbls_ident[["observed_timeseries"]] ## some years summary, other timeseries
-  # ATTR_ipt <- DATA_tbls_ident[["other"]]
-  
-  
-  # # Extract metadata --------------------------------------------------------
-  # 
-  # # Extract field coordinates
-  # 
-  # path <- "./inst/extdata/lte_duernast/0_raw/7e526e38-4bf1-492b-b903-d8dbcfd36b6d.xml"
-  # metadata <- read_metadata(path, repo = "bnr")
-  # 
-  # #NOTES <- c(paste0("Data files mapped on ", Sys.Date(), " with csmTools"), paste0("Source data DOI: ", DOI))
-  # 
-  # 
-  # 
-  # 
-  # # Format management tables ------------------------------------------------
-  # 
-  # 
-  # # Identify which management category correpond to the treatments
-  # MNGT_is_trt <- lapply(MNGT_ipt, function(df) is_treatment(df, "Year", "Plot_id"))
-  # # TODO: handle 0/1 treatments (so far not tagged as treatment)
-  # # TODO: create treatment name in the function
-  # 
-  # # Merge management IDs with the treatments table
-  # MNGT_ipt <- mapply(function(df1, df2) left_join(df1, df2, by = "Year"), MNGT_ipt, MNGT_is_trt)
-  # 
-  # # Add an ID per year for non-treatment management events
-  # MNGT_fmt <- lapply(names(MNGT_ipt), function(df_name){
-  #   
-  #   df <- MNGT_ipt[[df_name]]
-  #   
-  #   #
-  #   mngt_id <- get_pkeys(df, alternates = FALSE)
-  #   
-  #   # Sepcify name of the ID for the reduced table
-  #   ID_nm <- paste0(toupper(substr(df_name, 1, 2)), "_ID")
-  #   # Create the ID variable
-  #   df <- df %>%
-  #     # TODO: modify to handle variable factor levels
-  #     left_join(DESIGN_str, by = c("Year", "Plot_id")) %>%
-  #     group_by_at(c("Year", "Faktor1_Stufe_ID")) %>%
-  #     mutate(ID_trt_1 = cur_group_id()) %>% ungroup() %>%
-  #     group_by_at(c("Year", "Faktor2_Stufe_ID")) %>%
-  #     mutate(ID_trt_2 = cur_group_id()) %>% ungroup() %>%
-  #     group_by_at("Year") %>%
-  #     mutate(ID_fix = cur_group_id()) %>% ungroup() %>%
-  #     mutate(!!ID_nm := ifelse(is_trt, paste(ID_trt_1, ID_trt_2, sep = "_"), ID_fix)) %>%
-  #     select(-c(ID_trt_1, ID_trt_2, ID_fix, is_trt, Faktor1_Stufe_ID, Faktor2_Stufe_ID)) %>%
-  #     relocate(!!ID_nm, .before = everything())
-  #   
-  #   # Drop primary key, treatment and crop keys
-  #   df <- df[!names(df) %in% c(mngt_id, "Treatment_id")]
-  #   df <- df %>% arrange(.data[[ID_nm]])
-  #   
-  #   return(df)
-  #   
-  # })
-  # names(MNGT_fmt) <- names(MNGT_ipt)
-  # 
-  # # List 1: reduced management tables
-  # # (identified by unique management event features rather than event x plot combinations)
-  # MNGT_out <- lapply(MNGT_fmt, function(df){ distinct(df[!names(df) == "Plot_id"]) })
-  # names(MNGT_out) <- names(MNGT_fmt)
-  # 
-  # # List 2: IDs only (to update IDs in the treatment matrix)
-  # MNGT_ids <- lapply(MNGT_fmt, function(df){
-  #   mngt_id <- colnames(df)[1]
-  #   df[names(df) %in% c(mngt_id, "Year", "Plot_id")]
-  # })
-  # 
-  # 
-  # 
-  # # Format treatments matrix ------------------------------------------------
-  # 
-  # 
-  # TREATMENTS_matrix <-
-  #   # Append each management IDs to the correponding year x plot combination
-  #   Reduce(function(x, y)
-  #     merge(x, y, by = intersect(names(x), names(y)), all.x = TRUE),
-  #     MNGT_ids, init = DESIGN_str) %>%
-  #   select(-Rep_no) %>%  #CHECK: see if necesary
-  #   distinct() %>%
-  #   # Append FIELDS ids
-  #   left_join(FIELDS_tbl %>%
-  #               select(FL_ID, Plot_id),
-  #             by = "Plot_id") %>%
-  #   # Replace NA ids by 0 (= no management event)
-  #   mutate(across(ends_with("_ID"), ~ifelse(is.na(.x), 0, .x))) %>%
-  #   # Rename and recode treatment ID
-  #   group_by(Treatment_id) %>%
-  #   mutate(TRTNO = cur_group_id()) %>% ungroup() %>%
-  #   #rename(REPNO = !!REPS_id) %>%
-  #   relocate(TRTNO, .before = everything())
-  # 
-  # 
-  # 
-  # # Format observed data ----------------------------------------------------
-  # 
-  # 
-  # # Drop identifiers and tag
-  # DOB_suma_ipt <- lapply(DOBS_suma_ipt, function(df){
-  #   pkeys <- get_pkeys(df, alternates = FALSE)
-  #   df[!names(df) %in% c(pkeys, "tag")]
-  # })
-  # 
-  # # Merge all dataframes
-  # DOB_suma_out <- Reduce(function(x, y)
-  #   merge(x, y, by = c("Year", "Plot_id"), all = TRUE), DOB_suma_ipt,
-  #   init = DESIGN_str %>% select(Year, Plot_id, Treatment_id, Rep_no)) %>%
-  #   # Rename and recode treatment and replicate IDs
-  #   group_by(Treatment_id) %>%
-  #   mutate(TRTNO = cur_group_id()) %>% ungroup() %>%
-  #   relocate(TRTNO, .before = everything()) %>%
-  #   arrange(Year, TRTNO) %>%
-  #   distinct()
-  # 
-  # # Drop identifiers and tag
-  # DOB_tser_ipt <- lapply(DOBS_tser_ipt, function(df){
-  #   pkeys <- get_pkeys(df, alternates = FALSE)
-  #   df[!names(df) %in% c(pkeys, "tag")]
-  # })
-  # 
-  # # Merge all dataframes
-  # DOB_tser_out <- Reduce(function(x, y)
-  #   merge(x, y, by = c("Year", "Plot_id"), all = TRUE), DOB_tser_ipt,
-  #   init = DESIGN_str %>% select(Year, Plot_id, Treatment_id, Rep_no)) %>%
-  #   # Use design structure as init to have all years covered (necessary for later estimation of missing variables)
-  #   # e.g., phenology
-  #   # Rename and recode treatment and replicate IDs
-  #   group_by(Treatment_id) %>%
-  #   mutate(TRTNO = cur_group_id()) %>% ungroup() %>%
-  #   relocate(TRTNO, .before = everything()) %>%
-  #   arrange(Year, TRTNO) %>%
-  #   distinct()
-  # 
-  # 
-  # 
-  # # Format metadata output elements -----------------------------------------
-  # 
-  # 
-  # 
-  # 
-  # 
-  # # Format output -----------------------------------------------------------
-  # 
-  # 
-  # # Data sections
-  # TREATMENTS_matrix <- TREATMENTS_matrix %>%
-  #   select(-c(Plot_id, "Treatment_id")) %>%
-  #   distinct()
-  # 
-  # MANAGEMENT <- append(MNGT_out, list(GENERAL, FIELDS, TREATMENTS_matrix), after = 0)
-  # names(MANAGEMENT)[1:3] <- c("GENERAL", "FIELDS", "TREATMENTS")
-  # 
-  # OBSERVED <- list(Summary = DOB_suma_out, Time_series = DOB_tser_out)
-  # 
-  # OTHER <- ATTR_ipt
-  # names(OTHER) <- paste0("OTHER_", names(ATTR_ipt))
-  # 
-  # DATA_out <-
-  #   append(MANAGEMENT, c(list(OBSERVED_Summary = DOB_suma_out),
-  #                        list(OBSERVED_TimeSeries = DOB_tser_out),
-  #                        OTHER),
-  #          after = length(MANAGEMENT))
-  # 
-  # # Metadata attributes
-  # attr(DATA_out, "EXP_DETAILS") <- EXP_NAME
-  # attr(DATA_out, "SITE_CODE") <- toupper(
-  #   paste0(
-  #     substr(SITE, 1, 2),
-  #     countrycode(COUNTRY, origin = "country.name", destination = "iso2c")  # if input language is English
-  #   ))
-  # 
-  # return(DATA_out)
+##---- TMP DEV
+
+# # BonaRes specific adjustments
+# if (grepl("bonares-lte", input_model)) {
+#   
+#   if ("FERTILIZERS" %in% names(management_fmt)) {
+#     management_fmt[["FERTILIZERS"]] <- management_fmt[["FERTILIZERS"]] %>% filter(MIN == 1)
+#   }
+#   if ("ORGANIC_MATERIALS" %in% names(management_fmt)) {
+#     management_fmt[["ORGANIC_MATERIALS"]] <- management_fmt[["ORGANIC_MATERIALS"]] %>% filter(ORG == 1)
+#   }
+# }
 

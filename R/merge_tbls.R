@@ -91,82 +91,110 @@ are_identical_cols <- function(a, b) {
 #' @export
 #' 
 
-fuse_identical_columns <- function(df, sep = "-") {
-  # Extract base names from column names (before the separator)
-  base_names <- gsub(paste0("(", sep, "[^-]+)+$"), "", names(df))
+fuse_duplicate_columns <- function(df, sep = "-") {
+  
+  # Helper function to concatenate values in a row, handling NAs
+  combine_values <- function(row_vals, separator) {
+    char_vals <- as.character(row_vals)
+    non_na_vals <- char_vals[!is.na(char_vals)]
+    if (length(non_na_vals) == 0) {
+      return(NA_character_)
+    } else {
+      return(paste(non_na_vals, collapse = separator))
+    }
+  }
+  
+  original_col_names <- names(df)
+  base_names <- gsub(paste0("(", sep, "[^-]+)+$"), "", original_col_names)
+  
   flag_matrix <- matrix(FALSE, nrow = nrow(df), ncol = 0)
   colnames(flag_matrix) <- character(0)
   
-  for (bn in unique(base_names)) {
-    cols <- which(base_names == bn)
-    if (length(cols) > 1) {
-      vals <- df[cols]
-      vals[] <- lapply(vals, normalize)
-      # Flag: TRUE if not all non-NA values in the row are identical
-      flag <- apply(vals, 1, function(row) {
+  result_cols_list <- list() # This list will build the new dataframe's columns
+  processed_base_names_set <- new.env(hash = TRUE) # To efficiently track processed base names
+  
+  
+  for (i in seq_along(original_col_names)) {
+    current_base_name <- base_names[i]
+    
+    # Skip if this base name group has already been processed
+    if (exists(current_base_name, envir = processed_base_names_set)) {
+      next
+    }
+    
+    # Find all original column indices for this base name
+    current_bn_indices <- which(base_names == current_base_name)
+    assign(current_base_name, TRUE, envir = processed_base_names_set) # Mark as processed
+    
+    if (length(current_bn_indices) > 1) { # This is a group of columns (e.g., var-A, var-B, var-C)
+      # --- Flagging for row-wise discrepancies within this base name group ---
+      # This part is from your original function for discrepancy flagging
+      vals_for_flagging <- df[current_bn_indices]
+      vals_for_flagging[] <- lapply(vals_for_flagging, normalize) # Use your normalize function here
+      
+      flag <- apply(vals_for_flagging, 1, function(row) {
         non_na <- row[!is.na(row)]
         if (length(non_na) <= 1) return(FALSE)
         length(unique(non_na)) > 1
       })
-      flag_matrix <- cbind(flag_matrix, setNames(data.frame(flag), bn))
+      flag_matrix <- cbind(flag_matrix, setNames(data.frame(flag), current_base_name))
       
-      # Find sets of identical columns
-      # We'll use a grouping approach: for each column, assign it to a group of identical columns
-      n <- length(cols)
-      groups <- rep(NA_integer_, n)
-      group_id <- 1
-      for (i in seq_len(n)) {
-        if (!is.na(groups[i])) next
-        groups[i] <- group_id
-        for (j in seq_len(n)) {
-          if (i == j) next
-          if (is.na(groups[j]) && are_identical_cols(vals[[i]], vals[[j]])) {
-            groups[j] <- group_id
-          }
+      # --- Logic for handling identical vs. non-identical columns ---
+      # Check if ALL columns in this base name group are strictly identical
+      first_col_data <- df[[current_bn_indices[1]]]
+      all_are_strictly_identical <- TRUE
+      for (j in 2:length(current_bn_indices)) {
+        if (!are_identical_cols(first_col_data, df[[current_bn_indices[j]]])) {
+          all_are_strictly_identical <- FALSE
+          break
         }
-        group_id <- group_id + 1
       }
-      # For each group, keep only the first column
-      keep <- logical(n)
-      for (g in unique(groups)) {
-        idx <- which(groups == g)
-        keep[idx[1]] <- TRUE
-      }
-      # Remove duplicate columns
-      df <- df[ , c(setdiff(seq_along(df), cols[!keep])), drop = FALSE]
-      # Rename the kept columns to the base name if any of them is the no-suffix column
-      kept_cols <- cols[keep]
-      kept_names <- names(df)[kept_cols]
-      no_suffix_idx <- which(kept_names == bn)
-      if (length(no_suffix_idx) == 0) {
-        # If no no-suffix column, just keep the first as base name
-        names(df)[kept_cols[1]] <- bn
+      
+      if (all_are_strictly_identical) {
+        # If all columns in the group are strictly identical, keep only the first one
+        result_cols_list[[current_base_name]] <- first_col_data
       } else {
-        names(df)[kept_cols[no_suffix_idx]] <- bn
+        # If NOT all columns in the group are strictly identical, concatenate them
+        result_cols_list[[current_base_name]] <- apply(df[current_bn_indices], 1, combine_values, separator = " | ")
       }
-      # Update base_names for next iteration
-      base_names <- gsub(paste0("(", sep, "[^-]+)+$"), "", names(df))
+      
+    } else { # This is a single column (e.g., 'ID' or 'SingleVar-X' that has no other 'SingleVar' siblings)
+      # Add this column directly to the result list
+      result_cols_list[[original_col_names[i]]] <- df[[i]]
     }
   }
   
-  # Build the flag column
+  # Construct the new dataframe from the collected columns
+  res_df <- as.data.frame(result_cols_list)
+  
+  # --- Build and append the final flag column (renamed for clarity) ---
   if (ncol(flag_matrix) > 0) {
-    flag <- apply(flag_matrix, 1, function(row) {
+    flag_column_values <- apply(flag_matrix, 1, function(row) {
       flagged <- names(row)[as.logical(row)]
       if (length(flagged) == 0) return(NA_character_)
       paste(flagged, collapse = ";")
     })
-    df$flag <- flag
-    # Move flag to last column if it exists
-    if ("flag" %in% names(df)) {
-      df <- df[ c(setdiff(names(df), "flag"), "flag") ]
-    }
-    # Remove flag if only NA
-    if (all(is.na(df$flag))) {
-      df$flag <- NULL
+    res_df$flag_discrepancy <- flag_column_values # Renamed to reflect its purpose
+    # Remove flag column if all its values are NA
+    if (all(is.na(res_df$flag_discrepancy))) {
+      res_df$flag_discrepancy <- NULL
     }
   }
-  return(df)
+  
+  return(res_df)
+}
+
+#'
+#'
+#'
+
+check_ref_integrity <- function(parent_df, child_df, cols) {
+  if (length(cols) == 0) return(logical(0))
+  sapply(cols, function(col) {
+    pvals <- unique(na.omit(parent_df[[col]]))
+    cvals <- unique(na.omit(child_df [[col]]))
+    all(cvals %in% pvals)
+  })
 }
 
 
@@ -209,91 +237,92 @@ fuse_identical_columns <- function(df, sep = "-") {
 #'
 #' @export
 
-merge_tbls <- function(parent_list,
-                       child_list,
-                       type = c("parent-child","child-parent","bidirectional","any-common"),
-                       drop_keys = TRUE,
-                       suffixes = c("-x", "-y"),
-                       exclude_cols = NULL) {
+merge_db_tables <- function(db_tables,
+                            start_tables,
+                            type = c("referential", "loose"),
+                            drop_keys = FALSE,
+                            suffixes = c("-x", "-y"),
+                            exclude_cols = NULL) {
+  
   
   type <- match.arg(type)
   
-  # Helper: find join keys (jkeys) based on names and nested content
-  get_nested_cols <- function(df1, df2, candidates, direction = c("df1_in_df2", "df2_in_df1", "either")) {
-    if (length(candidates) == 0) return(character(0))  # Return empty character if no candidates
-    direction <- match.arg(direction)
-    candidates[sapply(candidates, function(col) {
-      vals1 <- unique(na.omit(df1[[col]]))
-      vals2 <- unique(na.omit(df2[[col]]))
-      if (direction == "df1_in_df2") {
-        all(vals1 %in% vals2)
-      } else if (direction == "df2_in_df1") {
-        all(vals2 %in% vals1)
-      } else { # either
-        all(vals1 %in% vals2) || all(vals2 %in% vals1)
-      }
-    })]
+  db_tables <- db_tables[order(names(db_tables))]
+  tbl_names <- names(db_tables)
+  all_cols  <- lapply(db_tables, colnames)
+  all_pkeys <- lapply(db_tables, function(df) get_pkeys(df, alternates = FALSE))
+  
+  check_ref <- function(parent_df, child_df, cols) {
+    if (length(cols) == 0) return(logical(0))
+    sapply(cols, function(col) {
+      p <- unique(na.omit(parent_df[[col]]))
+      c <- unique(na.omit(child_df[[col]]))
+      all(c %in% p)
+    })
   }
   
-  # Sort parent and child lists by name for reproducibility
-  parent_list <- parent_list[order(names(parent_list))]
-  parents_cols <- lapply(parent_list, colnames)
-  parent_pkeys <- lapply(parent_list, function(df) get_pkeys(df, alternates = FALSE))
+  if (!is.list(start_tables)) start_tables <- list(start_tables)
+  results     <- list()
+  all_merged  <- character(0)
+  start_names <- names(start_tables)
   
-  child_list <- child_list[order(names(child_list))]
-  child_cols <- lapply(child_list, colnames)
-  child_pkeys <- lapply(child_list, function(df) get_pkeys(df, alternates = FALSE))
+  if (is.null(start_names)) {
+    start_names <- paste0("start_", seq_along(start_tables))
+  }
   
-  # Prepare output lists
-  out_list <- list()
-  join_tbls_list <- vector("list", length(parent_list))
-  names(join_tbls_list) <- names(parent_list)
-  
-  # Loop over parent tables
-  for (i in seq_along(parent_list)) {
-    parent_df <- parent_list[[i]]
-    # Loop over child tables
-    for (j in seq_along(child_list)) {
-      # Determine join keys for merging based on relationship type and nested content
-      if (type == "parent-child") {
-        candidates <- intersect(parent_pkeys[[i]], child_cols[[j]])
-        jkeys <- get_nested_cols(parent_df, child_list[[j]], candidates, "df1_in_df2")
-      } else if (type == "child-parent") {
-        candidates <- intersect(parents_cols[[i]], child_pkeys[[j]])
-        jkeys <- get_nested_cols(parent_df, child_list[[j]], candidates, "df2_in_df1")
-      } else if (type == "bidirectional") {
-        candidates1 <- intersect(parent_pkeys[[i]], child_cols[[j]])
-        jkeys1 <- get_nested_cols(parent_df, child_list[[j]], candidates1, "df1_in_df2")
-        candidates2 <- intersect(parents_cols[[i]], child_pkeys[[j]])
-        jkeys2 <- get_nested_cols(parent_df, child_list[[j]], candidates2, "df2_in_df1")
-        jkeys <- unique(c(jkeys1, jkeys2))
-      } else if (type == "any-common") {
-        candidates <- intersect(parents_cols[[i]], child_cols[[j]])
-        jkeys <- get_nested_cols(parent_df, child_list[[j]], candidates, "either")
+  for (i in seq_along(start_tables)) {
+    
+    result_df <- start_tables[[i]]
+    joined    <- character(0)
+    
+    repeat {
+      candidates       <- setdiff(tbl_names, c(joined, start_names[[i]]))
+      joined_this_round <- FALSE
+      
+      for (dim in candidates) {
+        
+        jkeys <- character(0)
+        
+        if (type == "referential") {
+          poss <- intersect(all_pkeys[[dim]], names(result_df))
+          ok   <- check_ref(db_tables[[dim]], result_df, poss)
+          jkeys <- poss[ok]
+        } else {
+          poss <- intersect(all_cols[[dim]], names(result_df))
+          jkeys <- Filter(function(col) {
+            v1 <- unique(na.omit(result_df[[col]]))
+            v2 <- unique(na.omit(db_tables[[dim]][[col]]))
+            all(v1 %in% v2) || all(v2 %in% v1)
+          }, poss)
+        }
+        
+        if (!is.null(exclude_cols)) {
+          jkeys <- setdiff(jkeys, exclude_cols)
+        }
+        
+        if (length(jkeys)) {
+          result_df <- merge(result_df,
+                             db_tables[[dim]],
+                             by       = jkeys,
+                             all.x    = TRUE,
+                             all.y    = FALSE,
+                             suffixes = suffixes)
+          
+          result_df <- fuse_duplicate_columns(result_df)
+          # Drop join keys unless set to be preserved
+          if (drop_keys) { result_df[jkeys] <- NULL }
+          
+          joined          <- c(joined, dim)
+          all_merged      <- union(all_merged, dim)
+          joined_this_round <- TRUE
+        }
       }
-      # Exclude specified join columns
-      if (!is.null(exclude_cols)) {
-        jkeys <- setdiff(jkeys, exclude_cols)
-      }
-      # If there are join keys, perform the merge
-      if (length(jkeys) > 0) {
-        parent_df <- merge(parent_df, child_list[[j]],
-                           by = jkeys, all.x = TRUE, all.y = FALSE,
-                           suffixes = suffixes)
-        # Fuse identical columns and flag inconsistencies
-        parent_df <- fuse_identical_columns(parent_df)
-        # Record which child tables were merged
-        join_tbls_list[[i]] <- c(join_tbls_list[[i]], names(child_list)[j])
-        # Optionally drop join key columns
-        if (drop_keys == TRUE) { parent_df[jkeys] <- NULL }
-      }
+      
+      if (!joined_this_round) break
     }
-    out_list[[i]] <- parent_df
+    
+    results[[start_names[[i]]]] <- result_df
   }
-  # Attach join_tbls attribute to each parent table
-  for (i in seq_along(out_list)) {
-    attr(out_list[[i]], "join_tbls") <- join_tbls_list[[i]]
-  }
-  names(out_list) <- names(parent_list)
-  return(out_list)
+  
+  return(list(results_df = results, tables_merged = all_merged))
 }
