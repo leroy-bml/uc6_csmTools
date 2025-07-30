@@ -557,7 +557,6 @@ identify_exp_design <- function(db, design_tbl) {
   plot_tbl <- get_tbl(db, plot_nm)
   plot_tbl_nm <- get_df_name(db, plot_tbl)
   cat("\033[31m>> PLOTS - Table \"", plot_tbl_nm, "\"; ID: \"", plot_nm, "\"; n = ", plot_ranges, "\033[0m\n", sep = "")
-  print(as_tibble(plot_tbl))
 
   #--- Treatment attribute
   treat_nm <- find_treatment_col(design_tbl, plot_col = plot_nm, year_col = year_nm)
@@ -567,7 +566,6 @@ identify_exp_design <- function(db, design_tbl) {
   treat_tbl <- get_tbl(db, treat_nm)
   treat_tbl_nm <- get_df_name(db, treat_tbl)
   cat("\033[31m>> TREATMENTS - Table \"", treat_tbl_nm, "\"; ID: \"", treat_nm, "\"; n = ", treat_ranges, "\033[0m\n", sep = "")
-  print(as_tibble(treat_tbl))
   
   #--- Crop attribute
   crop_nm <- find_crop_col(design_tbl, plot_col = plot_nm, year_col = year_nm)
@@ -582,14 +580,13 @@ identify_exp_design <- function(db, design_tbl) {
   crop_tbl <- get_tbl(db, crop_nm)
   crop_tbl_nm <- get_df_name(db, crop_tbl)
   cat("\033[31m>> CROPS - Table \"", crop_tbl_nm, "\"; ID: \"", crop_nm, "\"; n = ", crop_ranges, "\033[0m\n", sep = "")
-  print(as_tibble(crop_tbl))
   
   #--- Output summary
   out <- data.frame(
     comp = c("year", "plot", "treatment", "crop"),
     tbl_name = c(NA_character_, plot_tbl_nm, treat_tbl_nm, crop_tbl_nm),
     id_name = c(year_nm, plot_nm, treat_nm, crop_nm),
-    n = c(year_n, plot_n_disp, treat_n_disp,crop_n_disp),
+    n = c(year_n, plot_ranges, treat_ranges, crop_ranges),
     stringsAsFactors = FALSE
   )
   invisible(out)
@@ -627,6 +624,8 @@ identify_exp_design <- function(db, design_tbl) {
 #' #   treatments = data.frame(TreatmentID = 1:2, Name = c("A", "B"))
 #' # )
 #' # identify_exp_attributes(db)
+#'
+#' @importFrom lubridate is_date
 #'
 #' @export
 #' 
