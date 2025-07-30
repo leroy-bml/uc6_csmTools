@@ -1,44 +1,26 @@
-#' Normalize a character vector by trimming whitespace
-#'
-#' Converts input to character and removes leading and trailing whitespace.
-#'
-#' @param x A vector to normalize.
-#' 
-#' @return A character vector with whitespace trimmed.
-#' 
-#' @examples
-#' normalize("  hello world  ")
-#' normalize(c("  a", "b  ", "  c  "))
-#' 
-
-normalize <- function(x) trimws(as.character(x))
-
-
 #' Test if Two Vectors are Identical (with NA Handling and Normalization)
 #'
-#' Compares two vectors to determine if they are identical, allowing for NA values and normalizing by trimming whitespace and coercing to character.
+#' This function compares two vectors to determine if they are functionally identical.
+#' The comparison includes handling of `NA` values and standardize values (e.g., by trimming whitespace)
+#' before comparison.
 #'
-#' @param a First vector to compare.
-#' @param b Second vector to compare.
+#' @param a The first vector to compare.
+#' @param b The second vector to compare.
 #'
-#' @return Logical. \code{TRUE} if the vectors are identical (including NA positions), \code{FALSE} otherwise.
+#' @return Logical. `TRUE` if the vectors are identical in length, content, and `NA` positions, and `FALSE` otherwise.
 #'
 #' @details
-#' The function:
-#' \itemize{
-#'   \item Returns \code{FALSE} if the vectors are of different lengths.
-#'   \item Returns \code{TRUE} if both vectors are entirely \code{NA}.
-#'   \item Trims whitespace and coerces both vectors to character.
-#'   \item Compares elements, treating \code{NA} in the same position as equal.
-#' }
+#' The function operates with the following logic:
 #'
-#' @examples
-#' are_identical_cols(c("A", "B", NA), c("A", "B", NA)) # TRUE
-#' are_identical_cols(c("A", "B", NA), c("A", "C", NA)) # FALSE
-#' are_identical_cols(c(NA, NA), c(NA, NA))             # TRUE
-#' are_identical_cols(c(" A", "B"), c("A", "B"))        # TRUE
+#' * It first checks if the vectors have different lengths. If so, it returns `FALSE` immediately.
+#' * It then handles the special case where both vectors are entirely composed of `NA` values, returning `TRUE`.
+#' * The content of both vectors are then standardized (i.e., by trimming leading/trailing whitespace and coercing to character type).
+#' * It performs an element-wise comparison. An `NA` in one vector is considered a match if and only if the other vector also has an `NA` in the same position.
+#' * If any element-wise comparison results in `FALSE` (and is not an `NA`), the function returns `FALSE`. Otherwise, it returns `TRUE`.
 #'
-#' @export
+#' This function is useful for robustly comparing columns in a data frame, where minor formatting differences
+#' (like whitespace) should be ignored and `NA` values should be treated as matches.
+#'
 
 are_identical_cols <- function(a, b) {
   
@@ -47,8 +29,8 @@ are_identical_cols <- function(a, b) {
   # Return TRUE if both vectors are entirely NA
   if (all(is.na(a)) && all(is.na(b))) return(TRUE)
   
-  a <- normalize(a)
-  b <- normalize(b)
+  a <- trimws(as.character(a))
+  b <- trimws(as.character(b))
   # Compare elements, treating NA in the same position as equal
   same <- (a == b) | (is.na(a) & is.na(b))
   if (any(!same, na.rm = TRUE)) return(FALSE)
@@ -58,38 +40,38 @@ are_identical_cols <- function(a, b) {
 
 #' Fuse Identical Columns in a Data Frame
 #'
-#' Identifies groups of columns in a data frame that share a common base name (differentiated by a separator and suffix)
-#' and fuses (merges) columns that are identical, keeping only one representative per group. 
-#' Adds a flag column indicating rows where columns with the same base name are not identical.
+#' Identifies groups of columns in a data frame that share a common base name (e.g., "Var-x", "Var-y" would have base "Var")
+#' and consolidates them based on whether their values are identical or not. It also adds a flag column
+#' indicating rows where values across columns within the same base name group are inconsistent.
 #'
-#' @param df A data frame in which to fuse identical columns.
+#' @param df A data frame in which to fuse columns. Expected column names may contain a separator and suffix
+#'           (e.g., "variable-suffix").
 #' @param sep A character string used as the separator between the base name and suffix in column names (default: "-").
+#'            This separator helps in identifying columns belonging to the same logical variable.
 #'
-#' @return A data frame with identical columns fused and a \code{flag} column indicating rows with non-identical values among columns with the same base name. If all rows are unflagged, the \code{flag} column is removed.
+#' @return A data frame with columns consolidated.
+#'         If columns sharing a base name are identical across all rows, one representative is kept, named after the base name.
+#'         If they are not identical, their values are concatenated into a single column, named after the base name.
+#'         A `flag_discrepancy` column is added (if discrepancies exist) listing the base names
+#'         for rows where values were inconsistent. If no discrepancies are found, `flag_discrepancy` is removed.
 #'
 #' @details
-#' The function:
-#' \itemize{
-#'   \item Groups columns by their base name (before the separator).
-#'   \item For each group, flags rows where the values are not identical across columns.
-#'   \item Within each group, keeps only one representative column for each set of identical columns.
-#'   \item Renames the kept column to the base name if possible.
-#'   \item Adds a \code{flag} column listing base names with non-identical values in each row.
-#'   \item Removes the \code{flag} column if all values are \code{NA}.
-#' }
+#' The function processes columns in the input data frame (`df`) by grouping them based on their "base name"
+#' (the part of the column name before the first occurrence of `sep`).
 #'
-#' @examples
-#' df <- data.frame(
-#'   A = c(1, 2, 3),
-#'   A-x = c(1, 2, 3),
-#'   A-y = c(1, 2, 4),
-#'   B = c("a", "b", "c"),
-#'   B-x = c("a", "b", "c")
-#' )
-#' fuse_identical_columns(df)
+#' **Processing steps for each base name group:**
 #'
-#' @export
-#' 
+#' 1.  **Discrepancy Flagging:** It first examines all columns within a base name group (e.g., `A`, `A-x`, `A-y`).
+#'     For each row, if non-missing values across these columns are not all identical, a discrepancy is noted for that row and base name. This flagging uses an internal `normalize()` helper (assumed to be available) to standardize values before comparison.
+#' 2.  **Column Fusion:**
+#'     * If **all** columns within a base name group are strictly identical across all rows (as determined by an internal `are_identical_cols()` helper, also assumed to be available), only the first column in the group is retained, and it is renamed to the `current_base_name`.
+#'     * If **any** columns within a base name group are not strictly identical, their row-wise non-NA values are concatenated into a single new column for that base name group. The concatenated values are separated by `" | "`.
+#' 3.  **Single Columns:** Columns that do not have any siblings with the same base name (i.e., they are not part of a "group" with a separator-suffixed name) are kept as is.
+#' 4.  **Flag Column Generation:** After processing all base name groups, a `flag_discrepancy` column is constructed. For each row, this column lists all base names for which discrepancies were detected (concatenated with ";").
+#' 5.  **Flag Column Cleanup:** If, after processing, the `flag_discrepancy` column contains only `NA` values (meaning no discrepancies were found across the entire data frame), the column is removed from the final output.
+#'
+#' This function relies on external/internal helper functions `normalize()` and `are_identical_cols()`.
+#'
 
 fuse_duplicate_columns <- function(df, sep = "-") {
   
@@ -184,9 +166,55 @@ fuse_duplicate_columns <- function(df, sep = "-") {
   return(res_df)
 }
 
+
+#' Check Referential Integrity Between Parent and Child Data Frames
 #'
+#' This function checks if referential integrity holds for specified common columns
+#' between a parent data frame and a child data frame. Referential integrity means
+#' that all values in the specified columns of the child data frame exist in the
+#' corresponding columns of the parent data frame.
 #'
+#' @param parent_df A data frame considered as the "parent" table. It should contain
+#'                  the primary or unique keys that the child table references.
+#' @param child_df A data frame considered as the "child" table. It should contain
+#'                 foreign keys that reference the parent table.
+#' @param cols A character vector specifying the names of the common columns (keys)
+#'             to check for referential integrity. These columns must exist in both
+#'             `parent_df` and `child_df`.
 #'
+#' @return A logical vector of the same length as `cols`. Each element is `TRUE` if
+#'         all unique, non-NA values in the corresponding column of `child_df` are
+#'         present in the unique, non-NA values of the same column in `parent_df`.
+#'         Returns `logical(0)` if `cols` is empty.
+#'
+#' @details
+#' The check is performed for each column specified in `cols` independently.
+#' For a given column:
+#'
+#' * It extracts unique, non-NA values from that column in both `parent_df` and `child_df`.
+#' * It then verifies if every unique value from the child's column is present within
+#'   the unique values of the parent's column.
+#' * This is a one-way check: it does not verify if all parent values are present in the child,
+#'   nor does it check for orphaned parent records. It strictly checks if child records
+#'   have a corresponding parent record.
+#'
+#' @examples
+#' # Example 1: Basic referential integrity check
+#' parent_data <- data.frame(
+#'   CustomerID = c(101, 102, 103, 104),
+#'   Name = c("Alice", "Bob", "Charlie", "David")
+#' )
+#'
+#' child_data <- data.frame(
+#'   OrderID = c(1, 2, 3, 4),
+#'   CustomerID = c(101, 103, 101, 102),
+#'   Amount = c(50, 75, 120, 30)
+#' )
+#'
+#' # Check integrity for 'CustomerID'
+#' check_ref_integrity(parent_data, child_data, "CustomerID") # Should be TRUE
+#'
+
 
 check_ref_integrity <- function(parent_df, child_df, cols) {
   if (length(cols) == 0) return(logical(0))
@@ -198,44 +226,52 @@ check_ref_integrity <- function(parent_df, child_df, cols) {
 }
 
 
-#' Merge Parent and Child Tables by Common Keys
+#' Merge Database Tables by Common Keys
 #'
-#' Merges lists of parent and child data frames by their common columns (primary keys or otherwise), according to the specified relationship type.
-#' Handles duplicate columns by fusing identical columns and flags inconsistencies. Returns the merged tables and a record of merged child tables.
+#' Merges a set of `start_tables` (e.g., child tables or tables to be integrated) into a largr collection of
+#' `db_tables` (e.g., parent tables or the main database backbone) by their common columns.
+#' The merging strategy (`type`) can be "referential" (based on foreign key integrity) or "loose" (based on common values).
+#' It handles duplicate columns by fusing identical ones and flags inconsistencies.
 #'
-#' @param parent_list A named list of parent data frames.
-#' @param child_list A named list of child data frames.
-#' @param type Character. The type of relationship to use for merging: \code{"parent-child"}, \code{"child-parent"}, \code{"bidirectional"}, or \code{"any-common"} (default: all).
-#' @param drop_keys Logical. If \code{TRUE}, drops the join key columns after merging (default: \code{TRUE}).
-#' @param suffixes Character vector of length 2. Suffixes to append to duplicate column names (default: \code{c("-x", "-y")}).
-#' @param exclude_cols Optional character vector of column names to exclude from being used as join keys.
+#' @param db_tables A named list of data frames representing the entire database or a collection of potential parent tables.
+#'                  These tables are the targets into which `start_tables` will be merged.
+#' @param start_tables A named list of data frames or a single data frame. These are the tables that will be iteratively
+#'                     merged into `db_tables`.
+#' @param type Character. The type of merging relationship to use.
+#'             \code{"referential"} (default) ensures that child keys exist in the parent,
+#'             while \code{"loose"} performs a merge if there's any overlap in common key values.
+#' @param drop_keys Logical. If \code{TRUE}, the common join key columns will be dropped from the merged table after merging (default: \code{FALSE}).
+#' @param suffixes Character vector of length 2. Suffixes to append to duplicate column names that are not identical (default: \code{c(".x", ".y")}).
+#' @param exclude_cols Optional character vector of column names to exclude from being considered or used as join keys.
 #'
-#' @return A named list of merged parent data frames, each with an attribute \code{join_tbls} listing the child tables merged into it.
-#'
-#' @details
-#' The function:
+#' @return A list containing:
 #' \itemize{
-#'   \item Identifies common columns between parent and child tables according to the specified relationship type.
-#'   \item Skips merging if there are no common columns between a parent and child table.
-#'   \item Merges tables by these columns, optionally excluding specified columns.
-#'   \item Fuses identical columns and flags inconsistencies using \code{\link{fuse_identical_columns}}.
-#'   \item Optionally drops join key columns after merging.
-#'   \item Records which child tables were merged into each parent.
+#'   \item \code{results_df}: A named list of data frames, where each element corresponds to a table from `start_tables`
+#'                          after it has been merged with relevant tables from `db_tables`.
+#'   \item \code{tables_merged}: A character vector listing the names of all tables from `db_tables` that were successfully
+#'                             merged into any of the `start_tables`.
 #' }
 #'
-#' @examples
-#' # Example usage (assuming get_pkeys and fuse_identical_columns are defined):
-#' # parent_list <- list(
-#' #   parent = data.frame(ID = 1:3, Value = c("A", "B", "C"))
-#' # )
-#' # child_list <- list(
-#' #   child = data.frame(ID = 1:3, Data = c("X", "Y", "Z"))
-#' # )
-#' # merge_tbls(parent_list, child_list, type = "parent-child")
+#' @details
+#' The function operates as an iterative merging engine:
 #'
-#' @importFrom magrittr %>%
+#' * **Initialization:** It prepares the `db_tables` and `start_tables` for merging, sorting table names for consistency
+#'     and pre-calculating primary keys.
+#' * **Iterative Merging Loop:** For each table in `start_tables`, it enters a loop:
+#'     * It identifies candidate tables from `db_tables` that have not yet been merged into the current `start_table`.
+#'     * **Key Identification:** Based on the `type` parameter:
+#'         * If `type = "referential"`, it looks for primary keys in the candidate table that are also present
+#'         in the current `start_table` and verifies referential integrity (all child keys exist in parent).
+#'         * If `type = "loose"`, it looks for any common columns where values overlap between the candidate table and `start_table`.
+#'     * **Exclusion:** Specified `exclude_cols` are removed from the potential join keys.
+#'     * **Merging:** If join keys are found, the candidate table is merged into the current `start_table` using `base::merge()`.
+#'     * **Duplicate Column Fusion:** After merging, `fuse_duplicate_columns()` is called to handle columns
+#'         with identical content but potentially different names (or suffixes from merging). This function also flags inconsistencies if columns with the same root name have different content.
+#'     * **Key Dropping:** If `drop_keys` is `TRUE`, the join key columns are removed from the merged table.
+#'     * The loop continues for the current `start_table` until no more candidates can be merged into it.
 #'
-#' @export
+#' This function relies on helper functions `get_pkeys()`, `check_ref_integrity()` (implicitly or explicitly depending on `type`), and `fuse_duplicate_columns()`.
+#'
 
 merge_db_tables <- function(db_tables,
                             start_tables,
