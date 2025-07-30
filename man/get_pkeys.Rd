@@ -4,7 +4,7 @@
 \alias{get_pkeys}
 \title{Identify the primary key(s) in a table}
 \usage{
-get_pkeys(df, alternates = FALSE)
+get_pkeys(df, alternates = FALSE, ignore_na = FALSE)
 }
 \arguments{
 \item{df}{a data frame}

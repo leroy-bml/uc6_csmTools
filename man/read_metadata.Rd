@@ -2,33 +2,31 @@
 % Please edit documentation in R/read_metadata.R
 \name{read_metadata}
 \alias{read_metadata}
-\title{Read and format experiment metadata from an BonaRes repository metadata XML file}
+\title{Read and format experiment metadata from the BonaRes repository metadata XML file}
 \usage{
-read_metadata(path, repo = "bonares", sheet = NULL)
+read_metadata(mother_path, schema = "bonares")
 }
 \arguments{
+\item{schema}{Character. Name of the metadata schema (default: "bonares"). Currently not used in the function logic, but reserved for future extensions.}
+
 \item{path}{Character. Path to the metadata XML file.}
-
-\item{repo}{Character. Name of the data repository (default: "bonares"). Currently not used in the function logic, but reserved for future extensions.}
-
-\item{sheet}{Character or NULL. Optional sheet name for variable key extraction (not currently implemented).}
 }
 \value{
 A tibble (one row) with the following columns:
 \describe{
-\item{METADATA.Experiment_name}{Experiment name(s) as a single string.}
-\item{METADATA.Experiment_title}{Experiment title(s) as a single string.}
-\item{METADATA.Experiment_doi}{Experiment DOI(s) as a single string.}
-\item{METADATA.Contact_persons}{Contact person(s), separated by "; ".}
-\item{METADATA.Institutions}{Institution(s), separated by "; ".}
-\item{METADATA.Contact_email}{Contact email(s), separated by "; ".}
-\item{METADATA.Legal_constraints}{Legal constraints, separated by "; ".}
-\item{METADATA.Funding}{Funding information, separated by "; ".}
-\item{METADATA.Date_published}{Earliest date found in the metadata (as.Date).}
-\item{METADATA.Date_revised}{Most recent date found in the metadata (as.Date).}
-\item{FIELDS.Coordinate_system}{Coordinate system as a string (e.g., "EPSG:4326 v8.9").}
-\item{FIELDS.Longitude}{Mean longitude (numeric) from west/east bounds.}
-\item{FIELDS.Latitude}{Mean latitude (numeric) from north/south bounds.}
+\item{Experiment_name}{Experiment name(s) as a single string.}
+\item{Experiment_title}{Experiment title(s) as a single string.}
+\item{Experiment_doi}{Experiment DOI(s) as a single string.}
+\item{Contact_persons}{Contact person(s), separated by "; ".}
+\item{Institutions}{Institution(s), separated by "; ".}
+\item{Contact_email}{Contact email(s), separated by "; ".}
+\item{Legal_constraints}{Legal constraints, separated by "; ".}
+\item{Funding}{Funding information, separated by "; ".}
+\item{Date_published}{Earliest date found in the metadata (as.Date).}
+\item{Date_revised}{Most recent date found in the metadata (as.Date).}
+\item{Coordinate_system}{Coordinate system as a string (e.g., "EPSG:4326 v8.9").}
+\item{Longitude}{Mean longitude (numeric) from west/east bounds.}
+\item{Latitude}{Mean latitude (numeric) from north/south bounds.}
 }
 }
 \description{
@@ -41,7 +39,7 @@ The function is designed for BonaRes and similar metadata standards, but can be 
 \examples{
 \dontrun{
 # Read metadata from XML file
-meta <- read_metadata("path/to/metadata.xml")
+meta <- read_metadata("path/to/xml")
 print(meta)
 }
 

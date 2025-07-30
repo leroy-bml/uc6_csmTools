@@ -7,29 +7,28 @@
 are_identical_cols(a, b)
 }
 \arguments{
-\item{a}{First vector to compare.}
+\item{a}{The first vector to compare.}
 
-\item{b}{Second vector to compare.}
+\item{b}{The second vector to compare.}
 }
 \value{
-Logical. \code{TRUE} if the vectors are identical (including NA positions), \code{FALSE} otherwise.
+Logical. \code{TRUE} if the vectors are identical in length, content, and \code{NA} positions, and \code{FALSE} otherwise.
 }
 \description{
-Compares two vectors to determine if they are identical, allowing for NA values and normalizing by trimming whitespace and coercing to character.
+This function compares two vectors to determine if they are functionally identical.
+The comparison includes handling of \code{NA} values and standardize values (e.g., by trimming whitespace)
+before comparison.
 }
 \details{
-The function:
+The function operates with the following logic:
 \itemize{
-\item Returns \code{FALSE} if the vectors are of different lengths.
-\item Returns \code{TRUE} if both vectors are entirely \code{NA}.
-\item Trims whitespace and coerces both vectors to character.
-\item Compares elements, treating \code{NA} in the same position as equal.
+\item It first checks if the vectors have different lengths. If so, it returns \code{FALSE} immediately.
+\item It then handles the special case where both vectors are entirely composed of \code{NA} values, returning \code{TRUE}.
+\item The content of both vectors are then standardized (i.e., by trimming leading/trailing whitespace and coercing to character type).
+\item It performs an element-wise comparison. An \code{NA} in one vector is considered a match if and only if the other vector also has an \code{NA} in the same position.
+\item If any element-wise comparison results in \code{FALSE} (and is not an \code{NA}), the function returns \code{FALSE}. Otherwise, it returns \code{TRUE}.
 }
-}
-\examples{
-are_identical_cols(c("A", "B", NA), c("A", "B", NA)) # TRUE
-are_identical_cols(c("A", "B", NA), c("A", "C", NA)) # FALSE
-are_identical_cols(c(NA, NA), c(NA, NA))             # TRUE
-are_identical_cols(c(" A", "B"), c("A", "B"))        # TRUE
 
+This function is useful for robustly comparing columns in a data frame, where minor formatting differences
+(like whitespace) should be ignored and \code{NA} values should be treated as matches.
 }
