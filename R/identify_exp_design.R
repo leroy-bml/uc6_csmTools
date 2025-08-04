@@ -625,7 +625,7 @@ identify_exp_design <- function(db, design_tbl) {
 #' # )
 #' # identify_exp_attributes(db)
 #'
-#' @importFrom lubridate is_date
+#' @importFrom lubridate is.Date
 #'
 #' @export
 #' 
