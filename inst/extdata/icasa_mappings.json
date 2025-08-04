@@ -11,7 +11,7 @@
     "icasa_unit": "text",
     "icasa_type": "text",
     "data_model": "bonares-lte_de",
-    "section": "ACROSS",
+    "section": "ERTRAG",
     "header": "SORTE.Bsa_Code",
     "comments": "Not original ICASA var: used to map multi-crop experiments"
   },
@@ -27,7 +27,7 @@
     "icasa_unit": "text",
     "icasa_type": "text",
     "data_model": "bonares-lte_de",
-    "section": "ACROSS",
+    "section": "ERTRAG",
     "header": "SORTE.Sorte",
     "description": "Name of variety",
     "unit": "text",
@@ -45,7 +45,7 @@
     "icasa_unit": "text",
     "icasa_type": "text",
     "data_model": "bonares-lte_de",
-    "section": "ACROSS",
+    "section": "AUSSAAT",
     "header": "SORTE.Bsa_Code",
     "comments": "Not original ICASA var: used to map multi-crop experiments"
   },
@@ -61,7 +61,7 @@
     "icasa_unit": "text",
     "icasa_type": "text",
     "data_model": "bonares-lte_de",
-    "section": "ACROSS",
+    "section": "AUSSAAT",
     "header": "SORTE.Sorte",
     "description": "Name of variety",
     "unit": "text",
@@ -79,11 +79,11 @@
     "icasa_unit": "code",
     "icasa_type": "text",
     "data_model": "bonares-lte_de",
-    "section": "ACROSS",
+    "section": "ERTRAG",
     "header": "KULTUR.Icc_Code",
     "description": "ICC-Code of the cultivated crop (FAO)",
-    "unit": "text",
-    "comments": "TODO: make code lists; not original ICASA variable: used to map multi-crop experiment datasets"
+    "unit": "code",
+    "code_mappings": "list('5.01: POT', '1.01: WHT', '8.01: SBT', '1.05: BAR', '1.02: MAZ')"
   },
   {
     "template_section": "HARVESTS",
@@ -97,11 +97,11 @@
     "icasa_unit": "code",
     "icasa_type": "text",
     "data_model": "bonares-lte_de",
-    "section": "ACROSS",
+    "section": "ERTRAG",
     "header": "KULTUR.Kultur",
     "description": "Name of cultivated crop",
-    "unit": "text",
-    "comments": "TODO: make code lists; not original ICASA variable: used to map multi-crop experiment datasets"
+    "unit": "code",
+    "code_mappings": "list('Kartoffel: POT', 'Winterweizen: WHT', 'Sommerweizen: WHT', 'Zuckerrübe: SBT', 'Sommergerste : BAR', 'Wintergerste: BAR', 'Körnermais: MAZ')"
   },
   {
     "template_section": "HARVESTS",
@@ -115,11 +115,11 @@
     "icasa_unit": "code",
     "icasa_type": "text",
     "data_model": "bonares-lte_de",
-    "section": "ACROSS",
+    "section": "ERTRAG",
     "header": "KULTUR.Kultur_Botanisch",
     "description": "Botanical name of cultivated crop",
-    "unit": "text",
-    "comments": "TODO: make code lists; not original ICASA variable: used to map multi-crop experiment datasets"
+    "unit": "code",
+    "code_mappings": "list()"
   },
   {
     "template_section": "HARVESTS",
@@ -133,11 +133,11 @@
     "icasa_unit": "code",
     "icasa_type": "text",
     "data_model": "bonares-lte_de",
-    "section": "ACROSS",
+    "section": "ERTRAG",
     "header": "KULTUR.Kultur_Englisch",
     "description": "English name of cultivated crop",
-    "unit": "text",
-    "comments": "TODO: make code lists; not original ICASA variable: used to map multi-crop experiment datasets"
+    "unit": "code",
+    "code_mappings": "list('Potato: POT', 'Winter wheat: WHT', 'Sugar beet: SBT', 'Spring barley: BAR', 'Winter barley: BAR', 'Maize: MAZ')"
   },
   {
     "template_section": "PLANTINGS",
@@ -151,11 +151,11 @@
     "icasa_unit": "code",
     "icasa_type": "text",
     "data_model": "bonares-lte_de",
-    "section": "ACROSS",
+    "section": "AUSSAAT",
     "header": "KULTUR.Icc_Code",
     "description": "ICC-Code of the cultivated crop (FAO)",
-    "unit": "text",
-    "comments": "TODO: make code lists; not original ICASA variable: used to map multi-crop experiment datasets"
+    "unit": "code",
+    "code_mappings": "list('5.01: POT', '1.01: WHT', '8.01: SBT', '1.05: BAR', '1.02: MAZ')"
   },
   {
     "template_section": "PLANTINGS",
@@ -169,11 +169,11 @@
     "icasa_unit": "code",
     "icasa_type": "text",
     "data_model": "bonares-lte_de",
-    "section": "ACROSS",
+    "section": "AUSSAAT",
     "header": "KULTUR.Kultur",
     "description": "Name of cultivated crop",
-    "unit": "text",
-    "comments": "TODO: make code lists; not original ICASA variable: used to map multi-crop experiment datasets"
+    "unit": "code",
+    "code_mappings": "list('Kartoffel: POT', 'Winterweizen: WHT', 'Sommerweizen: WHT', 'Zuckerrübe: SBT', 'Sommergerste : BAR', 'Wintergerste: BAR', 'Körnermais: MAZ')"
   },
   {
     "template_section": "PLANTINGS",
@@ -187,11 +187,11 @@
     "icasa_unit": "code",
     "icasa_type": "text",
     "data_model": "bonares-lte_de",
-    "section": "ACROSS",
+    "section": "AUSSAAT",
     "header": "KULTUR.Kultur_Botanisch",
     "description": "Botanical name of cultivated crop",
-    "unit": "text",
-    "comments": "TODO: make code lists; not original ICASA variable: used to map multi-crop experiment datasets"
+    "unit": "code",
+    "code_mappings": "list()"
   },
   {
     "template_section": "PLANTINGS",
@@ -205,11 +205,11 @@
     "icasa_unit": "code",
     "icasa_type": "text",
     "data_model": "bonares-lte_de",
-    "section": "ACROSS",
+    "section": "AUSSAAT",
     "header": "KULTUR.Kultur_Englisch",
     "description": "English name of cultivated crop",
-    "unit": "text",
-    "comments": "TODO: make code lists; not original ICASA variable: used to map multi-crop experiment datasets"
+    "unit": "code",
+    "code_mappings": "list('Potato: POT', 'Winter wheat: WHT', 'Sugar beet: SBT', 'Spring barley: BAR', 'Winter barley: BAR', 'Maize: MAZ')"
   },
   {
     "template_section": "HARVESTS",
@@ -223,7 +223,7 @@
     "icasa_unit": "number",
     "icasa_type": "single",
     "data_model": "bonares-lte_de",
-    "section": "ACROSS",
+    "section": "ERTRAG",
     "header": "Kultur_ID",
     "comments": "Crop ID mapped to cultivar to account for multi-crop experiments; not original ICASA variable: used to map multi-crop experiment datasets"
   },
@@ -239,7 +239,7 @@
     "icasa_unit": "number",
     "icasa_type": "single",
     "data_model": "bonares-lte_de",
-    "section": "ACROSS",
+    "section": "AUSSAAT",
     "header": "Kultur_ID",
     "comments": "Crop ID mapped to cultivar to account for multi-crop experiments; not original ICASA variable: used to map multi-crop experiment datasets"
   },
@@ -2244,7 +2244,7 @@
     "icasa_unit": "number",
     "icasa_type": "single",
     "data_model": "bonares-lte_de",
-    "section": "ACROSS",
+    "section": "KULTUR",
     "header": "Kultur_ID",
     "comments": "Crop ID mapped to cultivar to account for multi-crop experiments"
   },
@@ -2279,11 +2279,11 @@
     "icasa_unit": "code",
     "icasa_type": "text",
     "data_model": "bonares-lte_de",
-    "section": "ACROSS",
+    "section": "KULTUR",
     "header": "KULTUR.Icc_Code",
     "description": "ICC-Code of the cultivated crop (FAO)",
-    "unit": "text",
-    "comments": "TODO: make code lists"
+    "unit": "code",
+    "code_mappings": "list('5.01: POT', '1.01: WHT', '8.01: SBT', '1.05: BAR', '1.02: MAZ')"
   },
   {
     "template_section": "GENOTYPES",
@@ -2297,11 +2297,11 @@
     "icasa_unit": "code",
     "icasa_type": "text",
     "data_model": "bonares-lte_de",
-    "section": "ACROSS",
+    "section": "KULTUR",
     "header": "KULTUR.Kultur",
     "description": "Name of cultivated crop",
-    "unit": "text",
-    "comments": "TODO: make code lists"
+    "unit": "code",
+    "code_mappings": "list('Kartoffel: POT', 'Winterweizen: WHT', 'Sommerweizen: WHT', 'Zuckerrübe: SBT', 'Sommergerste : BAR', 'Wintergerste: BAR', 'Körnermais: MAZ')"
   },
   {
     "template_section": "GENOTYPES",
@@ -2315,11 +2315,11 @@
     "icasa_unit": "code",
     "icasa_type": "text",
     "data_model": "bonares-lte_de",
-    "section": "ACROSS",
+    "section": "KULTUR",
     "header": "KULTUR.Kultur_Botanisch",
     "description": "Botanical name of cultivated crop",
-    "unit": "text",
-    "comments": "TODO: make code lists"
+    "unit": "code",
+    "code_mappings": "list()"
   },
   {
     "template_section": "GENOTYPES",
@@ -2333,11 +2333,11 @@
     "icasa_unit": "code",
     "icasa_type": "text",
     "data_model": "bonares-lte_de",
-    "section": "ACROSS",
+    "section": "KULTUR",
     "header": "KULTUR.Kultur_Englisch",
     "description": "English name of cultivated crop",
-    "unit": "text",
-    "comments": "TODO: make code lists"
+    "unit": "code",
+    "code_mappings": "list('Potato: POT', 'Winter wheat: WHT', 'Sugar beet: SBT', 'Spring barley: BAR', 'Winter barley: BAR', 'Maize: MAZ')"
   },
   {
     "template_section": "GENOTYPES",
@@ -2411,7 +2411,7 @@
     "icasa_unit": "text",
     "icasa_type": "text",
     "data_model": "bonares-lte_de",
-    "section": "ACROSS",
+    "section": "KULTUR",
     "header": "SORTE.Bsa_Code",
     "description": "BSA-Code"
   },
@@ -2427,7 +2427,7 @@
     "icasa_unit": "text",
     "icasa_type": "text",
     "data_model": "bonares-lte_de",
-    "section": "ACROSS",
+    "section": "KULTUR",
     "header": "SORTE.Sorte",
     "description": "Name of variety",
     "unit": "text"
@@ -4690,8 +4690,7 @@
     "section": "AUSSAAT",
     "header": "AUSSAAT.Keimfaehige_Koerner",
     "description": "Number of germinable seeds per m² (grain, corn, beet) and per hectare (potatos)",
-    "code_mappings": "function(df) { if(df$CRID==\"POT\", PLSPOP*0.0001, PLSPOP }",
-    "fun_header": "list(df=EXPERIMENTS)",
+    "fun_header": "function(df) { if(df$CRID==\"POT\", PLSPOP*0.0001, PLSPOP }",
     "comments": "number/m2 to number/m2; non-conventional unit to create in the function; fun per ha for potatoes; does mapping make sense?"
   },
   {
@@ -5999,8 +5998,7 @@
     "header": "DUENGUNG.Termin",
     "description": "Date of fertilization",
     "unit": "date",
-    "code_mappings": "function(df) { if(df$Mineralisch==1, FEDATE, OMDAT }",
-    "fun_header": "list(df=DUENGUNG)"
+    "fun_header": "function(df) { if(df$Mineralisch==1, FEDATE, OMDAT }"
   },
   {
     "template_section": "FERTILIZER_APPLICS",
@@ -6083,7 +6081,8 @@
     "header": "DUENGUNG.Duengemittel_Name",
     "synonyms": "DUENGEMITTEL.Name",
     "description": "Name of fertilizer",
-    "unit": "text",
+    "unit": "code",
+    "code_mappings": "list('Harnstoff: FE005', 'Triplesuperphosphat: FE014', 'Ammon-Sulfat-Salpeter: FE060', 'Kalkammonsalpeter: FE011', 'Kalkstickstoff: FE050', 'Ammonium-Nitrat-Harnstoff-Lösung: FE010')",
     "fun_header": "function(df) { if(df$Mineralisch==1, FEACD, OMACD }",
     "fun_header_args": "list(df=DUENGUNG)",
     "comments": "Review code/conditional mapping"
@@ -6104,7 +6103,8 @@
     "section": "DUENGUNG",
     "header": "DUENGEMITTEL.Name",
     "description": "Name of fertilizer",
-    "unit": "text",
+    "unit": "code",
+    "code_mappings": "list('Harnstoff: FE005', 'Triplesuperphosphat: FE014', 'Ammon-Sulfat-Salpeter: FE060', 'Kalkammonsalpeter: FE011', 'Kalkstickstoff: FE050', 'Ammonium-Nitrat-Harnstoff-Lösung: FE010')",
     "fun_header": "function(df) { if(df$Mineralisch==1, FEACD, OMACD }",
     "fun_header_args": "list(df=DUENGUNG)",
     "comments": "Review code/conditional mapping"
@@ -6177,9 +6177,9 @@
     "section": "DUENGUNG",
     "header": "TECHNIK.Technik",
     "description": "Name of the machine/agricultural engineering",
-    "unit": "text",
-    "code_mappings": "function(df) { if(df$Mineralisch==1, FECD, OMCD }",
-    "fun_header": "list(df=DUENGUNG)"
+    "unit": "code",
+    "code_mappings": "list()",
+    "fun_header": "function(df) { if(df$Mineralisch==1, FECD, OMCD }"
   },
   {
     "template_section": "FERTILIZER_APPLICS",
@@ -6198,8 +6198,7 @@
     "header": "AGRICULTURAL_ENGINEERING.Name",
     "description": "Name of the machine/agricultural engineering",
     "unit": "text",
-    "code_mappings": "function(df) { if(df$Mineralisch==1, FECD, OMCD }",
-    "fun_header": "list(df=DUENGUNG)"
+    "fun_header": "function(df) { if(df$Mineralisch==1, FECD, OMCD }"
   },
   {
     "template_section": "FERTILIZER_APPLICS",
@@ -6569,6 +6568,26 @@
   },
   {
     "template_section": "FERTILIZER_APPLICS",
+    "var_uid": "355",
+    "icasa_dataset": "EXPERIMENT",
+    "icasa_subset": "MANAGEMENT",
+    "icasa_group": "FERTILIZERS",
+    "icasa_subgroup": "FERTILIZER_APPLICS",
+    "icasa_header_long": "phosphorus_applied_fert",
+    "icasa_header_short": "FEAMP",
+    "icasa_description": "Phosphorus (elemental) in applied fertilizer",
+    "icasa_unit": "kg/ha",
+    "icasa_type": "single",
+    "icasa_minval": "0",
+    "data_model": "bonares-lte_de",
+    "section": "DUENGUNG",
+    "header": "DUENGUNG.P2O5",
+    "description": "Mass of phosphorus (kg per ha, pure nutrient) which was applied to the plot with mineral fertilizer",
+    "unit": "kg/ha",
+    "fun_values": "function(x) { x*0.436 }"
+  },
+  {
+    "template_section": "FERTILIZER_APPLICS",
     "var_uid": "356",
     "icasa_dataset": "EXPERIMENT",
     "icasa_subset": "MANAGEMENT",
@@ -6604,6 +6623,26 @@
     "section": "DUENGUNG",
     "header": "DUENGUNG.Dikaliumoxid",
     "synonyms": "DUENGUNG.Kaliumoxid; DUENGUNG.K2O",
+    "description": "Mass of potassium (kg per ha, pure nutrient) which was applied to the plot with mineral fertilizer",
+    "unit": "kg/ha",
+    "fun_values": "function(x) { x*0.830 }"
+  },
+  {
+    "template_section": "FERTILIZER_APPLICS",
+    "var_uid": "356",
+    "icasa_dataset": "EXPERIMENT",
+    "icasa_subset": "MANAGEMENT",
+    "icasa_group": "FERTILIZERS",
+    "icasa_subgroup": "FERTILIZER_APPLICS",
+    "icasa_header_long": "fertilizer_K_applied",
+    "icasa_header_short": "FEAMK",
+    "icasa_description": "Potassium (elemental) in applied fertilizer",
+    "icasa_unit": "kg/ha",
+    "icasa_type": "single",
+    "icasa_minval": "0",
+    "data_model": "bonares-lte_de",
+    "section": "DUENGUNG",
+    "header": "DUENGUNG.K2O",
     "description": "Mass of potassium (kg per ha, pure nutrient) which was applied to the plot with mineral fertilizer",
     "unit": "kg/ha",
     "fun_values": "function(x) { x*0.830 }"
@@ -6723,6 +6762,26 @@
     "section": "DUENGUNG",
     "header": "DUENGUNG.Calciumoxid",
     "synonyms": "DUENGUNG.Gebrannter_Kalk; DUENGUNG.Branntkalk; DUENGUNG.Ungeloeschter_Kalk; DUENGUNG.Kalkerde; DUENGUNG.Aetzkalk ; DUENGUNG.Freikalk; DUENGUNG.CaO",
+    "description": "Amount of calcium (kg per hectare, pure nutrient) which was applied to the plot with mineral fertilizer",
+    "unit": "kg/ha",
+    "fun_values": "function(x) { x*0.715 }"
+  },
+  {
+    "template_section": "FERTILIZER_APPLICS",
+    "var_uid": "358",
+    "icasa_dataset": "EXPERIMENT",
+    "icasa_subset": "MANAGEMENT",
+    "icasa_group": "FERTILIZERS",
+    "icasa_subgroup": "FERTILIZER_APPLICS",
+    "icasa_header_long": "Ca_in_applied_fertilizer",
+    "icasa_header_short": "FEAMC",
+    "icasa_description": "Calcium (elemental) in applied fertilizer",
+    "icasa_unit": "kg/ha",
+    "icasa_type": "single",
+    "icasa_minval": "0",
+    "data_model": "bonares-lte_de",
+    "section": "DUENGUNG",
+    "header": "DUENGUNG.CaO",
     "description": "Amount of calcium (kg per hectare, pure nutrient) which was applied to the plot with mineral fertilizer",
     "unit": "kg/ha",
     "fun_values": "function(x) { x*0.715 }"
@@ -6920,6 +6979,26 @@
     "section": "DUENGUNG",
     "header": "DUENGUNG.Magnesiumoxid",
     "synonyms": "DUENGUNG.Magnesia; DUENGUNG.MgO",
+    "description": "Amount of magnesium (kg per hectare, pure nutrient) which was applied to the plot with mineral fertilizer",
+    "unit": "kg/ha",
+    "fun_values": "function(x) { x*0.603 }"
+  },
+  {
+    "template_section": "FERTILIZER_APPLICS",
+    "var_uid": "359",
+    "icasa_dataset": "EXPERIMENT",
+    "icasa_subset": "MANAGEMENT",
+    "icasa_group": "FERTILIZERS",
+    "icasa_subgroup": "FERTILIZER_APPLICS",
+    "icasa_header_long": "Mg_in_applied_fertilizer",
+    "icasa_header_short": "FEAMM",
+    "icasa_description": "Magnesium (elemental) in applied fertilizer",
+    "icasa_unit": "kg/ha",
+    "icasa_type": "single",
+    "icasa_minval": "0",
+    "data_model": "bonares-lte_de",
+    "section": "DUENGUNG",
+    "header": "DUENGUNG.MgO",
     "description": "Amount of magnesium (kg per hectare, pure nutrient) which was applied to the plot with mineral fertilizer",
     "unit": "kg/ha",
     "fun_values": "function(x) { x*0.603 }"
@@ -7174,8 +7253,8 @@
     "header": "DUENGUNG.Termin",
     "description": "Date of fertilization",
     "unit": "date",
-    "code_mappings": "function(df) { if(df$Mineralisch==1, FEDATE, OMDAT }",
-    "fun_header": "list(df=DUENGUNG)"
+    "fun_header": "function(df) { if(df$Mineralisch==1, FEDATE, OMDAT }",
+    "fun_header_args": "list(df=DUENGUNG)"
   },
   {
     "template_section": "ORGANIC_MATERIAL_APPLICS",
@@ -7258,7 +7337,8 @@
     "header": "DUENGUNG.Duengemittel_Name",
     "synonyms": "DUENGEMITTEL.Name",
     "description": "Name of fertilizer",
-    "unit": "text",
+    "unit": "code",
+    "code_mappings": "list()",
     "fun_header": "function(df) { if(df$Mineralisch==1, FEACD, OMACD }",
     "fun_header_args": "list(df=DUENGUNG)",
     "comments": "Review code/conditional mapping"
@@ -7279,7 +7359,8 @@
     "section": "DUENGUNG",
     "header": "DUENGEMITTEL.Name",
     "description": "Name of fertilizer",
-    "unit": "text",
+    "unit": "code",
+    "code_mappings": "list()",
     "fun_header": "function(df) { if(df$Mineralisch==1, FEACD, OMACD }",
     "fun_header_args": "list(df=DUENGUNG)",
     "comments": "Review code/conditional mapping"
@@ -7320,9 +7401,10 @@
     "section": "DUENGUNG",
     "header": "TECHNIK.Technik",
     "description": "Name of the machine/agricultural engineering",
-    "unit": "text",
-    "code_mappings": "function(df) { if(df$Mineralisch==1, FECD, OMCD }",
-    "fun_header": "list(df=DUENGUNG)"
+    "unit": "code",
+    "code_mappings": "list()",
+    "fun_header": "function(df) { if(df$Mineralisch==1, FECD, OMCD }",
+    "fun_header_args": "list(df=DUENGUNG)"
   },
   {
     "template_section": "ORGANIC_MATERIAL_APPLICS",
@@ -7341,8 +7423,7 @@
     "header": "AGRICULTURAL_ENGINEERING.Name",
     "description": "Name of the machine/agricultural engineering",
     "unit": "text",
-    "code_mappings": "function(df) { if(df$Mineralisch==1, FECD, OMCD }",
-    "fun_header": "list(df=DUENGUNG)"
+    "fun_header": "function(df) { if(df$Mineralisch==1, FECD, OMCD }"
   },
   {
     "template_section": "ORGANIC_MATERIAL_APPLICS",
@@ -7819,8 +7900,7 @@
     "section": "DUENGUNG",
     "header": "BEMERKUNGEN.Bemerkungen",
     "description": "Contains extra information",
-    "unit": "text",
-    "comments": "TODO: conditional mapping (org vs min)"
+    "unit": "text"
   },
   {
     "template_section": "MULCHES",
@@ -8367,8 +8447,7 @@
     "section": "PFLANZENSCHUTZ",
     "header": "PFLANZENSCHUTZ_MITTEL.Wirkstoff",
     "description": "Active substance in the plant protection product",
-    "unit": "text",
-    "comments": "; TOFILL AS JSONSTR: function(x, y){ paste(x, y, sep =  | ) }; x=PFLANZENSCHUTZ_MITTEL.Name ; y=PFLANZENSCHUTZ_MITTEL.Wirkstoff"
+    "unit": "text"
   },
   {
     "template_section": "CHEMICAL_APPLICS",
@@ -9825,7 +9904,8 @@
     "section": "ERNTE",
     "header": "TECHNIK.Technik",
     "description": "Name of the machine/agricultural engineering",
-    "unit": "text"
+    "unit": "code",
+    "code_mappings": "list()"
   },
   {
     "template_section": "HARVEST_EVENTS",
@@ -9843,7 +9923,8 @@
     "section": "ERTRAG",
     "header": "TECHNIK.Technik",
     "description": "Name of the machine/agricultural engineering",
-    "unit": "text"
+    "unit": "code",
+    "code_mappings": "list()"
   },
   {
     "template_section": "HARVEST_EVENTS",
@@ -14315,6 +14396,8 @@
     "header": "KLIMADATEN.T_Max_2m",
     "description": "Average day temperature in 2 m height",
     "unit": "degree_C",
+    "fun_values": "new_column:temperature_sensor_ht",
+    "fun_values_args": "list(2)",
     "comments": "Add function to autofill TEMHT = 2"
   },
   {
@@ -14532,6 +14615,8 @@
     "header": "KLIMADATEN.T_Min_2m",
     "description": "Minimum daily temperature in 2 m height (day)",
     "unit": "degree_C",
+    "fun_values": "new_column:temperature_sensor_ht",
+    "fun_values_args": "list(2)",
     "comments": "Add function to autofill TEMHT = 2"
   },
   {
@@ -14550,6 +14635,8 @@
     "header": "KLIMADATEN.T_Min_5cm",
     "description": "Maximum daily temperature in 2 m height (day)",
     "unit": "degree_C",
+    "fun_values": "new_column:temperature_sensor_ht",
+    "fun_values_args": "list(0.05)",
     "comments": "Add function to autofill TEMHT = 0.05; override mapping if both 2m and 5cm"
   },
   {
@@ -15668,6 +15755,8 @@
     "header": "KLIMADATEN.T_Mit_2m",
     "description": "Average daily temperature on ground level (5cm)",
     "unit": "degree_C",
+    "fun_values": "new_column:temperature_sensor_ht",
+    "fun_values_args": "list(2)",
     "comments": "Add function to autofill TEMHT = 2"
   },
   {
@@ -26056,7 +26145,6 @@
     "icasa_description": "Additional information regarding a single day's measurements",
     "icasa_unit": "t/ha",
     "icasa_type": "text",
-    "data_model": "bonares-lte_de",
     "section": "BODENLABORWERTE",
     "header": "BEMERKUNGEN.Bemerkungen"
   },
@@ -26318,5 +26406,221 @@
     "section": "ACROSS",
     "header": "VERSUCHSAUFBAU.Bewaesserung",
     "fun_values_args": "may be mapped to IRRIG APPLIED, example of recombining tables post-mapping?"
+  },
+  {
+    "var_uid": "993",
+    "icasa_dataset": "EXPERIMENT",
+    "icasa_subset": "MEASURED_DATA",
+    "icasa_group": "TIME_SERIES",
+    "icasa_subgroup": "PLANT_GROWTH",
+    "icasa_header_long": "harvest_yield_at_day_dw",
+    "icasa_header_short": "HWAD",
+    "icasa_description": "Harvest yield, specified day (dry wt)",
+    "icasa_unit": "kg/ha",
+    "icasa_type": "single",
+    "icasa_minval": "0",
+    "data_model": "bonares-lte_de",
+    "section": "PFLANZENLABORWERTE",
+    "header": "PFLANZENLABORWERTE.Hp_Trockenmasse",
+    "description": "Dry matter of the harvested main product, e.g. grains",
+    "unit": "dt/ha"
+  },
+  {
+    "data_model": "bonares-lte_de",
+    "header": "PFLANZENLABORWERTE.TS",
+    "description": "Dry matter from fresh grain",
+    "unit": "%",
+    "comments": "TODO: Calculate from moisture content + date condition (harvest)"
+  },
+  {
+    "var_uid": "1079",
+    "icasa_dataset": "EXPERIMENT",
+    "icasa_subset": "MEASURED_DATA",
+    "icasa_group": "TIME_SERIES",
+    "icasa_subgroup": "PLANT_NITROGEN",
+    "icasa_header_long": "grain_N_conc",
+    "icasa_header_short": "GN%D",
+    "icasa_description": "Grain N concentration on sampling date",
+    "icasa_unit": "%",
+    "icasa_type": "single",
+    "icasa_minval": "0",
+    "data_model": "bonares-lte_de",
+    "section": "PFLANZENLABORWERTE",
+    "header": "PFLANZENLABORWERTE.N",
+    "description": "N in dry matter corn",
+    "unit": "%",
+    "comments": "TODO: also generate content (kg/ha); Note: ICASA concentration basis (dry/fresh weight) not specified"
+  },
+  {
+    "var_uid": "1124",
+    "icasa_dataset": "EXPERIMENT",
+    "icasa_subset": "MEASURED_DATA",
+    "icasa_group": "TIME_SERIES",
+    "icasa_subgroup": "PLANT_PHOSPHORUS",
+    "icasa_header_long": "grain_P_conc",
+    "icasa_header_short": "GP%D",
+    "icasa_description": "Grain phosphorus concentration",
+    "icasa_unit": "%",
+    "icasa_type": "single",
+    "icasa_minval": "0",
+    "data_model": "bonares-lte_de",
+    "section": "PFLANZENLABORWERTE",
+    "header": "PFLANZENLABORWERTE.P",
+    "description": "P in dry matter corn",
+    "unit": "%",
+    "comments": "TODO: also generate content (kg/ha); Note: ICASA concentration basis (dry/fresh weight) not specified"
+  },
+  {
+    "data_model": "bonares-lte_de",
+    "section": "PFLANZENLABORWERTE",
+    "header": "PFLANZENLABORWERTE.K",
+    "description": "K in dry matter corn",
+    "unit": "%",
+    "comments": "TODO: calculate grain_potassium_content based on yield 'function(yield, x) {  yield * (x / 100) }'; figure out how to specify"
+  },
+  {
+    "var_uid": "939",
+    "icasa_dataset": "EXPERIMENT",
+    "icasa_subset": "MEASURED_DATA",
+    "icasa_group": "TIME_SERIES",
+    "icasa_subgroup": "PLANT_GROWTH",
+    "icasa_header_long": "grain_oil_conc",
+    "icasa_header_short": "GL%D",
+    "icasa_description": "Grain oil concentration",
+    "icasa_unit": "%",
+    "icasa_type": "single",
+    "icasa_minval": "0",
+    "data_model": "bonares-lte_de",
+    "section": "PFLANZENLABORWERTE",
+    "header": "PFLANZENLABORWERTE.Oel",
+    "description": "Oel content from fresh corn",
+    "unit": "%",
+    "comments": "Note: ICASA concentration basis (dry/fresh weight) not specified"
+  },
+  {
+    "var_uid": "1080",
+    "icasa_dataset": "EXPERIMENT",
+    "icasa_subset": "MEASURED_DATA",
+    "icasa_group": "TIME_SERIES",
+    "icasa_subgroup": "PLANT_NITROGEN",
+    "icasa_header_long": "grain_protein_concentration",
+    "icasa_header_short": "GPR%D",
+    "icasa_description": "Grain protein concentration",
+    "icasa_unit": "%",
+    "icasa_type": "single",
+    "icasa_minval": "0",
+    "data_model": "bonares-lte_de",
+    "section": "PFLANZENLABORWERTE",
+    "header": "PFLANZENLABORWERTE.Protein",
+    "description": "Protein content from fresh corn",
+    "unit": "%",
+    "comments": "Note: ICASA concentration basis (dry/fresh weight) not specified"
+  },
+  {
+    "data_model": "bonares-lte_de",
+    "section": "PFLANZENLABORWERTE",
+    "header": "PFLANZENLABORWERTE.N_Proz_Restpflanze_ohne_Korn",
+    "description": "N in dry matter plant above earth (without corn)",
+    "unit": "%",
+    "comments": "Question: does top includes grain?"
+  },
+  {
+    "data_model": "bonares-lte_de",
+    "section": "PFLANZENLABORWERTE",
+    "header": "PFLANZENLABORWERTE.C",
+    "description": "C in dry matter corn",
+    "unit": "%",
+    "comments": "TODO: conditial mapping to SUMMARY var IF date = harvest date?"
+  },
+  {
+    "template_section": "PLANTINGS",
+    "var_uid": "272",
+    "icasa_dataset": "EXPERIMENT",
+    "icasa_subset": "MANAGEMENT",
+    "icasa_group": "PLANTINGS",
+    "icasa_header_long": "plant_pop_at_planting",
+    "icasa_header_short": "PLPOP",
+    "icasa_description": "Plant population at planting",
+    "icasa_unit": "number/m2",
+    "icasa_type": "single",
+    "icasa_minval": "0",
+    "data_model": "bonares-lte_de",
+    "header": "AUSSAAT.Saatstaerke_Anzahl_m2",
+    "description": "Seeding rate, total number of seeds per area",
+    "unit": "number/m2"
+  },
+  {
+    "data_model": "bonares-lte_de",
+    "header": "AUSSAAT.Vorfrucht",
+    "description": "Catch crop",
+    "fun_values": "conditional_new_column:crop_intended_use:tmin_2m:1",
+    "fun_values_args": "list(\"CO\")",
+    "comments": "TODO: conditional mapping to cover crop if = 1; nothing otherwise"
+  },
+  {
+    "template_section": "CHEMICAL_APPLICS",
+    "var_uid": "418",
+    "icasa_dataset": "EXPERIMENT",
+    "icasa_subset": "MANAGEMENT",
+    "icasa_group": "CHEMICALS",
+    "icasa_subgroup": "CHEMICAL_APPLICS",
+    "icasa_header_long": "chemical_applic_amount",
+    "icasa_header_short": "CHAMT",
+    "icasa_description": "Chemicals application amount (active)",
+    "icasa_unit": "l/ha",
+    "icasa_type": "single",
+    "icasa_minval": "0",
+    "data_model": "bonares-lte_de",
+    "section": "PFLANZENSCHUTZ",
+    "header": "PFLANZENSCHUTZ.Menge_l_ha",
+    "description": "Amount of applied plant protection. The unit differs according to the used product.",
+    "unit": "l/ha",
+    "comments": "Note: incorret unit; need addition to ICASA for non-solid formulations"
+  },
+  {
+    "data_model": "bonares-lte_de",
+    "header": "FRUCHTFOLGE.Vorfrucht",
+    "description": "Catch crop",
+    "fun_values": "conditional_new_column:crop_intended_use:tmin_2m:1",
+    "fun_values_args": "list(\"CO\")",
+    "comments": "TODO: conditional mapping to cover crop if = 1; nothing otherwise"
+  },
+  {
+    "template_section": "TREATMENTS",
+    "var_uid": "112",
+    "icasa_dataset": "EXPERIMENT",
+    "icasa_subset": "MANAGEMENT",
+    "icasa_group": "TREATMENTS",
+    "icasa_header_long": "plot_geocoord_x",
+    "icasa_header_short": "PLOT_GEO_X",
+    "icasa_description": "\"x\" geocoordinate of an individual plot (e.g. longitude in decimal degrees)",
+    "icasa_unit": "number",
+    "icasa_type": "double",
+    "data_model": "bonares-lte_de",
+    "section": "ACROSS",
+    "header": "PARZELLE.Mittelpunkt_x_GK",
+    "description": "Longitude (X) of plot center point in Gauss-Krüger coordinate system",
+    "fun_values": "new_column:plot_geocoord_system",
+    "fun_values_args": "list(\"Gauss-Krueger\")",
+    "comments": "TODO: conditional mapping of PLOT_GEO_SYS TO Gauss-Krueger"
+  },
+  {
+    "template_section": "TREATMENTS",
+    "var_uid": "113",
+    "icasa_dataset": "EXPERIMENT",
+    "icasa_subset": "MANAGEMENT",
+    "icasa_group": "TREATMENTS",
+    "icasa_header_long": "plot_geocoord_y",
+    "icasa_header_short": "PLOT_GEO_Y",
+    "icasa_description": "\"y\" geocoordinate of an individual plot (e.g. latitude in decimal degrees)",
+    "icasa_unit": "number",
+    "icasa_type": "double",
+    "data_model": "bonares-lte_de",
+    "section": "ACROSS",
+    "header": "PARZELLE.Mittelpunkt_y_GK",
+    "description": "Latitude (Y) of plot center point in Gauss-Krüger coordinate system",
+    "fun_values": "new_column:plot_geocoord_system",
+    "fun_values_args": "list(\"Gauss-Krueger\")",
+    "comments": "TODO: conditional mapping of PLOT_GEO_SYS TO Gauss-Krueger"
   }
 ]
