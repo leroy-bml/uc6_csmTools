@@ -7,9 +7,9 @@
 project_dataframe(df, map)
 }
 \arguments{
-\item{df}{A data frame to be split. Columns in this data frame should correspond to the \code{icasa_header_short} values in \code{map}.}
+\item{df}{A data frame to be split. Columns in this data frame should correspond to the \code{icasa_header_long} values in \code{map}.}
 
-\item{map}{A data frame containing at least the columns \code{icasa_group} and \code{icasa_header_short}. This mapping defines which columns in \code{df} belong to which group.}
+\item{map}{A data frame containing at least the columns \code{icasa_group} and \code{icasa_header_long}. This mapping defines which columns in \code{df} belong to which group.}
 }
 \value{
 A named list of data frames. Each element corresponds to a group defined in \code{map$icasa_group}, containing the relevant columns from \code{df}.
@@ -21,7 +21,7 @@ Each sub-data frame contains columns associated with a specific group, as well a
 \details{
 The function works as follows:
 \itemize{
-\item It filters the \code{map} data frame to include only those rows where \code{icasa_header_short} matches a column in \code{df}.
+\item It filters the \code{map} data frame to include only those rows where \code{icasa_header_long} matches a column in \code{df}.
 \item It identifies all unique, non-\code{NA} group names from \code{icasa_group}.
 \item Columns with \code{NA} in \code{icasa_group} are considered "no-group" columns and are included in every sub-data frame.
 \item For each identified group, a sub-data frame is created containing all columns mapped to that group, plus all "no-group" columns.

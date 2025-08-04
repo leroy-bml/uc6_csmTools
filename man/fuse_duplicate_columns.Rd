@@ -32,7 +32,7 @@ The function processes columns in the input data frame (\code{df}) by grouping t
 \strong{Processing steps for each base name group:}
 \enumerate{
 \item \strong{Discrepancy Flagging:} It first examines all columns within a base name group (e.g., \code{A}, \code{A-x}, \code{A-y}).
-For each row, if non-missing values across these columns are not all identical, a discrepancy is noted for that row and base name. This flagging uses an internal \code{normalize()} helper (assumed to be available) to standardize values before comparison.
+For each row, if non-missing values across these columns are not all identical, a discrepancy is noted for that row and base name.
 \item \strong{Column Fusion:}
 \itemize{
 \item If \strong{all} columns within a base name group are strictly identical across all rows (as determined by an internal \code{are_identical_cols()} helper, also assumed to be available), only the first column in the group is retained, and it is renamed to the \code{current_base_name}.
@@ -43,5 +43,5 @@ For each row, if non-missing values across these columns are not all identical, 
 \item \strong{Flag Column Cleanup:} If, after processing, the \code{flag_discrepancy} column contains only \code{NA} values (meaning no discrepancies were found across the entire data frame), the column is removed from the final output.
 }
 
-This function relies on external/internal helper functions \code{normalize()} and \code{are_identical_cols()}.
+This function relies on the internal helper functions \code{are_identical_cols()}.
 }

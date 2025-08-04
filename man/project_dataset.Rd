@@ -11,7 +11,7 @@ project_dataset(db, map = load_map())
 (e.g., "PLOT_DETAILS", "SOIL_MEASUREMENTS"), with column names already mapped to ICASA headers.}
 
 \item{map}{A data frame containing the mapping information, typically loaded via \code{load_map()}.
-It must contain at least \code{section}, \code{header}, \code{icasa_header_short}, and \code{icasa_group} columns,
+It must contain at least \code{section}, \code{header}, \code{icasa_header_long}, and \code{icasa_group} columns,
 which define how columns in input data frames should be grouped into output sections.}
 }
 \value{

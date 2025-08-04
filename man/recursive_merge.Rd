@@ -4,14 +4,14 @@
 \alias{recursive_merge}
 \title{Iteratively Merge Leaf Tables into a Database Backbone}
 \usage{
-recursive_merge(db, drop_keys = FALSE, exclude_cols = NULL)
+recursive_merge(db, force_keys = NULL, exclude_keys = NULL, drop_keys = FALSE)
 }
 \arguments{
 \item{db}{A named list of data frames representing the database. Each data frame corresponds to a table.}
 
-\item{drop_keys}{Logical. If \code{TRUE}, drops the join key columns after successful merges (default: \code{FALSE}).}
+\item{exclude_keys}{Optional character vector of column names to exclude from being considered or used as join keys during the merge process.}
 
-\item{exclude_cols}{Optional character vector of column names to exclude from being considered or used as join keys during the merge process.}
+\item{drop_keys}{Logical. If \code{TRUE}, drops the join key columns after successful merges (default: \code{FALSE}).}
 }
 \value{
 A list of data frames representing the melted (fully merged) database. The number of tables in the output

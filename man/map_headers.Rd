@@ -4,7 +4,12 @@
 \alias{map_headers}
 \title{Map Column Headers to Standard Codes}
 \usage{
-map_headers(df, map, direction = c("to_icasa", "from_icasa"))
+map_headers(
+  df,
+  map,
+  direction = c("to_icasa", "from_icasa"),
+  header = c("short", "long")
+)
 }
 \arguments{
 \item{df}{A data frame containing the data to be mapped.}

@@ -8,6 +8,7 @@ map_data(
   df,
   input_model,
   output_model,
+  header,
   map,
   keep_unmapped = TRUE,
   col_exempt = NULL

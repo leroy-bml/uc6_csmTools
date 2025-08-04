@@ -8,9 +8,10 @@ merge_db_tables(
   db_tables,
   start_tables,
   type = c("referential", "loose"),
+  force_keys = NULL,
+  exclude_keys = NULL,
   drop_keys = FALSE,
-  suffixes = c("-x", "-y"),
-  exclude_cols = NULL
+  suffixes = c("-x", "-y")
 )
 }
 \arguments{
@@ -24,11 +25,11 @@ merged into \code{db_tables}.}
 \code{"referential"} (default) ensures that child keys exist in the parent,
 while \code{"loose"} performs a merge if there's any overlap in common key values.}
 
+\item{exclude_keys}{Optional character vector of column names to exclude from being considered or used as join keys.}
+
 \item{drop_keys}{Logical. If \code{TRUE}, the common join key columns will be dropped from the merged table after merging (default: \code{FALSE}).}
 
 \item{suffixes}{Character vector of length 2. Suffixes to append to duplicate column names that are not identical (default: \code{c(".x", ".y")}).}
-
-\item{exclude_cols}{Optional character vector of column names to exclude from being considered or used as join keys.}
 }
 \value{
 A list containing:
@@ -59,7 +60,7 @@ and pre-calculating primary keys.
 in the current \code{start_table} and verifies referential integrity (all child keys exist in parent).
 \item If \code{type = "loose"}, it looks for any common columns where values overlap between the candidate table and \code{start_table}.
 }
-\item \strong{Exclusion:} Specified \code{exclude_cols} are removed from the potential join keys.
+\item \strong{Exclusion:} Specified \code{exclude_keys} are removed from the potential join keys.
 \item \strong{Merging:} If join keys are found, the candidate table is merged into the current \code{start_table} using \code{base::merge()}.
 \item \strong{Duplicate Column Fusion:} After merging, \code{fuse_duplicate_columns()} is called to handle columns
 with identical content but potentially different names (or suffixes from merging). This function also flags inconsistencies if columns with the same root name have different content.
