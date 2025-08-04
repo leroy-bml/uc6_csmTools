@@ -153,3 +153,31 @@ fetch_template <- function(force = FALSE) {
     return(invisible(list(path = normalizePath(user_template), created = FALSE, updated = FALSE)))
   }
 }
+
+
+#'
+#'
+#'
+#'
+
+fetch_icasa <- function(url) {
+  
+  # List of CSV filenames (you can expand this list or scrape it dynamically)
+  csv_files <- c("Metadata.csv", "Management_info.csv", "Soils_data.csv", "Weather_data.csv", "Measured_data.csv")
+  
+  # Read all CSVs into a named list
+  data_list <- lapply(csv_files, function(file) {
+    url <- paste0(url, file)
+    read.csv(url)
+  })
+  
+  out <- do.call(rbind, data_list)
+  out <- cbind(out["var_uid"], out[ , setdiff(names(out), "var_uid")])
+  row.names(out) <- NULL
+  
+  return(out)
+}
+
+
+
+
