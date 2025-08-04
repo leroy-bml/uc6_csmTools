@@ -104,7 +104,7 @@ get_soilGrids_dataverse <- function(dir = tempdir()) {
 #' @importFrom tidyselect everything
 #' @importFrom dplyr mutate filter row_number select pull distinct
 #' @importFrom tidyr unnest
-#' @importFrom DSSAT as_DSSAT_tbl
+#' @importFrom DSSAT as_DSSAT_tbl read_sol
 #'
 #' @export
 #' 
