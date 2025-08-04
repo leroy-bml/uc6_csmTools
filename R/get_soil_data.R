@@ -169,11 +169,11 @@ get_soilGrids_profile <- function(lat, lon, dir = tempdir()) {
     
     # Map to ICASA
     prov_metadata[[i]] <- map_data(prov_metadata[[i]], input_model = "dssat", output_model = "icasa",
-                                   map = data_map, keep_unmapped = FALSE)
+                                   header = "long", map = data_map, keep_unmapped = FALSE)
     profile_metadata[[i]] <- map_data(profile_metadata[[i]], input_model = "dssat", output_model = "icasa",
-                                      map = data_map, keep_unmapped = FALSE)
+                                      header = "long", map = data_map, keep_unmapped = FALSE)
     layer_data[[i]] <- map_data(layer_data[[i]], input_model = "dssat", output_model = "icasa",
-                                map = data_map, keep_unmapped = FALSE)
+                                header = "long", map = data_map, keep_unmapped = FALSE)
     
     # Add ISRIC as institution
     prov_metadata[[i]]$INST_NAME <- "ISRIC"
