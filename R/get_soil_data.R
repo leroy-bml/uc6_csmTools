@@ -18,7 +18,7 @@
 #' list.files(soil_dir)
 #' }
 #'
-#' @importFrom dataverse get_file
+#' @importFrom dataverse get_file dataset_files
 #' @importFrom zip unzip
 #'
 
