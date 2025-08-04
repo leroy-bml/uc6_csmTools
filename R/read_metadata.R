@@ -157,7 +157,7 @@ get_dataset_varkeys <- function(mother_path, schema = "bonares") {
 #' }
 #'
 #' @importFrom xml2 read_xml xml_ns xml_text xml_find_all xml_find_first
-#' @importFrom tibble tibble
+#' @importFrom tibble tibble as_tibble
 #'
 #' @export
 #' 

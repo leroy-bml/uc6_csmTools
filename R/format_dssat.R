@@ -303,6 +303,7 @@ build_filex <- function(ls, title = NULL, site_code = NA_character_) {
 #'
 #' @importFrom magrittr %>%
 #' @importFrom dplyr mutate arrange across where
+#' @importFrom lubridate is.Date
 #' @importFrom DSSAT as_DSSAT_tbl
 #' 
 #' @export

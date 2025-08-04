@@ -13,7 +13,7 @@
 #' The function attempts to parse up to \code{n_check} values using a set of common date and datetime formats (including ISO 8601, US, European, and compact forms). If at least \code{threshold} proportion of the checked values are successfully parsed as dates, the function returns TRUE; otherwise, it returns FALSE.
 #'
 #' @return Logical. TRUE if the input vector is likely to contain date-like values, FALSE otherwise.
-#'
+#'  
 #' @examples
 #' is_date(c("2023-01-01", "2023-02-15")) # TRUE
 #' is_date(c("01/31/2023", "02/15/2023")) # TRUE (US format)
@@ -22,6 +22,8 @@
 #' is_date(c("not a date", "still not a date")) # FALSE
 #' is_date(23001L, dssat_fmt = TRUE) # TRUE (DSSAT format)
 #' is_date(12345L) # FALSE (not DSSAT format)
+#'
+#' @importFrom lubridate is.Date is.POSIXct is.POSIXlt
 #'
 
 is_date <- function(x, dssat_fmt = FALSE, n_check = 5, threshold = 0.8) {
