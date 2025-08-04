@@ -293,15 +293,21 @@ make_code_lookup <- function(vec){
 #' @importFrom dplyr rename
 #'
 
-map_headers <- function(df, map, direction = c("to_icasa", "from_icasa")) {
+map_headers <- function(df, map, direction = c("to_icasa", "from_icasa"), header = c("short","long")) {
   
   mapped_cols <- c()  # empty vector to store mapped column names = column in both data models, whether same-named of different
   
   # Determine which data model is the input/output
   if (direction == "to_icasa"){
-    map <- map %>% rename(header_in = header, header_out = icasa_header_short)
+    if (header == "short") {
+      map <- map %>% rename(header_in = header, header_out = icasa_header_short)
+    }
+    map <- map %>% rename(header_in = header, header_out = icasa_header_long)
   } else if (direction == "from_icasa"){
-    map <- map %>% rename(header_in = icasa_header_short, header_out = header)
+    if (header == "short") {
+      map <- map %>% rename(header_in = icasa_header_short, header_out = header)
+    }
+    map <- map %>% rename(header_in = icasa_header_long, header_out = header)
   }
   
   for (i in seq_along(colnames(df))) {
@@ -580,7 +586,8 @@ transform_data <- function(df, map, ...) {
 #' @export
 #' 
 
-map_data <- function(df, input_model, output_model, map, keep_unmapped = TRUE, col_exempt = NULL){
+map_data <- function(df, input_model, output_model, header,
+                     map, keep_unmapped = TRUE, col_exempt = NULL){
   
   # TODO: workaround to skip dataframes with no single match in the output model [currently fails]
   
@@ -595,12 +602,13 @@ map_data <- function(df, input_model, output_model, map, keep_unmapped = TRUE, c
   #   print(paste(i, names(template_icasa)[i]))
   # }
   
-  # df = tmp1$AUSSAAT
+  # df = tmp$AUSSAAT
   # input_model = "bonares-lte_de"
   # output_model = "icasa"
-  # map = map_tmp
-  # keep_unmapped = TRUE
+  # map = load_map()
+  # keep_unmapped = FALSE
   # col_exempt = NULL
+  # header = "long"
 
   
   metadata <- attributes(df)$metadata  # store metadata
@@ -611,8 +619,9 @@ map_data <- function(df, input_model, output_model, map, keep_unmapped = TRUE, c
     if ("icasa" %in% output_model){
       df0 <- df  # store original data
       map <- map[map$data_model == input_model & map$header %in% colnames(df),]
-      headers <- map_headers(df, map, "to_icasa")  # map headers
+      headers <- map_headers(df, map, "to_icasa", header = header)  # map headers
       df <- headers$data
+      #df <- fuse_duplicate_columns(df, sep = "-")
       mapped_cols <- unique(headers$mapped)
       #df <- map_codes(df, map, "to_icasa")  # map codes
       #df <- convert_units(df, metadata, map, "to_icasa")  # convert units
@@ -620,16 +629,16 @@ map_data <- function(df, input_model, output_model, map, keep_unmapped = TRUE, c
     } else if ("icasa" %in% input_model){
       df0 <- df  # store original data
       map <- map[map$data_model == output_model & map$icasa_header_short %in% colnames(df),]
-      headers <- map_headers(df, map, "from_icasa")  # map headers
+      headers <- map_headers(df, map, "from_icasa", header = header)  # map headers
       df <- headers$data
       mapped_cols <- unique(headers$mapped)
       df <- map_codes(df, map, "from_icasa")
-      df <- convert_units(df, metadata, map, "from_icasa")  # convert units
+      df <- convert_units(df, metadata, map, "from_icasa", header = header)  # convert units
     } else {
       df0 <- df  # store original data
       map_icasa <- map[map$data_model == input_model & map$header %in% colnames(df),]
       map <- map[map$data_model == output_model & map$icasa_header_short %in% colnames(df),]
-      headers <- map_headers(df, , "to_icasa")
+      headers <- map_headers(df, map, "to_icasa", header = header)
       df_icasa <- headers$data
       mapped_cols <- unique(headers$mapped)
       df_icasa <- map_codes(df_icasa, map_icasa, "to_icasa")  # map codes
