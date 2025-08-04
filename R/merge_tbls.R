@@ -62,7 +62,7 @@ are_identical_cols <- function(a, b) {
 #' **Processing steps for each base name group:**
 #'
 #' 1.  **Discrepancy Flagging:** It first examines all columns within a base name group (e.g., `A`, `A-x`, `A-y`).
-#'     For each row, if non-missing values across these columns are not all identical, a discrepancy is noted for that row and base name. This flagging uses an internal `normalize()` helper (assumed to be available) to standardize values before comparison.
+#'     For each row, if non-missing values across these columns are not all identical, a discrepancy is noted for that row and base name.
 #' 2.  **Column Fusion:**
 #'     * If **all** columns within a base name group are strictly identical across all rows (as determined by an internal `are_identical_cols()` helper, also assumed to be available), only the first column in the group is retained, and it is renamed to the `current_base_name`.
 #'     * If **any** columns within a base name group are not strictly identical, their row-wise non-NA values are concatenated into a single new column for that base name group. The concatenated values are separated by `" | "`.
@@ -70,7 +70,7 @@ are_identical_cols <- function(a, b) {
 #' 4.  **Flag Column Generation:** After processing all base name groups, a `flag_discrepancy` column is constructed. For each row, this column lists all base names for which discrepancies were detected (concatenated with ";").
 #' 5.  **Flag Column Cleanup:** If, after processing, the `flag_discrepancy` column contains only `NA` values (meaning no discrepancies were found across the entire data frame), the column is removed from the final output.
 #'
-#' This function relies on external/internal helper functions `normalize()` and `are_identical_cols()`.
+#' This function relies on the internal helper functions `are_identical_cols()`.
 #'
 
 fuse_duplicate_columns <- function(df, sep = "-") {
@@ -112,7 +112,7 @@ fuse_duplicate_columns <- function(df, sep = "-") {
       # --- Flagging for row-wise discrepancies within this base name group ---
       # This part is from your original function for discrepancy flagging
       vals_for_flagging <- df[current_bn_indices]
-      vals_for_flagging[] <- lapply(vals_for_flagging, normalize) # Use your normalize function here
+      vals_for_flagging[] <- lapply(vals_for_flagging, function(x) trimws(as.character(x))) # Normalize
       
       flag <- apply(vals_for_flagging, 1, function(row) {
         non_na <- row[!is.na(row)]
@@ -215,7 +215,6 @@ fuse_duplicate_columns <- function(df, sep = "-") {
 #' check_ref_integrity(parent_data, child_data, "CustomerID") # Should be TRUE
 #'
 
-
 check_ref_integrity <- function(parent_df, child_df, cols) {
   if (length(cols) == 0) return(logical(0))
   sapply(cols, function(col) {
@@ -242,7 +241,7 @@ check_ref_integrity <- function(parent_df, child_df, cols) {
 #'             while \code{"loose"} performs a merge if there's any overlap in common key values.
 #' @param drop_keys Logical. If \code{TRUE}, the common join key columns will be dropped from the merged table after merging (default: \code{FALSE}).
 #' @param suffixes Character vector of length 2. Suffixes to append to duplicate column names that are not identical (default: \code{c(".x", ".y")}).
-#' @param exclude_cols Optional character vector of column names to exclude from being considered or used as join keys.
+#' @param exclude_keys Optional character vector of column names to exclude from being considered or used as join keys.
 #'
 #' @return A list containing:
 #' \itemize{
@@ -263,7 +262,7 @@ check_ref_integrity <- function(parent_df, child_df, cols) {
 #'         * If `type = "referential"`, it looks for primary keys in the candidate table that are also present
 #'         in the current `start_table` and verifies referential integrity (all child keys exist in parent).
 #'         * If `type = "loose"`, it looks for any common columns where values overlap between the candidate table and `start_table`.
-#'     * **Exclusion:** Specified `exclude_cols` are removed from the potential join keys.
+#'     * **Exclusion:** Specified `exclude_keys` are removed from the potential join keys.
 #'     * **Merging:** If join keys are found, the candidate table is merged into the current `start_table` using `base::merge()`.
 #'     * **Duplicate Column Fusion:** After merging, `fuse_duplicate_columns()` is called to handle columns
 #'         with identical content but potentially different names (or suffixes from merging). This function also flags inconsistencies if columns with the same root name have different content.
@@ -276,30 +275,28 @@ check_ref_integrity <- function(parent_df, child_df, cols) {
 merge_db_tables <- function(db_tables,
                             start_tables,
                             type = c("referential", "loose"),
+                            force_keys = NULL,
+                            exclude_keys = NULL,
                             drop_keys = FALSE,
-                            suffixes = c("-x", "-y"),
-                            exclude_cols = NULL) {
+                            suffixes = c("-x", "-y")) {
   
+  # db_tables = db[roots]
+  # start_tables = db
+  # type = "referential"
+  # force_keys = force_keys
+  # exclude_keys = exclude_keys
+  # drop_keys = drop_keys
   
   type <- match.arg(type)
   
   db_tables <- db_tables[order(names(db_tables))]
   tbl_names <- names(db_tables)
-  all_cols  <- lapply(db_tables, colnames)
+  all_cols <- lapply(db_tables, colnames)
   all_pkeys <- lapply(db_tables, function(df) get_pkeys(df, alternates = FALSE))
   
-  check_ref <- function(parent_df, child_df, cols) {
-    if (length(cols) == 0) return(logical(0))
-    sapply(cols, function(col) {
-      p <- unique(na.omit(parent_df[[col]]))
-      c <- unique(na.omit(child_df[[col]]))
-      all(c %in% p)
-    })
-  }
-  
   if (!is.list(start_tables)) start_tables <- list(start_tables)
-  results     <- list()
-  all_merged  <- character(0)
+  results <- list()
+  all_merged <- character(0)
   start_names <- names(start_tables)
   
   if (is.null(start_names)) {
@@ -307,21 +304,22 @@ merge_db_tables <- function(db_tables,
   }
   
   for (i in seq_along(start_tables)) {
-    
+
+    #print(names(start_tables)[i])
     result_df <- start_tables[[i]]
-    joined    <- character(0)
+    joined <- character(0)
     
     repeat {
-      candidates       <- setdiff(tbl_names, c(joined, start_names[[i]]))
+      candidates <- setdiff(tbl_names, c(joined, start_names[[i]]))
       joined_this_round <- FALSE
       
       for (dim in candidates) {
-        
+
         jkeys <- character(0)
         
         if (type == "referential") {
           poss <- intersect(all_pkeys[[dim]], names(result_df))
-          ok   <- check_ref(db_tables[[dim]], result_df, poss)
+          ok <- check_ref_integrity(db_tables[[dim]], result_df, poss)
           jkeys <- poss[ok]
         } else {
           poss <- intersect(all_cols[[dim]], names(result_df))
@@ -332,24 +330,29 @@ merge_db_tables <- function(db_tables,
           }, poss)
         }
         
-        if (!is.null(exclude_cols)) {
-          jkeys <- setdiff(jkeys, exclude_cols)
+        if (!is.null(force_keys) &&
+            all(force_keys %in% intersect(names(result_df), names(db_tables[[dim]])))) {
+          jkeys <- c(force_keys, jkeys)
+        }
+        
+        if (!is.null(exclude_keys)) {
+          jkeys <- setdiff(jkeys, exclude_keys)
         }
         
         if (length(jkeys)) {
           result_df <- merge(result_df,
                              db_tables[[dim]],
-                             by       = jkeys,
-                             all.x    = TRUE,
-                             all.y    = FALSE,
+                             by = jkeys,
+                             all.x = TRUE,
+                             all.y = FALSE,
                              suffixes = suffixes)
           
           result_df <- fuse_duplicate_columns(result_df)
           # Drop join keys unless set to be preserved
           if (drop_keys) { result_df[jkeys] <- NULL }
           
-          joined          <- c(joined, dim)
-          all_merged      <- union(all_merged, dim)
+          joined <- c(joined, dim)
+          all_merged <- union(all_merged, dim)
           joined_this_round <- TRUE
         }
       }
