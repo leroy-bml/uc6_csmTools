@@ -6,7 +6,7 @@
 #'
 #' @param db A named list of data frames representing the database. Each data frame corresponds to a table.
 #' @param drop_keys Logical. If \code{TRUE}, drops the join key columns after successful merges (default: \code{FALSE}).
-#' @param exclude_cols Optional character vector of column names to exclude from being considered or used as join keys during the merge process.
+#' @param exclude_keys Optional character vector of column names to exclude from being considered or used as join keys during the merge process.
 #'
 #' @return A list of data frames representing the melted (fully merged) database. The number of tables in the output
 #'         will typically be less than or equal to the input, with related data consolidated.
@@ -26,9 +26,12 @@
 #' @export
 #'
 
-recursive_merge <- function(db, drop_keys = FALSE, exclude_cols = NULL) {
+recursive_merge <- function(db, force_keys = NULL, exclude_keys = NULL, drop_keys = FALSE) {
 
-  cat("Merging dataset recursively....\n")
+  # db <- check0
+  # force_keys = exp_str_ids
+  # exclude_keys = nokeys
+  # drop_keys = FALSE
   
   # Sort tables based on referencing
   cats <- categorize_tables(db)
@@ -37,10 +40,11 @@ recursive_merge <- function(db, drop_keys = FALSE, exclude_cols = NULL) {
   # Merge all roots to prevent downstream redundancies
   res <- merge_db_tables(
     db_tables = db[roots],
-    start_table = db,
+    start_tables = db,
     type = "referential",
-    drop_keys = drop_keys,
-    exclude_cols = exclude_cols
+    force_keys = force_keys,
+    exclude_keys = exclude_keys,
+    drop_keys = drop_keys
   )
   db <- res$results_df
     
@@ -82,8 +86,9 @@ recursive_merge <- function(db, drop_keys = FALSE, exclude_cols = NULL) {
       db_tables = db,
       start_table = unref_mergeable,
       type = "referential",
-      drop_keys = drop_keys,
-      exclude_cols = exclude_cols
+      force_keys = force_keys,
+      exclude_keys = exclude_keys,
+      drop_keys = drop_keys
     )
     db <- res$results_df
   }
@@ -107,13 +112,13 @@ recursive_merge <- function(db, drop_keys = FALSE, exclude_cols = NULL) {
 #' This function splits a data frame into a list of sub-data frames based on groupings defined in a mapping data frame.
 #' Each sub-data frame contains columns associated with a specific group, as well as any columns not assigned to any group (i.e., with \code{NA} as group).
 #'
-#' @param df A data frame to be split. Columns in this data frame should correspond to the \code{icasa_header_short} values in \code{map}.
-#' @param map A data frame containing at least the columns \code{icasa_group} and \code{icasa_header_short}. This mapping defines which columns in \code{df} belong to which group.
+#' @param df A data frame to be split. Columns in this data frame should correspond to the \code{icasa_header_long} values in \code{map}.
+#' @param map A data frame containing at least the columns \code{icasa_group} and \code{icasa_header_long}. This mapping defines which columns in \code{df} belong to which group.
 #'
 #' @details
 #' The function works as follows:
 #'
-#' * It filters the `map` data frame to include only those rows where `icasa_header_short` matches a column in `df`.
+#' * It filters the `map` data frame to include only those rows where `icasa_header_long` matches a column in `df`.
 #' * It identifies all unique, non-`NA` group names from `icasa_group`.
 #' * Columns with `NA` in `icasa_group` are considered "no-group" columns and are included in every sub-data frame.
 #' * For each identified group, a sub-data frame is created containing all columns mapped to that group, plus all "no-group" columns.
@@ -129,18 +134,18 @@ recursive_merge <- function(db, drop_keys = FALSE, exclude_cols = NULL) {
 project_dataframe <- function(df, map) {
   
   groups_df <- map %>%
-    filter(icasa_header_short %in% colnames(df)) %>%
-    select(icasa_group, icasa_header_short) %>%
+    filter(icasa_header_long %in% colnames(df)) %>%
+    select(icasa_group, icasa_header_long) %>%
     distinct()
   
   group_names <- na.omit(unique(groups_df$icasa_group))
   
   # Get columns with no group (NA; to include in all splits)
-  na_cols <- groups_df$icasa_header_short[is.na(groups_df$icasa_group)]
+  na_cols <- groups_df$icasa_header_long[is.na(groups_df$icasa_group)]
   
   # Split df by group (keep no-group cols in each sub-df)
   split_dfs <- lapply(group_names, function(grp) {
-    group_cols <- groups_df$icasa_header_short[groups_df$icasa_group == grp]
+    group_cols <- groups_df$icasa_header_long[groups_df$icasa_group == grp]
     cols <- unique(c(na_cols, group_cols))
     cols <- cols[cols %in% colnames(df)]
     df[, cols, drop = FALSE]
@@ -159,7 +164,7 @@ project_dataframe <- function(df, map) {
 #' @param db A named list of data frames, where each data frame represents a section of a dataset
 #'           (e.g., "PLOT_DETAILS", "SOIL_MEASUREMENTS"), with column names already mapped to ICASA headers.
 #' @param map A data frame containing the mapping information, typically loaded via `load_map()`.
-#'            It must contain at least `section`, `header`, `icasa_header_short`, and `icasa_group` columns,
+#'            It must contain at least `section`, `header`, `icasa_header_long`, and `icasa_group` columns,
 #'            which define how columns in input data frames should be grouped into output sections.
 #'
 #' @details
@@ -195,9 +200,6 @@ project_dataframe <- function(df, map) {
 #'
 
 project_dataset <- function(db, map = load_map()) {
-
-  # db <- db_icasa  #tmp
-  # map <- load_map()
   
   # Exclude metadata from breakdown
   metadata <- db["METADATA"]
@@ -212,10 +214,6 @@ project_dataset <- function(db, map = load_map()) {
   sec_tbls <- do.call(c, projected_sec)
   names(sec_tbls) <- unlist(lapply(projected_sec, names))
   sec_tbls <- split(sec_tbls, names(sec_tbls))
-  
-  db_out <- do.call(c, db_exploded)
-  names(db_out) <- unlist(lapply(db_exploded, names))
-  db_out <- split(db_out, names(db_out))
   
   # Merge fragments within each section (full join on common columns)
   merged_sec <- lapply(sec_tbls, function(tbl_list) {
@@ -291,14 +289,14 @@ project_dataset <- function(db, map = load_map()) {
 reshape_exp_data <- function(db, mother_xml, design_tbl_name, data_model = "bonares-lte_de") {
 
   # Extract metadata --------------------------------------------------------
+  cat("\033[34mDownload metadata...\033[0m\n")
   
   xml <- read_metadata(mother_path = mother_xml, schema = "bonares")
   db <- c(db, list(METADATA = xml$metadata))  # append
   
   
   # Identify experimental design --------------------------------------------
-  
-  # Identify the components of the experimental design ----------------------
+  cat("\033[34mIdentify experimental design...\033[0m\n")
   
   design_tbl <- db[[design_tbl_name]]
   
@@ -311,7 +309,10 @@ reshape_exp_data <- function(db, mother_xml, design_tbl_name, data_model = "bona
   db <- identify_exp_attributes(db, str_cols = exp_str_ids)
   nokeys <- do.call(c, attr(db, "attributes"))  # list of unique data attributes
   
-  db <- recursive_merge(db, drop_keys = FALSE, exclude_cols = nokeys)
+  # Recursive merge ---------------------------------------------------------
+  cat("\033[34mMerge dataset recursively...\033[0m\n")
+  
+  db <- recursive_merge(db, force_keys = exp_str_ids, exclude_keys = nokeys, drop_keys = FALSE)
   db <- lapply(db, remove_all_na_cols)  # Remove only-NA artefact columns
   
 
@@ -331,57 +332,132 @@ reshape_exp_data <- function(db, mother_xml, design_tbl_name, data_model = "bona
     )
   })
   
-  
   # Map data to ICASA -------------------------------------------------------
-
+  cat("\033[34mMap variables...\033[0m\n")
+  #return(db)  #tmp
   db_icasa <- lapply(names(db), function(sec) {
     df <- db[[sec]]
     
     # TODO: prevent retaining unused section OBSERV_DATA_LINKS (why??) and GENERAL
     map_sub <- load_map() %>%
       filter(data_model == data_model) %>%
-      filter(!is.na(icasa_header_short)) %>%
+      filter(!is.na(icasa_header_long)) %>%
       filter(section %in% c(!!sec, "ACROSS") & header %in% colnames(df))
     
     # NB: tmp version before codes and units are properly formatted
     map_data(df,
              input_model = data_model,
              output_model = "icasa",
+             header = "long",
              map = map_sub,
              keep_unmapped = FALSE)  # TODO: TRUE does not work?
   })
   names(db_icasa) <- names(db)
   
+  # Tmp hack for faulty mappings
+  mapping_hack <- function(ls) {
+    
+    ls$DUENGUNG <- ls$DUENGUNG %>%
+      mutate(phosphorus_applied_fert = phosphorus_applied_fert*0.436,
+             fertilizer_K_applied = fertilizer_K_applied*0.830,
+             Ca_in_applied_fertilizer = Ca_in_applied_fertilizer*0.715,
+             Mg_in_applied_fertilizer = Mg_in_applied_fertilizer*0.603) %>%
+      mutate(fertilizer_total_amount = fertilizer_total_amount * 100,
+             fertilizer_material = case_when(
+               fertilizer_material == "Harnstoff" ~ "FE005",
+               fertilizer_material == "Triplesuperphosphat" ~ "FE014",
+               fertilizer_material == "Ammon-Sulfat-Salpeter" ~ "FE060",
+               fertilizer_material == "Kalkammonsalpeter" ~ "FE011",
+               fertilizer_material == "Kalkstickstoff" ~ "FE050",
+               fertilizer_material == "Ammonium-Nitrat-Harnstoff-Lösung" ~ "FE010",
+               TRUE ~ fertilizer_material
+             ))
+    cropdat <- list(ERTRAG = ls$ERTRAG, AUSSAAT = ls$AUSSAAT)
+    cropdat <- lapply(cropdat, function(df) {
+      df %>%
+        mutate(crop_id = case_when(
+          crop_id == "Kartoffel" ~ "POT",
+          crop_id == "Winterweizen" ~ "WHT",
+          crop_id == "Sommerweizen" ~ "WHT",
+          crop_id == "Zuckerrübe" ~ "SBT",
+          crop_id == "Sommergerste" ~ "BAR",
+          crop_id == "Wintergerste" ~ "BAR",
+          crop_id == "Körnermais" ~ "MAZ",
+          crop_id == "" ~ "Raiffeisen Mischung",
+          TRUE ~ crop_id),
+          crop_id = case_when(
+            crop_id == "5.01" ~ "POT",
+            crop_id == "1.01" ~ "WHT",
+            crop_id == "8.01" ~ "SBT",
+            crop_id == "1.05" ~ "BAR",
+            crop_id == "1.02" ~ "MAZ",
+            TRUE ~ crop_id
+          ))
+    })
+    cropdat$ERTRAG <- cropdat$ERTRAG %>%
+      mutate(harvest_yield_harvest_dw = harvest_yield_harvest_dw*100,
+             harvest_yield_at_day_dw = harvest_yield_at_day_dw*100)
+    ls$ERTRAG <- cropdat$ERTRAG
+    ls$AUSAAT <- cropdat$AUSSAAT
+    
+    ls$PFLANZENLABORWERTE <- ls$PFLANZENLABORWERTE %>%
+      mutate(harvest_yield_at_day_dw = harvest_yield_at_day_dw*100)
+    
+    ls$WEATHER_METADATA = data.frame(temperature_sensor_ht = 2)
+    
+    out <- lapply(ls, function(df) {
+      if (any(grepl("plot_geocoord_x|plot_geocoord_y", names(df)))) {
+        df$plot_geocoord_system = "Gauss-Krueger"
+      }
+      df
+    })
+    
+    return(out)
+  }
+  db_icasa <- mapping_hack(db_icasa)
+  
   
   # Explode data frame into ICASA sections ----------------------------------
+  cat("\033[34mProject dataset...\033[0m\n")
   
   db_icasa <- project_dataset(db_icasa, map = load_map())   # here we stand
   
   
   # Explode data frame into ICASA sections ----------------------------------
+  cat("\033[34mFormat ICASA sections...\033[0m\n")
   
   format_management <- function(ls) {
+    
+    #ls <- management  #tmp
     
     # Format management tables and matrix as ICASA
     # >> Tables: unique event regimes within year
     # >> Matrix: link between year, plot, and treatment and management regimes
-    #ls <- management
     management_fmt <- list()
     management_matrix <- ls[["TREATMENTS"]]
     management <- ls[setdiff(names(ls), "TREATMENTS")]
     
     for (i in 1:length(management)) {
+      print(names(management)[i])
+      #i = 2
+      
       df <- management[[i]]
       
-      pkey <- setdiff(intersect(colnames(df), colnames(management_matrix)), c("EXP_YEAR","TRTNO","PLOT_ID"))
+      mngt_ids <- intersect(colnames(df), colnames(management_matrix))
+      pkey <- setdiff(mngt_ids, c("experiment_year","treatment_number","plot_number"))
       # Handle special case when 2 keys are present (GE and another)
       if (length(pkey) > 1) pkey <- get_pkeys(df)
+      if (length(pkey) == 0) pkey <- "planting_level"
+      # TODO: fix pkey not detected (muencheberg; PL is likely not a PKEY)
+      # Problem diagnostic: faulty PL-GE join (generate NAs)
       
       # Exclude comments from event columns
       comment_cols <- colnames(df[grepl("NOTES|COMMENT", colnames(df))])
-      grp_cols <- setdiff(colnames(df), c("EXP_YEAR", "TRTNO", "PLOT_ID", pkey, comment_cols))
-      is_date_col <- apply(df, 2, is_date)
-      date_cols <- names(is_date_col[is_date_col])
+      str_cols <- c("experiment_year ", "treatment_number", "plot_number")
+      str_cols_valid <- intersect(str_cols, names(df))
+      grp_cols <- setdiff(colnames(df), c(str_cols, pkey, comment_cols))
+      date_cols <- apply(df, 2, is_date)
+      date_cols <- names(date_cols[date_cols])
       
       # Go next if tables have no attributes besides structural cols and pkeys
       # TODO: not correct
@@ -394,37 +470,41 @@ reshape_exp_data <- function(db, mother_xml, design_tbl_name, data_model = "bona
       df <- df %>%
         mutate(event_signature = do.call(paste, c(.[grp_cols], sep = "_")))
       
-      # For each plot-EXP_YEAR, concatenate all event_signatures (ordered by PDATE or row order) ---
+      # For each plot-experiment_year , concatenate all event_signatures (ordered by PDATE or row order) ---
       df <- df %>%
-        arrange(EXP_YEAR, PLOT_ID, !!!syms(date_cols)) %>%  # TODO: arrange by date only when applicable
-        group_by(EXP_YEAR, PLOT_ID) %>%
+        arrange(!!!syms(c(str_cols_valid, date_cols))) %>%  # TODO: arrange by date only when applicable
+        group_by(!!!syms(str_cols_valid)) %>%
         mutate(event_regime_signature = paste(event_signature, collapse = "|")) %>%
         ungroup()
       
-      # Assign event_regime_IDs per EXP_YEAR (identical regimes get same ID within EXP_YEAR) ---
+      # Assign event_regime_IDs per experiment_year  (identical regimes get same ID within experiment_year ) ---
       regime_ids <- df %>%
-        select(EXP_YEAR, event_regime_signature) %>%
+        select(experiment_year , event_regime_signature) %>%
         distinct() %>%
-        group_by(EXP_YEAR) %>%
+        group_by(experiment_year ) %>%
         mutate(!!sym(pkey) := as.integer(factor(event_regime_signature))) %>%
         ungroup()
       
       # Join event_regime_ID back to main table ---
       df <- df %>%
         select(-!!sym(pkey)) %>%
-        left_join(regime_ids, by = c("EXP_YEAR", "event_regime_signature"))
+        left_join(regime_ids, by = c("experiment_year", "event_regime_signature")) %>%
+        mutate(experiment_year  = as.numeric(experiment_year ))  #HACK 
+      #TODO:force format on join keys
+      #TODO: fix seehausen (problem is NAs in experiment_year  due to fusing)
       
-      # Treatment-to-event_regime mapping (one row per plot per EXP_YEAR)
+      # Treatment-to-event_regime mapping (one row per plot per experiment_year )
       mngt_event_regime <- df %>%
-        select(EXP_YEAR, TRTNO, PLOT_ID, !!sym(pkey)) %>%
+        select(any_of(str_cols_valid), !!sym(pkey)) %>%
         distinct()
       management_matrix <- management_matrix %>%
+        mutate(experiment_year  = as.numeric(experiment_year )) %>%  #HACK 
         select(-!!sym(pkey)) %>%
-        left_join(mngt_event_regime, by = c("EXP_YEAR", "TRTNO", "PLOT_ID"))
+        left_join(mngt_event_regime, by = str_cols_valid)
       
-      # B. Event details table (one row per event, grouped by event_regime_ID within EXP_YEAR)
+      # B. Event details table (one row per event, grouped by event_regime_ID within experiment_year )
       management_fmt[[i]] <- df %>%
-        select(EXP_YEAR, !!sym(pkey), all_of(grp_cols)) %>%
+        select(experiment_year , !!sym(pkey), all_of(grp_cols)) %>%
         distinct()
     }
     names(management_fmt) <- names(management)
@@ -441,10 +521,13 @@ reshape_exp_data <- function(db, mother_xml, design_tbl_name, data_model = "bona
   weather <- db_icasa[intersect(c("WEATHER_METADATA", "WEATHER_DAILY"), names(db_icasa))]
   soil <- db_icasa[intersect(c("SOIL_METADATA", "SOIL_LAYERS"), names(db_icasa))]
   #TODO: handle soil data: unpractical profile/analysis/measured split in ICASA
-  management <- db_icasa[setdiff(names(db_icasa),
-                                 unlist(sapply(list(metadata, measured, weather, soil, tofix), names)))]
+  management_sec <- c("GENOTYPES", "FIELDS", "SOIL_ANALYSES", "INITIAL_CONDITIONS", "PLANTINGS",
+                      "IRRIGATIONS", "FERTILIZERS", "ORGANIC_MATERIALS", "MULCHES", "CHEMICALS",
+                      "TILLAGE", "ENVIRON_MODIFICATIONS", "HARVESTS", "SIMULATION_CONTROLS","TREATMENTS")
+  management <- db_icasa[intersect(management_sec, names(db_icasa))]
   
   management_fmt <- format_management(management)
+
   management <- management_fmt$management
   management_matrix <- management_fmt$management_matrix
   
