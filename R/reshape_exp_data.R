@@ -259,7 +259,7 @@ reshape_exp_data <- function(db, mother_xml, design_tbl_name, data_model = "bona
 #'
 #' @importFrom magrittr %>%
 #' @importFrom rlang !! !!! := syms sym
-#' @importFrom dplyr group_by across all_of summarise mutate select distinct arrange ungroup any_of left_join
+#' @importFrom dplyr group_by across all_of summarise n mutate select distinct arrange ungroup any_of left_join
 #' @importFrom lubridate year
 #' @export
 
