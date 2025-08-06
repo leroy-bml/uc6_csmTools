@@ -7,7 +7,9 @@
 extract_template(
   path = NULL,
   exp_id = NA_character_,
-  headers = c("short", "long")
+  headers = c("short", "long"),
+  keep_null_events = TRUE,
+  keep_empty = TRUE
 )
 }
 \arguments{

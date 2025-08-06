@@ -4,7 +4,7 @@
 \alias{split_experiments}
 \title{Split a List of Data Frames into Experiments with Associated Soil and Weather Data}
 \usage{
-split_experiments(ls)
+split_experiments(ls, keep_empty = FALSE, keep_na_cols = FALSE)
 }
 \arguments{
 \item{ls}{A named list of data frames, typically representing sections of an experimental template, including experiment, soil, and weather data.}
