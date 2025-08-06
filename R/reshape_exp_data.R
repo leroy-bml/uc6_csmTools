@@ -195,11 +195,12 @@ reshape_exp_data <- function(db, mother_xml, design_tbl_name, data_model = "bona
   
   # Map data and apply rowwise transformations ------------------------------
   cat("\033[34mMap variables...\033[0m\n")
+
   db_icasa <- map_data2(dataset = db,
                         input_model = data_model,
                         output_model = "icasa",
                         header_type = header_type)
-  
+  #return(db_icasa)
 
   # Apply summary transformations -------------------------------------------
   cat("\033[34mTransform variables...\033[0m\n")
@@ -210,9 +211,57 @@ reshape_exp_data <- function(db, mother_xml, design_tbl_name, data_model = "bona
   return(out)
 }
 
+#' Reformat and Aggregate Experimental Data for a Target Model
 #'
+#' This function processes a list of raw experimental data tables and transforms
+#' them into a structured format suitable for simulation models, specifically
+#' the ICASA standard. It splits data into logical sections, aggregates key
+#' tables (fields, weather), and normalizes complex management schedules by
+#' converting event sequences into distinct management regimes.
 #'
+#' @details
+#' The core transformation performed by this function is the aggregation of
+#' management events into "regimes". For each management type (e.g.,
+#' fertilization, tillage), it identifies unique sequences of operations
+#' applied to plots or treatments. These unique sequences (regimes) are
+#' assigned a numeric level. The main `TREATMENTS` table is then updated to
+#' map each experimental plot to its corresponding management regime levels.
+#' This simplifies the data structure by abstracting detailed event schedules
+#' into a cross-referenced matrix.
 #'
+#' The function also performs the following pre-processing steps:
+#' - Aggregates spatial data in the `FIELDS` table by year.
+#' - Extracts year information from date columns in the `WEATHER_METADATA` table.
+#'
+#' @section TODO:
+#' A list of known issues and areas for future improvement:
+#' - **General:** The aggregation logic currently hardcoded could be moved to a
+#'   more flexible `yaml` configuration file.
+#' - **Fields:** Implement a function to handle different coordinate systems and
+#'   group field coordinates more robustly.
+#' - **Soil:** The soil data section (`SOIL_METADATA`, `SOIL_LAYERS`) is not yet
+#'   processed. The unpractical profile/analysis/measured split in the ICASA
+#'   standard needs to be handled.
+#'
+#' @param dataset A list of dataframes containing experimental data. Each
+#'   dataframe in the list should correspond to a table from the ICASA suite
+#'   (e.g., `TREATMENTS`, `FIELDS`, `FERTILIZERS`, etc.).
+#' @param data_model A character string specifying the target data model.
+#'   Currently a placeholder for `"icasa"`.
+#' @param header_type A character string, either `"long"` or `"short"`, that
+#'   specifies the column naming convention to use for key identifiers (e.g.,
+#'   `"experiment_year"` vs. `"EXP_YEAR"`).
+#'
+#' @return A list of dataframes conforming to the target data model structure.
+#'   The list includes the original data sections, but with the management
+#'   tables redefined as regime definitions and an updated `TREATMENTS` matrix
+#'   that links plots to these regimes.
+#'
+#' @importFrom magrittr %>%
+#' @importFrom rlang !! !!! := syms sym
+#' @importFrom dplyr group_by across all_of summarise mutate select distinct arrange ungroup any_of left_join
+#' @importFrom lubridate year
+#' @export
 
 
 format_to_model <- function(dataset, data_model = "icasa", header_type) {
@@ -238,15 +287,15 @@ format_to_model <- function(dataset, data_model = "icasa", header_type) {
   }
   
   # Split data into major ICASA sections
-  metadata <- db_icasa[intersect(c("GENERAL", "PERSONS", "INSTITUTIONS", "DOCUMENTS", "PLOT_DETAILS"), names(db_icasa))]
-  measured <- db_icasa[intersect(c("SUMMARY", "TIME_SERIES"), names(db_icasa))]
-  weather <- db_icasa[intersect(c("WEATHER_METADATA", "WEATHER_DAILY"), names(db_icasa))]
-  soil <- db_icasa[intersect(c("SOIL_METADATA", "SOIL_LAYERS"), names(db_icasa))]
+  metadata <- dataset[intersect(c("GENERAL", "PERSONS", "INSTITUTIONS", "DOCUMENTS", "PLOT_DETAILS"), names(dataset))]
+  measured <- dataset[intersect(c("SUMMARY", "TIME_SERIES"), names(dataset))]
+  weather <- dataset[intersect(c("WEATHER_METADATA", "WEATHER_DAILY"), names(dataset))]
+  soil <- dataset[intersect(c("SOIL_METADATA", "SOIL_LAYERS"), names(dataset))]
   #TODO: handle soil data: unpractical profile/analysis/measured split in ICASA
   management_sec <- c("GENOTYPES", "FIELDS", "SOIL_ANALYSES", "INITIAL_CONDITIONS", "PLANTINGS",
                       "IRRIGATIONS", "FERTILIZERS", "ORGANIC_MATERIALS", "MULCHES", "CHEMICALS",
                       "TILLAGE", "ENVIRON_MODIFICATIONS", "HARVESTS", "SIMULATION_CONTROLS","TREATMENTS")
-  management <- db_icasa[intersect(management_sec, names(db_icasa))]
+  management <- dataset[intersect(management_sec, names(dataset))]
   
   # Post-processing FIELDS table
   management[["FIELDS"]] <- management[["FIELDS"]] %>%
