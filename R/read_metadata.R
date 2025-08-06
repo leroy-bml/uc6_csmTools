@@ -165,10 +165,13 @@ get_dataset_varkeys <- function(mother_path, schema = "bonares") {
 read_metadata <- function(mother_path, schema = "bonares") {
   
   # Helper to extract, filter, and collapse text
-  extract_collapse <- function(doc, xpath, ns, collapse = "; ") {
+  extract_collapse <- function(doc, xpath, ns, collapse = TRUE) {
     vals <- xml2::xml_text(xml2::xml_find_all(doc, xpath, ns))
     vals <- vals[nzchar(vals)]
-    paste(vals, collapse = collapse)
+    if (collapse) {
+      vals <- paste(vals, collapse = "; ")
+    }
+    vals
   }
   extract_first <- function(doc, xpath, ns) {
     val <- xml2::xml_text(xml2::xml_find_first(doc, xpath, ns))
@@ -205,9 +208,10 @@ read_metadata <- function(mother_path, schema = "bonares") {
   exp_title <- extract_collapse(metadata, ".//gmd:identificationInfo/bnr:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:title/gco:CharacterString", ns)
   exp_doi   <- extract_collapse(metadata, ".//gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gco:CharacterString", ns)
   # Contacts
-  persons <- extract_collapse(metadata, ".//gmd:contact/gmd:CI_ResponsibleParty/gmd:individualName/gco:CharacterString", ns)
+  persons <- extract_collapse(metadata, ".//gmd:contact/gmd:CI_ResponsibleParty/gmd:individualName/gco:CharacterString", ns, collapse = FALSE)
   institutions <- extract_collapse(metadata, ".//gmd:contact/gmd:CI_ResponsibleParty/gmd:organisationName/gco:CharacterString", ns)
-  emails <- extract_collapse(metadata, ".//gmd:contact/gmd:CI_ResponsibleParty/gmd:contactInfo/gmd:CI_Contact/gmd:address/gmd:CI_Address/gmd:electronicMailAddress/gco:CharacterString", ns)
+  emails <- extract_collapse(metadata, ".//gmd:contact/gmd:CI_ResponsibleParty/gmd:contactInfo/gmd:CI_Contact/gmd:address/gmd:CI_Address/gmd:electronicMailAddress/gco:CharacterString",
+                             ns, collapse = FALSE)
   # Legal constraints
   legalConstraints <- extract_collapse(metadata, ".//gmd:identificationInfo/bnr:MD_DataIdentification/gmd:resourceConstraints", ns)
   # Funding
@@ -240,23 +244,30 @@ read_metadata <- function(mother_path, schema = "bonares") {
   
   ##---- Output ----
   exp_metadata <- tibble(
-    Experiment_name   = exp_name,
-    Experiment_title  = exp_title,
-    Experiment_doi    = exp_doi,
-    Contact_persons   = persons,
-    Institutions      = institutions,
-    Contact_email     = emails,
+    Experiment_name = exp_name,
+    Experiment_title = exp_title,
+    Experiment_doi = exp_doi,
     Legal_constraints = legalConstraints,
-    Funding           = funding,
-    Date_published    = date_published,
-    Date_revised      = date_revised,
-    Coordinate_system   = coord_system,
-    Longitude           = mean(c(west_bound, east_bound), na.rm = TRUE),
-    Latitude            = mean(c(north_bound, south_bound), na.rm = TRUE)
+    Funding = funding,
+    Date_published = date_published,
+    Date_revised = date_revised,
+    Coordinate_system = coord_system,
+    Longitude = mean(c(west_bound, east_bound), na.rm = TRUE),
+    Latitude = mean(c(north_bound, south_bound), na.rm = TRUE)
+  )
+  persons <- tibble(
+    Contact_persons = persons,
+    Contact_email = emails
+  )
+  institutions <- tibble(
+    Institutions = institutions
   )
   
   list(
-    metadata = exp_metadata,
+    metadata = list(METADATA = exp_metadata,
+                    PERSONS = persons,
+                    INSTITUTIONS = institutions),
     variable_key = var_key
   )
 }
+
