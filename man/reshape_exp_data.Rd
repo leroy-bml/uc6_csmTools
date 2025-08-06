@@ -8,7 +8,8 @@ reshape_exp_data(
   db,
   mother_xml,
   design_tbl_name,
-  data_model = "bonares-lte_de"
+  data_model = "bonares-lte_de",
+  header_type = "long"
 )
 }
 \arguments{
