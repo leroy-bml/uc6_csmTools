@@ -128,13 +128,14 @@ get_template_codes <- function(wb){
 #' }
 #'
 #' @importFrom magrittr %>%
-#' @importFrom dplyr mutate filter
+#' @importFrom dplyr mutate filter select
 #' @importFrom openxlsx2 wb_load wb_get_sheet_names wb_to_df
 #' 
 #' @export
 #' 
 
-extract_template <- function(path = NULL, exp_id = NA_character_, headers = c("short", "long")){
+extract_template <- function(path = NULL, exp_id = NA_character_, headers = c("short", "long"),
+                             keep_null_events = TRUE, keep_empty = TRUE){
   
   # Fetch template
   if (is.null(path)) {
@@ -160,14 +161,19 @@ extract_template <- function(path = NULL, exp_id = NA_character_, headers = c("s
   # Extract all sections and section names
   dfs <- list()
   for (i in 1:length(nms_data)){
+
     df <- suppressWarnings(
       wb_to_df(wb, sheet = nms_data[i], startRow = 4, detect_dates = TRUE)
     )
-    #attr(df, "section") <- nms_data[i]
+    
+    # Drop artefacts if any
     df <- drop_artefacts(df)
     
-    dfs[[i]] <- df
-    names(dfs)[i] <- nms_data[i]
+    # Decide whether to keep or skip based on row count and keep_empty flag
+    if (nrow(df) > 0 || keep_empty) {
+      dfs[[i]] <- df
+      names(dfs)[i] <- nms_data[i]
+    }
   }
 
   # Map template dropdown list descriptions into ICASA codes
@@ -179,15 +185,20 @@ extract_template <- function(path = NULL, exp_id = NA_character_, headers = c("s
   # Delete empty dataframes
   # TODO: quality check if mandatory data is input
   #dfs <- dfs[!sapply(dfs, function(df) all(is.null(df) || dim(df) == c(0, 0)) || all(is.na(df)))]
-  dfs <- Filter(function(df) !is.null(df) || !all(dim(df) == c(0, 0)) || !all(is.na(df)), dfs)
+  if (!keep_empty) {
+    dfs <- Filter(function(df) !is.null(df) || !all(dim(df) == c(0, 0)) || !all(is.na(df)), dfs)
+  }
   
   # Replace treatment names by treatment number in the treatment matrix
   dfs <- format_envmod_tbl(dfs)
   dfs <- format_treatment_str(dfs)
   
   # Replace null events (e.g., "rainfed" irrigation input)
-  dfs <- format_events(dfs, "FERTILIZERS", "fertilizer_level", "fert_applied", "FERTILIZER_APPLICS")  #check warnings
-  dfs <- format_events(dfs, "IRRIGATIONS", "irrigation_level", "irrig_applied", "IRRIGATION_APPLICATIONS")  #TODO: check warnings
+  if (!keep_null_events) {
+    dfs <- format_events(dfs, "FERTILIZERS", "fertilizer_level", "fert_applied", "FERTILIZER_APPLICS")  #check warnings
+    dfs <- format_events(dfs, "IRRIGATIONS", "irrigation_level", "irrig_applied", "IRRIGATION_APPLICATIONS")
+    # TODO: check warnings many-to-many joins
+  }
   
   # Format metadata
   dfs <- structure_metadata(dfs, data_model = "icasa")
@@ -207,7 +218,7 @@ extract_template <- function(path = NULL, exp_id = NA_character_, headers = c("s
   }
 
   # Split experiments
-  out <- split_experiments(dfs)
+  out <- split_experiments(dfs, keep_empty = keep_empty, keep_na_cols = TRUE)
   if(!all(is.na(exp_id))){
     out <- out[exp_id %in% names(out)]
   } 
@@ -428,7 +439,8 @@ format_envmod_tbl <- function(ls){
     
     df <- df %>%
       select(-environ_parameter_unit) %>%
-      pivot_wider(names_from = environ_parameter, values_from = c(modif_code, environ_parameter_value))
+      pivot_wider(names_from = environ_parameter, values_from = c(modif_code, environ_parameter_value)) %>%
+      as.data.frame()
     
     colnames(df) <- gsub(pattern = "modif_code", replacement = "environ_modif_code", colnames(df))
     colnames(df) <- gsub(pattern = "environ_parameter_value", replacement = "environ_modif", colnames(df))
@@ -814,89 +826,110 @@ remap <- function(dataset, map_path, input_model = "icasa", output_model = "dssa
 #' 
 
 # NB: fails when applied to the mapped dataset with unmapped variables kept, due to duplicate name in multiple table (ELEV.x, ELEV.y)
-split_experiments <- function(ls) {
+split_experiments <- function(ls, keep_empty = FALSE, keep_na_cols = FALSE) {
 
   # Set the splitting factor (IDs) for each data type (experiment, soil, weather)
-  if(all(grepl("^[A-Z_]+$", colnames(ls[[1]])))){
+  if (all(grepl("^[A-Z_]+$", colnames(ls[[1]])))) {
     fcts <- c(exp = "EID", sol = "SOIL_SUBSET", wth = "WTH_SUBSET")
   } else {
     fcts <- c(exp = "experiment_ID", sol = "soil_identifier", wth = "weather_sta_identifier")
   }
   
-  #1- split EID - nonEDI
+  # Split into experiment-related and environment-related dataframes
   exp_dfs <- Filter(function(df) fcts[["exp"]] %in% names(df), ls)
   env_dfs <- Filter(function(df) !fcts[["exp"]] %in% names(df), ls)
   
+  exp_names <- names(ls)[names(ls) %in% names(exp_dfs)]
+  env_names <- names(ls)[!names(ls) %in% names(exp_dfs)]
+  
+  # Track structured empty versions of all dataframes
+  df_structures <- lapply(ls, function(df) {
+    if (is.data.frame(df)) {
+      df[0, , drop = FALSE]  # preserves column names and types, zero rows
+    } else {
+      NULL
+    }
+  })
+  
+  # Split experiment dataframes by experiment ID
   exp_dfs_split <- lapply(exp_dfs, function(df) split(df, f = df[[fcts[["exp"]]]]))
   exp_dfs_split <- revert_list_str(exp_dfs_split)
-
-  # Initialize lists to store lookup values/dataframes
-  sol_split <- wth_split <- c()
   
-  for (i in 1:length(exp_dfs_split)){
+  # If keep_empty, ensure all dfs with no records are preserved
+  if (keep_empty) {
+
+    exp_ids <- names(exp_dfs_split)
     
-    # Identify profile and station IDs for each experiment
+    exp_df_structures <- lapply(exp_dfs, function(df) df[0, , drop = FALSE])
+    names(exp_df_structures) <- names(exp_dfs)
+    
+    for (eid in exp_ids) {
+      for (df_name in names(exp_df_structures)) {
+        if (is.null(exp_dfs_split[[eid]][[df_name]])) {
+          exp_dfs_split[[eid]][[df_name]] <- exp_df_structures[[df_name]]
+        }
+      }
+    }
+  }
+  
+  sol_split <- wth_split <- vector("list", length(exp_dfs_split))
+  
+  for (i in seq_along(exp_dfs_split)) {
     profile_id <- exp_dfs_split[[i]]$FIELDS[[fcts[["sol"]]]]
     station_id <- exp_dfs_split[[i]]$FIELDS[[fcts[["wth"]]]]
     
-    # Keep only soil data records containing the profile ID
     sol_split[[i]] <- lapply(env_dfs, function(df) {
-      
-      matched_col <- names(which(sapply(df, function(col) any(col %in% profile_id))))
+      matched_col <- names(df)[sapply(df, function(col) is.atomic(col) && any(profile_id %in% col))]
       
       if (all(!is.na(profile_id)) && length(matched_col) > 0) {
         df %>% filter(.data[[matched_col[1]]] %in% profile_id)
-        # NB: [1] in case soil/weather data names are identical to IDs (wrong practice)
       } else {
         NULL
       }
     })
-    
-    # Remove empty dataframes
     sol_split[[i]] <- Filter(Negate(is.null), sol_split[[i]])
     
-    # Keep only weather data records containing the station ID
     wth_split[[i]] <- lapply(env_dfs, function(df) {
-      
-      matched_col <- names(which(sapply(df, function(col) any(col %in% station_id))))
-      
+      matched_col <- names(df)[sapply(df, function(col) is.atomic(col) && any(station_id %in% col))]
       if (all(!is.na(station_id)) && length(matched_col) > 0) {
         df %>% filter(.data[[matched_col[1]]] %in% station_id)
-        # NB: [1] in case soil/weather data names are identical to IDs (wrong practice)
       } else {
         NULL
       }
     })
-    
-    # Remove empty dataframes
     wth_split[[i]] <- Filter(Negate(is.null), wth_split[[i]])
     
-    # Append data when it exists
-    if (length(sol_split[[i]]) > 0 || length(wth_split[[i]]) > 0) {
-      exp_dfs_split[[i]] <- c(exp_dfs_split[[i]], sol_split[[i]], wth_split[[i]])
+    # Combine experiment, soil, and weather data
+    exp_dfs_split[[i]] <- c(exp_dfs_split[[i]], sol_split[[i]], wth_split[[i]])
+    
+    # If keep_empty is TRUE, add missing dataframes with preserved structure
+    if (keep_empty) {
+      original_names <- names(ls)
+      current_names <- names(exp_dfs_split[[i]])
+      missing_names <- setdiff(original_names, current_names)
+      
+      for (nm in missing_names) {
+        exp_dfs_split[[i]][[nm]] <- df_structures[[nm]] %||% data.frame()
+      }
     }
     
-    # Remove empty data frames
-    exp_dfs_split[[i]] <- Filter(function(df) !is.null(df) || 
-                                   !all(dim(df) == c(0, 0)) || 
-                                   !all(is.na(df)), 
-                                 exp_dfs_split[[i]])
     
-    # Remove NA columns generated by splitting in measured data
+    # Remove NA columns from measured data
     nms <- names(exp_dfs_split[[i]])
-    exp_dfs_split[[i]] <- lapply(names(exp_dfs_split[[i]]), function(name) {
-      
-      ls <- exp_dfs_split[[i]]
-      df <- ls[[name]]
-      
-      if (grepl("^SM_|TS_", name)) {
-        df <- df[, colSums(!is.na(df)) > 0, drop = FALSE]  # Remove all-NA columns
-      }
-      
-      return(df)
-    })
-    names(exp_dfs_split[[i]]) <- nms  # Restore names
+    # TODO: do for all data (not only measured)?
+    if (!keep_na_cols) {
+      nms <- names(exp_dfs_split[[i]])
+      exp_dfs_split[[i]] <- lapply(nms, function(name) {
+        df <- exp_dfs_split[[i]][[name]]
+        if (grepl("^SM_|TS_", name)) {
+          df <- df[, colSums(!is.na(df)) > 0, drop = FALSE]
+        }
+        df
+      })
+      names(exp_dfs_split[[i]]) <- nms
+    }
   }
-  
   return(exp_dfs_split)
 }
+
+
