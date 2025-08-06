@@ -590,5 +590,5 @@ map_data2 <- function(dataset, input_model, output_model, header_type) {
                        NULL  # Default if none match
     )
   }
-  apply_mappings(input_data, map_path, header_dict, header_type = "short")
+  apply_mappings(dataset, map_path, header_dict, header_type = "short")
 }
