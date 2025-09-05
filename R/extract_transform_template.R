@@ -584,36 +584,6 @@ concatenate_per_group <- function(df) {
 }
 
 
-#' Strictly Abbreviate a String to a Minimum Length
-#'
-#' Produces a strict abbreviation of a string, ensuring the result does not exceed the specified minimum length.
-#'
-#' @param string Character vector. The string(s) to abbreviate.
-#' @param minlength Integer. The minimum (and maximum) length of the abbreviation. Default is 2.
-#'
-#' @details
-#' The function uses \code{abbreviate} with \code{strict = TRUE} to generate abbreviations. If the resulting abbreviation exceeds \code{minlength}, it is truncated to exactly \code{minlength} characters.
-#'
-#' This is useful for generating short, fixed-length codes or labels from longer strings.
-#'
-#' @return A character vector of abbreviated strings, each of length \code{minlength}.
-#'
-#' @examples
-#' strict_abbreviate("Wheat", minlength = 3)
-#' # Returns "Whe"
-#' strict_abbreviate(c("Maize", "Rice"), minlength = 2)
-#' # Returns c("Ma", "Ri")
-#'
-
-strict_abbreviate <- function(string, minlength = 2) {
-  abbr <- abbreviate(string, minlength = minlength, strict = TRUE)
-  if (nchar(abbr) > minlength) {
-    abbr <- substr(abbr, 1, minlength)
-  }
-  return(abbr)
-}
-
-
 #' Format and Merge Observed Data Sections in a List
 #'
 #' Merges related observed data tables (e.g., summary and time series) in a list of data frames, producing unified "SUMMARY" and "TIME_SERIES" sections.

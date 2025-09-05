@@ -384,3 +384,52 @@ find_common_prefix <- function(strings) {
   }
   return(common_prefix)
 }
+
+
+#' Strictly Abbreviate a String to a Minimum Length
+#'
+#' Produces a strict abbreviation of a string, ensuring the result does not exceed the specified minimum length.
+#' Automatically transliterates non-ASCII characters (e.g., Umlauts) to their ASCII equivalents if needed.
+#'
+#' @param string Character vector. The string(s) to abbreviate.
+#' @param minlength Integer. The minimum (and maximum) length of the abbreviation. Default is 2.
+#'
+#' @details
+#' The function uses \code{abbreviate} with \code{strict = TRUE} to generate abbreviations. If a warning is triggered due to non-ASCII characters,
+#' the input string is transliterated using \code{stringi::stri_trans_general(..., "Latin-ASCII")} before abbreviation.
+#' If the resulting abbreviation exceeds \code{minlength}, it is truncated to exactly \code{minlength} characters.
+#'
+#' This is useful for generating short, fixed-length codes or labels from longer strings, including those with accented or special characters.
+#'
+#' @return A character vector of abbreviated strings, each of length \code{minlength}.
+#'
+#' @examples
+#' strict_abbreviate("Wheat", minlength = 3)
+#' strict_abbreviate(c("Maize", "Rice"), minlength = 2)
+#' strict_abbreviate("München", minlength = 2)
+#'
+
+strict_abbreviate <- function(string, minlength = 2) {
+  warning_triggered <- FALSE
+  abbr <- NULL
+  
+  withCallingHandlers({
+    abbr <- abbreviate(string, minlength = minlength, strict = TRUE)
+  }, warning = function(w) {
+    if (grepl("non-ASCII", conditionMessage(w))) {
+      warning_triggered <<- TRUE
+      invokeRestart("muffleWarning")
+    }
+  })
+  
+  if (warning_triggered) {
+    string <- stri_trans_general(string, "Latin-ASCII")
+    abbr <- abbreviate(string, minlength = minlength, strict = TRUE)
+  }
+  
+  if (nchar(abbr) > minlength) {
+    abbr <- substr(abbr, 1, minlength)
+  }
+  
+  return(abbr)
+}
