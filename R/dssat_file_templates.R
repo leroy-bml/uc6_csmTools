@@ -57,7 +57,7 @@ FIELDS_template <-
 # Soil analysis
 SOIL_ANALYSIS_template <-
   data.frame(
-    A = 1, SADAT = as.POSIXct(NA), SMHB = NA_character_, SMPX = NA_character_, SMKE = NA_character_,
+    A = 1, SADAT = NA_character_, SMHB = NA_character_, SMPX = NA_character_, SMKE = NA_character_,
     SANAME = NA_character_
   )
 
@@ -75,7 +75,7 @@ SOIL_ANALYSIS_template$SASC <- list(NA_real_)
 # Initial conditions
 INITIAL_CONDITIONS_template <-
   data.frame(
-    C = 1, PCR = NA_character_, ICDAT = as.POSIXct(NA), ICRT = NA_real_, ICND = NA_real_,
+    C = 1, PCR = NA_character_, ICDAT = NA_character_, ICRT = NA_real_, ICND = NA_real_,
     ICRN = NA_real_, ICRE = NA_real_, ICWD = NA_real_, ICRES = NA_real_,
     ICREN = NA_real_, ICREP = NA_real_, ICRIP = NA_real_, ICRID = NA_real_,
     ICNAME = NA_character_
@@ -89,8 +89,8 @@ INITIAL_CONDITIONS_template$SNO3 <- list(NA_real_)
 
 # Planting details
 PLANTING_DETAILS_template <- data.frame(P = 1,
-                                        PDATE = as.POSIXct(NA),
-                                        EDATE = as.POSIXct(NA),
+                                        PDATE = NA_character_,
+                                        EDATE = NA_character_,
                                         PPOP = NA_real_,
                                         PPOE = NA_real_,
                                         PLME = NA_character_,
@@ -109,7 +109,7 @@ PLANTING_DETAILS_template <- data.frame(P = 1,
 # Tillage
 TILLAGE_template <-
   data.frame(
-    T = 1, TDATE = as.POSIXct(NA), TIMPL = NA_character_, TDEP = NA_real_,
+    T = 1, TDATE = NA_character_, TIMPL = NA_character_, TDEP = NA_real_,
     TNAME = NA_character_
   )
 
@@ -122,7 +122,7 @@ IRRIGATION_template <-
     IRNAME = NA_character_
   )
 
-IRRIGATION_template$IDATE <- list(as.POSIXct(NA))
+IRRIGATION_template$IDATE <- list(NA_character_)
 IRRIGATION_template$IROP <- list(NA_character_)
 IRRIGATION_template$IRVAL <- list(NA_real_)
 
@@ -130,7 +130,7 @@ IRRIGATION_template$IRVAL <- list(NA_real_)
 # Fertilizers
 FERTILIZERS_template <-
   data.frame(
-    F = 1, FDATE = as.POSIXct(NA), FMCD = NA_character_, FACD = NA_character_,
+    F = 1, FDATE = NA_character_, FMCD = NA_character_, FACD = NA_character_,
     FDEP = NA_real_, FAMN = NA_real_, FAMP = NA_real_, FAMK = NA_real_,
     FAMC = NA_real_, FAMO = NA_real_, FOCD = NA_character_,
     FERNAME = NA_character_
@@ -140,7 +140,7 @@ FERTILIZERS_template <-
 # Residues
 RESIDUES_template <-
   data.frame(
-    R = 1, RDATE = as.POSIXct(NA), RCOD = NA_character_, RAMT = NA_real_,
+    R = 1, RDATE = NA_character_, RCOD = NA_character_, RAMT = NA_real_,
     RESN = NA_real_, RESP = NA_real_, RESK = NA_real_, RINP = NA_real_,
     RDEP = NA_real_, RMET = NA_character_, RENAME = NA_character_
   )
@@ -149,7 +149,7 @@ RESIDUES_template <-
 # Chemicals
 CHEMICALS_template <-
   data.frame(
-    C = 1, CDATE = as.POSIXct(NA), CHCOD = NA_character_, CHAMT = NA_real_,
+    C = 1, CDATE = NA_character_, CHCOD = NA_character_, CHAMT = NA_real_,
     CHME = NA_character_, CHDEP = NA_real_, CHT = NA_character_,
     CHNAME = NA_character_
   )
@@ -158,7 +158,7 @@ CHEMICALS_template <-
 # Environment modificatuions
 ENVIRONMENT_MODIFICATIONS_template <-
   data.frame(
-    E = 1, ODATE = as.POSIXct(NA), EDAY = NA_real_, ERAD = NA_real_,
+    E = 1, ODATE = NA_character_, EDAY = NA_real_, ERAD = NA_real_,
     EMAX = NA_real_, EMIN = NA_real_, ERAIN = NA_real_, ECO2 = NA_real_,
     EDEW = NA_real_, EWIND = NA_real_,
     ENVNAME = NA_character_
@@ -168,7 +168,7 @@ ENVIRONMENT_MODIFICATIONS_template <-
 # Harvest
 HARVEST_template <-
   data.frame(
-    H = 1, HDATE = as.POSIXct(NA), HSTG = NA_character_, HCOM = NA_character_,
+    H = 1, HDATE = NA_character_, HSTG = NA_character_, HCOM = NA_character_,
     HSIZE = NA_character_, HPC = NA_real_, HBPC = NA_real_,
     HNAME = NA_character_
   )
@@ -299,7 +299,7 @@ WEATHER_header_template <-
     TAV = NA_real_, AMP = NA_real_, REFHT = NA_real_, WNDHT = NA_real_
   )
 # 
-# WEATHER_template$DATE <- list(as.POSIXct(NA))
+# WEATHER_template$DATE <- list(NA_character_)
 # WEATHER_template$SRAD <- list(NA_real_)
 # WEATHER_template$TMAX <- list(NA_real_)
 # WEATHER_template$TMIN <- list(NA_real_)
@@ -313,7 +313,7 @@ WEATHER_header_template <-
 
 WEATHER_template <-
   data.frame(
-    DATE = as.POSIXct(NA), SRAD = NA_real_, TMAX = NA_real_, TMIN = NA_real_,
+    DATE = NA_character_, SRAD = NA_real_, TMAX = NA_real_, TMIN = NA_real_,
     RAIN = NA_real_, DEWP = NA_real_, WIND = NA_real_,
     PAR = NA_real_, EVAP = NA_real_, RHUM = NA_real_
   )
@@ -391,7 +391,7 @@ v_fmt_filet <- c(
   CHTD = "%6.0f", `CN%D` = "%6.0f", CNAD = "%6.0f", CWAD = "%6.0f", CWID = "%6.0f",
   `G#AD` = "%6.0f", `GN%D` = "%6.0f", GNAD = "%6.0f", `GP%D` = "%6.0f", GPAD = "%6.0f", GWAD = "%6.0f",
   GWGD = "%6.0f",
-  HIAD = "%6.0f", HIPD = "%6.2f",
+  HIAD = "%6.0f", HIPD = "%6.2f", HWAD = "%6.0f",
   `L#SD` = "%6.1f", `LN%D` = "%6s", `LP%D` = "%6.0f", LAID = "%6.0f", 
   LDAD = "%6.0f", LNAD = "%6.0f", LPAD = "%6.0f", LWAD = "%6.0f",
   NUPC = "%6.0f",
