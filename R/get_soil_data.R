@@ -140,7 +140,7 @@ get_soilGrids_profile <- function(lat, lon, dir = tempdir()) {
   }
   
   # Reshape and map to ICASA format
-  prov_metadata <- profile_metadata <- layer_data <- list()
+  profile_metadata <- data_general <- data_layers <- list()
   
   for (i in 1:length(profiles)) {
     
@@ -150,48 +150,45 @@ get_soilGrids_profile <- function(lat, lon, dir = tempdir()) {
     # Identify metadata, profile metadata and layer data attributes
     data_map <- load_map()
     
-    prov_attr <- data_map %>%
-      filter(data_model == "dssat" & template_section == "SOIL_METADATA") %>%
+    attr_metadata <- data_map %>%
+      filter(data_model == "dssat" & icasa_group == "PROFILE_METADATA") %>%
       pull(header)
     
-    profile_attr <- data_map %>%
-      filter(data_model == "dssat" & template_section == "SOIL_PROFILES") %>%
+    attr_general <- data_map %>%
+      filter(data_model == "dssat" & icasa_group == "SOIL_PROFILE" & is.na(icasa_subgroup)) %>%
       pull(header)
     
-    layers_attr <- data_map %>%
-      filter(data_model == "dssat" & template_section == "SOIL_PROFILE_LAYERS") %>%
+    attr_layers <- data_map %>%
+      filter(data_model == "dssat" & icasa_group == "SOIL_PROFILE" & icasa_subgroup == "SOIL_PROFILE_LAYERS") %>%
       pull(header)
     
     # Split sections
-    prov_metadata[[i]] <- profile_full[names(profile_full) %in% prov_attr] %>% distinct()
-    profile_metadata[[i]] <- profile_full[names(profile_full) %in% profile_attr] %>% distinct()
-    layer_data[[i]] <- profile_full[names(profile_full) %in% layers_attr]
+    profile_metadata[[i]] <-
+      profile_full[names(profile_full) %in% attr_metadata] %>%
+      distinct()
+    data_general[[i]] <-
+      profile_full[names(profile_full) %in% attr_general] %>%
+      distinct()
+    data_layers[[i]] <-
+      profile_full[names(profile_full) %in% attr_layers]
     
     # Map to ICASA
-    prov_metadata[[i]] <- map_data(prov_metadata[[i]], input_model = "dssat", output_model = "icasa",
-                                   header = "long", map = data_map, keep_unmapped = FALSE)
+    # TODO: replace eventually by updated routine convert_dataset
     profile_metadata[[i]] <- map_data(profile_metadata[[i]], input_model = "dssat", output_model = "icasa",
                                       header = "long", map = data_map, keep_unmapped = FALSE)
-    layer_data[[i]] <- map_data(layer_data[[i]], input_model = "dssat", output_model = "icasa",
-                                header = "long", map = data_map, keep_unmapped = FALSE)
+    data_general[[i]] <- map_data(data_general[[i]], input_model = "dssat", output_model = "icasa",
+                                  header = "long", map = data_map, keep_unmapped = FALSE)
+    data_layers[[i]] <- map_data(data_layers[[i]], input_model = "dssat", output_model = "icasa",
+                                 header = "long", map = data_map, keep_unmapped = FALSE)
     
     # Add ISRIC as institution
-    prov_metadata[[i]]$INST_NAME <- "ISRIC"
+    profile_metadata[[i]]$institute_name <- "ISRIC"
   }
   
   # Format output
-  out <- list(SOIL_METADATA = prov_metadata,
-              SOIL_PROFILES = profile_metadata,
-              SOIL_PROFILE_LAYERS = layer_data)
-  
-  # Attach comment on data provenance
-  attr(out, "comments") <-
-      c(
-        "Soil profile generated using ISRIC SoilGrid1km (see Han et al. [2015] 10.1016/j.envsoft.2019.05.012)",
-        paste(
-          "Data extracted from the Harvard Dataverse (10.7910/DVN/1PEEY0) on", Sys.Date(), "using csmTools"
-        )
-      )
+  out <- list(PROFILE_METADATA = profile_metadata,
+              SOIL_PROFILE = data_general,
+              SOIL_PROFILE_LAYERS = data_layers)
   
   out <- lapply(out, function(ls) {
     if (length(ls)>1){
@@ -201,8 +198,17 @@ get_soilGrids_profile <- function(lat, lon, dir = tempdir()) {
     }
   })
   
+  # Attach comment on data provenance
+  method_notes <- c(
+    "Soil profile generated using ISRIC SoilGrid1km (see Han et al. [2015] 10.1016/j.envsoft.2019.05.012)",
+    paste("Data extracted from the Harvard Dataverse (10.7910/DVN/1PEEY0) on", Sys.Date())
+  )
+  out[["PROFILE_METADATA"]] <- out[["PROFILE_METADATA"]] %>%
+    group_by(soil_profile_ID) %>%
+    mutate(soil_profile_methods = list(method_notes)) %>%
+    ungroup()
+  
   return(out)
 }
 
 # TODO: XY in metadata rather than data?
-
