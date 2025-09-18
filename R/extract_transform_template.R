@@ -200,8 +200,59 @@ extract_template <- function(path = NULL, exp_id = NA_character_, headers = c("s
     # TODO: check warnings many-to-many joins
   }
   
-  # Format metadata
-  dfs <- structure_metadata(dfs, data_model = "icasa")
+  # Re-structure template to ICASA:
+  # CHECK: to revise
+  # This function split provenance metadata (persons, institutes, documents) among sections (management, soil, weather)
+  structure_itpl_metadata <- function(dataset) {
+    
+    # Drop empty tables
+    dataset <- Filter(function(x) nrow(x) > 0, dataset)
+    
+    # Identify core and provenance metadata tables
+    metadata <- dataset[grepl("METADATA", names(dataset))]
+    prov_meta <- dataset[grepl("PERSONS|INSTITUTIONS|DOCUMENTS", names(dataset))]
+    
+    # Remove template drop down list helpers (institute names appended to IDs)
+    prov_meta[["PERSONS"]] <- prov_meta[["PERSONS"]] %>%
+      mutate(institute_ID = sub("\\|.*", "", institute_ID)) %>%
+      mutate(institute_ID = as.numeric(institute_ID))
+    
+    # Merge core metadata with provenance attributes
+    metadata <- lapply(metadata, function(df){
+      
+      join_nm <- names(df)[1]  # Get the first column name dynamically
+      
+      prov_meta <- lapply(prov_meta, function(x){
+        colnames(x)[1] <- join_nm
+        return(x)
+      })
+      
+      # Merge provenance attributes
+      prov_merged <- Reduce(function(x, y) full_join(x, y, by = base::intersect(names(x), names(y))), prov_meta)
+      # Append to metadata table
+      df <- Reduce(function(x, y) left_join(x, y, by = join_nm), list(df, prov_merged))
+    })
+    
+    # Rename merged provenance attributes in compliance with ICASA
+    add_header_suffix <- function(df, suffix) {
+      colnames(df) <- ifelse(grepl("^(digital|document)", colnames(df)), 
+                             paste0(colnames(df), "_", suffix), 
+                             colnames(df))
+      return(df)
+    }
+    
+    if (!is.null(metadata[["WEATHER_METADATA"]])) {
+      dataset[["WEATHER_METADATA"]] <- add_header_suffix(metadata[["WEATHER_METADATA"]], "wst")
+    }
+    if (!is.null(metadata[["SOIL_METADATA"]])) {
+      dataset[["SOIL_METADATA"]] <- add_header_suffix(metadata[["SOIL_METADATA"]], "sl")
+    }
+    dataset[["EXP_METADATA"]] <- metadata[["EXP_METADATA"]]
+    
+    out <- dataset[base::setdiff(names(dataset), names(prov_meta))]
+    return(out)
+  }
+  dfs <- structure_itpl_metadata(dfs)
   
   # Map column headers to short format if applicable
   # TODO: extensive testing (e.g., no provenance sheets or empty)
@@ -566,22 +617,22 @@ format_events <- function(ls, type, head_key, applied_key, applics_key) {
 #' @importFrom dplyr across n_distinct select_if group_by summarise all_of
 #' 
 
-# TODO: add_property_mapping <- function(name, unit, icasa = list(), agg_funs = list())
-concatenate_per_group <- function(df) {
-  
-  constant_cols <- df %>%
-    summarise(across(everything(), ~ n_distinct(.) == 1)) %>% 
-    select_if(~ .) %>%
-    colnames()
-  
-  other_cols <- base::setdiff(colnames(df), constant_cols)
-  
-  out <- df %>% 
-    group_by(across(all_of(constant_cols))) %>%
-    summarise(across(all_of(other_cols), ~ paste(., collapse = ", ")), .groups = 'drop')
-  
-  return(out)
-}
+# # TODO: add_property_mapping <- function(name, unit, icasa = list(), agg_funs = list())
+# concatenate_per_group <- function(df) {
+#   
+#   constant_cols <- df %>%
+#     summarise(across(everything(), ~ n_distinct(.) == 1)) %>% 
+#     select_if(~ .) %>%
+#     colnames()
+#   
+#   other_cols <- base::setdiff(colnames(df), constant_cols)
+#   
+#   out <- df %>% 
+#     group_by(across(all_of(constant_cols))) %>%
+#     summarise(across(all_of(other_cols), ~ paste(., collapse = ", ")), .groups = 'drop')
+#   
+#   return(out)
+# }
 
 
 #' Format and Merge Observed Data Sections in a List
