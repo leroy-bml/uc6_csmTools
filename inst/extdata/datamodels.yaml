@@ -1,0 +1,125 @@
+# ================================================================
+# BonaRes-LTE Data Model
+# ================================================================
+bonares-lte_de:
+  # --- Definitional Properties ---
+  master_key: "experiment"
+  key_source_table: "METADATA" 
+  design_keys:
+    experiment: "Experiment_name"
+    year: "Versuchsjahr"
+    treatment: "Pruefglied_ID"
+    plot: "Parzelle_ID"
+  data_tables:
+    - METADATA
+    - VERSUCHSAUFBAU
+    - PRUEFGLIED
+    - FAKTOR
+    - FAKTOR1_STUFE
+    - FAKTOR2_STUFE
+    - FAKTOR3_STUFE
+    - PARZELLE
+    - FRUCHTFOLGE
+    - KULTUR
+    - SAAT_PFLANZGUT
+    - SORTE
+    - AUSSAAT
+    - BEREGNUNG
+    - DUENGUNG
+    - DUENGEMITTEL
+    - PFLANZENSCHUTZ
+    - PFLANZENSCHUTZMITTEL
+    - BODENBEARBEITUNG
+    - ERNTE
+    - ERTRAG
+    - PROBENAHME_PFLANZEN
+    - PFLANZENLABORWERTE
+    - PROBENAHME_BODEN
+    - BODENLABORWERTE
+    - KLIMADATEN
+    
+  # --- Properties for when this model is an OUTPUT ---
+  # 'mappings' would go here if you could map TO this model
+  mappings: null 
+
+
+# ================================================================
+# ICASA Output Model
+# ================================================================
+icasa:
+  master_key: "experiment"
+  key_source_table: "GENERAL"
+  design_keys:
+    experiment: "experiment_ID"
+    year: "experiment_year"
+    treatment: "treatment_number"
+    plot: "plot_id"
+  shared_tables:
+    - PROFILE_METADATA
+    - SOIL_PROFILE
+    - SOIL_PROFILE_LAYERS
+    - WEATHER_METADATA
+    - WEATHER_DAILY
+  data_tables:
+    - GENERAL
+    - PERSONS
+    - INSTITUTIONS
+    - DOCUMENTS
+    - TREATMENTS
+    - GENOTYPES
+    - FIELDS
+    - PLANTINGS
+    - IRRIGATIONS
+    - FERTILIZERS
+    - ORGANIC_MATERIALS
+    - CHEMICALS
+    - TILLAGE
+    - HARVESTS
+    - SUMMARY
+    - TIME_SERIES
+  dict_source:
+    type: "url_fetch_icasa"
+    path: "https://raw.githubusercontent.com/DSSAT/ICASA-Dictionary/main/CSV/"  
+    
+  # --- Properties for when this model is an OUTPUT ---
+  mappings:
+    "bonares-lte_de": "./inst/extdata/map_bonares_icasa_v1-2.yaml"
+
+# ================================================================
+# DSSAT Output Model
+# ================================================================
+dssat:
+  master_key: "experiment"
+  key_source_table: "GENERAL"
+  design_keys:
+    experiment: "EXP_ID"
+    year: "EXP_YEAR"
+    treatment: "TRTNO"
+    plot: "PLTID"
+  data_tables:
+    - GENERAL
+    - TREATMENTS
+    - CULTIVARS
+    - FIELDS
+    - INITIAL_CONDITIONS
+    - ENVIRONMENT_MODIFICATIONS
+    - PLANTING_DETAILS
+    - IRRIGATION
+    - FERTILIZERS
+    - RESIDUES
+    - CHEMICALS
+    - TILLAGE
+    - HARVEST
+    - SIMULATION_CONTROLS
+    - WEATHER_METADATA
+    - WEATHER_DAILY
+    - SOIL_META
+    - SOIL_GENERAL
+    - SOIL_LAYERS
+  dict_source: null
+    
+  # --- Properties for when this model is an OUTPUT ---
+  mappings:
+    "icasa": "./inst/extdata/map_icasa_dssat_v1-1-0.yaml"
+    
+
