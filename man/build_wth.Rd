@@ -4,7 +4,7 @@
 \alias{build_wth}
 \title{Build a DSSAT Weather File from a List}
 \usage{
-build_wth(ls)
+build_wth(weather_data)
 }
 \arguments{
 \item{ls}{A named list containing at least a \code{"WEATHER"} data frame and its attributes.}

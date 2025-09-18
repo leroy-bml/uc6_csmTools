@@ -4,14 +4,14 @@
 \alias{build_filet}
 \title{Format observed time-series table list as a DSSAT input file format}
 \usage{
-build_filet(ls, title = NULL, site_code = NA_character_)
+build_filet(ts_data, title = NULL, site_code = NA_character_)
 }
 \arguments{
-\item{ls}{A named list containing at least a \code{"TIME_SERIES"} data frame.}
-
 \item{title}{Character or NULL. Optional title for the file (not currently used).}
 
 \item{site_code}{Character or NA. Optional site code (not currently used).}
+
+\item{ls}{A named list containing at least a \code{"TIME_SERIES"} data frame.}
 }
 \value{
 A formatted data frame ready for DSSAT time series file writing, with formatting attributes attached.

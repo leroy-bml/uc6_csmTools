@@ -4,14 +4,14 @@
 \alias{build_filea}
 \title{Format observed summary table list as a DSSAT input file format}
 \usage{
-build_filea(ls, title = NULL, site_code = NA_character_)
+build_filea(summary_data, title = NULL, site_code = NA_character_)
 }
 \arguments{
-\item{ls}{A named list containing at least a \code{"SUMMARY"} data frame.}
-
 \item{title}{Character or NULL. Optional title for the file (not currently used).}
 
 \item{site_code}{Character or NA. Optional site code (not currently used).}
+
+\item{ls}{A named list containing at least a \code{"SUMMARY"} data frame.}
 }
 \value{
 A formatted data frame ready for DSSAT summary file writing, with formatting attributes attached.

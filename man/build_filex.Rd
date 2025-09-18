@@ -4,14 +4,14 @@
 \alias{build_filex}
 \title{Format management table list as a DSSAT input file format (file X)}
 \usage{
-build_filex(ls, title = NULL, site_code = NA_character_)
+build_filex(management_data, title = NULL, site_code = NA_character_)
 }
 \arguments{
-\item{ls}{A named list containing at least a \code{"MANAGEMENT"} data frame or list of management sections.}
-
 \item{title}{Character or NULL. Optional title for the file (not currently used).}
 
 \item{site_code}{Character or NA. Optional site code (not currently used).}
+
+\item{ls}{A named list containing at least a \code{"MANAGEMENT"} data frame or list of management sections.}
 }
 \value{
 A named list of formatted management sections, ready for DSSAT File X writing, with metadata attributes attached.

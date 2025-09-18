@@ -4,7 +4,7 @@
 \alias{build_sol}
 \title{Format soil profile data as a DSSAT input table}
 \usage{
-build_sol(ls)
+build_sol(soil_data)
 }
 \arguments{
 \item{ls}{A named list containing at least a \code{"SOIL"} data frame and its attributes.}
