@@ -587,54 +587,6 @@ format_events <- function(ls, type, head_key, applied_key, applics_key) {
 }
 
 
-#' Concatenate Non-Constant Columns by Group in a Data Frame
-#'
-#' Groups a data frame by columns with constant values and concatenates the remaining columns within each group.
-#'
-#' @param df A data frame to process.
-#'
-#' @details
-#' The function identifies columns in \code{df} that have the same value in every row (constant columns). It then groups the data frame by these constant columns and, for each group, concatenates the values of the remaining columns into comma-separated strings.
-#'
-#' This is useful for summarizing data where some columns are invariant within groups, and you want to aggregate the other columns as concatenated lists.
-#'
-#' The function uses the \strong{dplyr} package for data manipulation.
-#'
-#' @return A data frame grouped by the constant columns, with other columns concatenated as comma-separated strings.
-#'
-#' @examples
-#' library(dplyr)
-#' df <- data.frame(
-#'   id = c(1, 1, 2, 2),
-#'   value1 = c('a', 'b', 'c', 'd'),
-#'   value2 = c('x', 'y', 'z', 'w')
-#' )
-#' concatenate_per_group(df)
-#' # Returns a data frame with one row per id, and value1/value2 as comma-separated strings
-#'
-#' @importFrom magrittr %>%
-#' @importFrom tidyselect everything
-#' @importFrom dplyr across n_distinct select_if group_by summarise all_of
-#' 
-
-# # TODO: add_property_mapping <- function(name, unit, icasa = list(), agg_funs = list())
-# concatenate_per_group <- function(df) {
-#   
-#   constant_cols <- df %>%
-#     summarise(across(everything(), ~ n_distinct(.) == 1)) %>% 
-#     select_if(~ .) %>%
-#     colnames()
-#   
-#   other_cols <- base::setdiff(colnames(df), constant_cols)
-#   
-#   out <- df %>% 
-#     group_by(across(all_of(constant_cols))) %>%
-#     summarise(across(all_of(other_cols), ~ paste(., collapse = ", ")), .groups = 'drop')
-#   
-#   return(out)
-# }
-
-
 #' Format and Merge Observed Data Sections in a List
 #'
 #' Merges related observed data tables (e.g., summary and time series) in a list of data frames, producing unified "SUMMARY" and "TIME_SERIES" sections.
