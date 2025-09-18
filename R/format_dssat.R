@@ -493,6 +493,13 @@ write_dssat <- function(ls, sol_append = TRUE, path = getwd()) {
       # Add append = FALSE only for write_sol
       if (. == "filesol") {
         write_funs[[.]](ls[[.]], file_name = paste0(path, "/", attr(ls[[.]], "file_name")), append = sol_append)
+      } else if (. == "filewth") {
+        
+        if (is.list(ls[[.]]) && all(sapply(ls[[.]], is.data.frame)) && length(ls[[.]]) > 1) {
+          lapply(ls[[.]], function(df) write_funs[[.]](df, file_name = paste0(path, "/", attr(df, "file_name"))))
+        } else {
+          write_funs[[.]](ls[[.]], file_name = paste0(path, "/", attr(ls[[.]], "file_name")))
+        } 
       } else {
         write_funs[[.]](ls[[.]], file_name = paste0(path, "/", attr(ls[[.]], "file_name")))
       }
@@ -532,6 +539,9 @@ compile_model_dataset <-
   function(dataset, framework = "dssat",
            write = FALSE, sol_append = TRUE, path = getwd(), args = list()) {
 
+    # dataset <- duernast_dssat$TUDU1701
+    
+    
     # Build management files
     filex <- build_filex(dataset[["MANAGEMENT"]])
     
@@ -547,7 +557,7 @@ compile_model_dataset <-
     if (is.list(weather) && all(sapply(weather, is.data.frame)) && length(weather) > 1) {
       filewth <- lapply(weather, build_wth)
     } else {
-      build_wth(weather)
+      filewth <- build_wth(weather)
     }
     
     # Set simulation controls (overwrite default with provided values)
@@ -565,6 +575,8 @@ compile_model_dataset <-
     
     # Write DSSAT files
     if (write == TRUE){
+      # path = getwd()
+      # sol_append = FALSE
       write_dssat(dataset, sol_append = sol_append, path)
       message(paste("DSSAT data files written in", path))
     }
