@@ -237,9 +237,14 @@ read_metadata <- function(mother_path, schema = "bonares") {
   
   
   ##---- Variable key ----
-  var_key <- as_tibble(
-    get_dataset_varkeys(mother_path, schema = "bonares")
-  )
+  var_key <- tryCatch({
+    as_tibble(
+      get_dataset_varkeys(mother_path, schema = "bonares")
+    )
+  }, error = function(e) {
+    warning("Failed to retrieve variable keys. Server may be down. Original error: ", e$message)
+    return(NULL)
+  })
   
   
   ##---- Output ----
