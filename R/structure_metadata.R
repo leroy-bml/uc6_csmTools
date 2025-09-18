@@ -290,9 +290,9 @@ structure_dssat_sol <- function(dataset) {
       }
     })
   
-  # Stop if core data is missing
-  if (is.null(sol_meta) || is.null(sol_layers)) {
-    stop("Core soil profile metadata is missing.")
+  # Stop if core data is missing from the original dataset list
+  if (is.null(dataset[["SOIL_META"]]) || is.null(dataset[["SOIL_LAYERS"]])) {
+    stop("Core soil profile tables ('SOIL_META' or 'SOIL_LAYERS') are missing from the input dataset.")
   }
   
   # --- Format and enrich metadata ---
