@@ -289,12 +289,7 @@ structure_dssat_sol <- function(dataset) {
         bind_cols(.x, y_unique_cols)
       }
     })
-  
-  # Stop if core data is missing
-  if (is.null(sol_meta) || is.null(sol_layers)) {
-    stop("Core soil profile metadata is missing.")
-  }
-  
+
   # --- Format and enrich metadata ---
   if (all(is.na(sol_data$LAT)) || all(is.na(sol_data$LONG))) {
     warning("Location metadata (LAT, LONG) not found for any soil profile.")
