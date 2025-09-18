@@ -403,6 +403,8 @@ find_common_prefix <- function(strings) {
 #'
 #' @return A character vector of abbreviated strings, each of length \code{minlength}.
 #'
+#' @importFrom stringi stri_trans_general
+#'
 #' @examples
 #' strict_abbreviate("Wheat", minlength = 3)
 #' strict_abbreviate(c("Maize", "Rice"), minlength = 2)
@@ -410,26 +412,36 @@ find_common_prefix <- function(strings) {
 #'
 
 strict_abbreviate <- function(string, minlength = 2) {
-  warning_triggered <- FALSE
-  abbr <- NULL
   
-  withCallingHandlers({
-    abbr <- abbreviate(string, minlength = minlength, strict = TRUE)
-  }, warning = function(w) {
-    if (grepl("non-ASCII", conditionMessage(w))) {
-      warning_triggered <<- TRUE
-      invokeRestart("muffleWarning")
+  # Handle non-ASCII warnings and fallback
+  safe_abbreviate <- function(s) {
+    warning_triggered <- FALSE
+    abbr <- NULL
+    
+    withCallingHandlers({
+      abbr <- abbreviate(s, minlength = minlength, strict = TRUE)
+    }, warning = function(w) {
+      if (grepl("non-ASCII", conditionMessage(w))) {
+        warning_triggered <<- TRUE
+        invokeRestart("muffleWarning")
+      }
+    })
+    
+    if (warning_triggered) {
+      s <- stri_trans_general(s, "Latin-ASCII")
+      abbr <- abbreviate(s, minlength = minlength, strict = TRUE)
     }
-  })
-  
-  if (warning_triggered) {
-    string <- stri_trans_general(string, "Latin-ASCII")
-    abbr <- abbreviate(string, minlength = minlength, strict = TRUE)
+    
+    if (nchar(abbr) > minlength) {
+      abbr <- substr(abbr, 1, minlength)
+    }
+    
+    abbr
   }
   
-  if (nchar(abbr) > minlength) {
-    abbr <- substr(abbr, 1, minlength)
-  }
-  
-  return(abbr)
+  # Apply safely to each element
+  out <- ifelse(!is.na(string), 
+                vapply(string, safe_abbreviate, character(1)),
+                "XX")
+  return(out)
 }
