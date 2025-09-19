@@ -51,7 +51,7 @@ definitions:
   chemical_material_map: &chemical_material_map
     'Inzektizid1': 'FE001'
     'Inzektizid2': 'FE002'
-  chemical_material_default: &chemical_material_map NA
+  chemical_material_default: &chemical_material_default NA
 
   harvest_method_map: &harvest_method_map
     'Mähdrusch':	'HM001'
