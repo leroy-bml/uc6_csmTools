@@ -34,8 +34,9 @@ docs/
 # archived and dev scripts
 /archive/
 /dev/
-# test data
+# test data and manuscript files
 inst/extdata/test_data/
+/ms/
 # translation temp files
 po/*~
 # RStudio Connect folder
