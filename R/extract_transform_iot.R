@@ -237,24 +237,20 @@ patch_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","Da
 #' @importFrom httr GET add_headers content
 #' @importFrom jsonlite fromJSON
 #' @importFrom magrittr %>%
-#' @importFrom dplyr filter mutate pull rowwise select rename group_by_at summarise across all_of bind_rows
+#' @importFrom dplyr filter mutate pull rowwise select rename group_by_at summarise across all_of bind_rows distinct
 #' @importFrom tidyr separate
 #' @importFrom tibble tibble
 #' 
 
-# TODO: update function to handle multiple devices in single location
-locate_sta_datastreams <- function(url, token = NULL, var = c("air_temperature","solar_radiation","rainfall"), lon, lat, from, to, ...){
+locate_sta_datastreams <- function(url, token = NULL, var, lon, lat, from, to, radius = 0,...){
   
-  # Identify all devices from the target server
+  # --- Identify all devices from the target server ---
   locate_sta_devices <- function(...) {
     
     url_locs <- paste0(url, "Things?$expand=Locations")
     response <- GET(url_locs, add_headers(`Authorization` = paste("Bearer", token)))
     
-    devices <- fromJSON(
-      content(response, as = "text", encoding = "UTF-8")
-    )
-    
+    devices <- fromJSON(content(response, as = "text", encoding = "UTF-8"))
     locations <- devices$value$Locations
     
     devices <- do.call(
@@ -266,21 +262,15 @@ locate_sta_datastreams <- function(url, token = NULL, var = c("air_temperature",
                  y = location$coordinates[[1]][2],
                  url = paste0(url, "Things(", `@iot.id`, ")")) %>%
           rename(location_name = name, location_description = description) %>%
-          #filter(x == lon & y == lat) %>%
           select(`@iot.id`, url, location_name, location_description, x, y) %>%
           as.data.frame()
       })
     )
-    
-    # if (nrow(devices) == 0) {
-    #   return("No device was found at the specified coordinates.")
-    # } else {
-    #   return(devices)
-    # }
+    return(devices)
   }
   
+  # --- Data retrieval ---
   devices <- locate_sta_devices(url, token)
-  #devices <- rbind(devices, devices)  #tmp
   devices_nms <- paste0("device_", devices$`@iot.id`)
   
   # Retrieve all datastreams for the selected devices
@@ -288,9 +278,7 @@ locate_sta_datastreams <- function(url, token = NULL, var = c("air_temperature",
   response <- lapply(url_dev_ds, function(url) GET(url, add_headers(`Authorization` = paste("Bearer", token))))
   
   url_ds <- lapply(response, function(x) {
-    fromJSON(
-      content(x, as = "text", encoding = "UTF-8")
-    )$Datastreams %>%
+    fromJSON(content(x, as = "text", encoding = "UTF-8"))$Datastreams %>%
       pull(`@iot.selfLink`)
   })
   
@@ -303,20 +291,21 @@ locate_sta_datastreams <- function(url, token = NULL, var = c("air_temperature",
   })
   
   ds_ls <- lapply(response, function(dev) {
-    lapply(dev, function(x){
-      fromJSON(
-        content(x, as = "text", encoding = "UTF-8")
-      )
-    })
+    lapply(dev, function(x) fromJSON(content(x, as = "text", encoding = "UTF-8")))
   })
   names(ds_ls) <- devices_nms
   
+  # Compile output
   ds_out <- list()
   for (i in seq_along(ds_ls)) {
     ds_out[[i]] <- 
       do.call(
         rbind,
         lapply(ds_ls[[i]], function(ds) {
+          
+          coords <- na.omit(as.numeric(ds$observedArea$coordinates))
+          if (length(coords) < 2) return(NULL)  # Skip if coordinates are invalid
+          
           tibble(Datastream_id = ds$`@iot.id`,
                  Datastream_link = ds$`@iot.selfLink`,
                  Datastream_name = ds$name,
@@ -326,36 +315,54 @@ locate_sta_datastreams <- function(url, token = NULL, var = c("air_temperature",
                  ObservedProperty_name = ds$ObservedProperty$name,
                  unitOfMeasurement_name = ds$unitOfMeasurement$name,
                  unitOfMeasurement_symbol = ds$unitOfMeasurement$symbol,
-                 longitude = as.numeric(ds$observedArea$coordinates[1]),
-                 latitude = as.numeric(ds$observedArea$coordinates[2]),
+                 longitude = coords[1],
+                 latitude = coords[2],
                  phenomenonTime = ds$phenomenonTime) %>%
             tidyr::separate(phenomenonTime, into = c("start_date","end_date"), sep = "/") %>%
             mutate(across(start_date:end_date, ~ as.Date(.x)))
         })
       )
   }
-  
   datastreams <- do.call(rbind, ds_out)
+  if (is.null(datastreams) || nrow(datastreams) == 0) {
+    return("No valid datastreams could be retrieved from the server.")
+  }
 
-  # Find focal datastream(s)
-  out <- datastreams %>% filter(longitude == lon & latitude == lat)
+  # Find focal datastreams based on coordinate and radius inputs
+  focal_datastreams_list <- lapply(seq_along(lon), function(i) {
+    current_lon <- lon[i]
+    current_lat <- lat[i]
+    
+    distances <- haversine_dist(current_lat, current_lon, datastreams$latitude, datastreams$longitude)
+    in_radius_idx <- which(distances <= radius)
+    datastreams_in_radius <- datastreams[in_radius_idx, ]
+    
+    if (nrow(datastreams_in_radius) > 0) {
+      datastreams_in_radius$input_lon <- current_lon
+      datastreams_in_radius$input_lat <- current_lat
+      datastreams_in_radius$distance_m <- distances[in_radius_idx]
+    }
+    return(datastreams_in_radius)
+  })
+  out <- bind_rows(focal_datastreams_list) %>% distinct()
 
   if (nrow(out) == 0) {
-    return("No data was measured at the specified location")
+    return("No data was measured within the specified radius of the given location(s).")
+  }
+  
+  out <- out %>% filter(ObservedProperty_name %in% var)
+  if (nrow(out) == 0) {
+    return("No data for the focal property could be retrieved at the specified location(s).")
+  }
+  
+  out <- out %>%
+    mutate(is_contained = as.Date(from) >= start_date & as.Date(to) <= end_date) %>%
+    filter(is_contained)
+  
+  if (nrow(out) == 0) {
+    return("Measured data does not encompass the requested timeframe.")
   } else {
-    out <- out %>% filter(ObservedProperty_name %in% var)
-    if (nrow(out) == 0) {
-      return("No data for the focal property could be retrieved at the specified location.")
-    } else {
-      out <- out %>%
-        mutate(is_contained = as.Date(from) >= start_date & as.Date(to) <= end_date) %>%
-        filter(is_contained)
-      if (nrow(out) == 0) {
-        return("Measured data does not encompass the requested timeframe.")
-      } else {
-        return(out[-ncol(out)])
-      }
-    }
+    return(out %>% select(-is_contained)) # Remove the temporary column
   }
 }
 
@@ -446,14 +453,14 @@ get_all_obs <- function(url, token) {
 #' 
 
 extract_iot <- function(url, token = NULL, var = c("air_temperature","solar_radiation","rainfall"),
-                        lon, lat, from, to, format = "icasa") {
+                        lon, lat, radius, from, to, format = "icasa") {
   
   if(is.null(token)) {
     token <- get_kc_token(url = url, client_id, client_secret, username, password)  # check token
   }
   
   # Find datastream
-  ds_metadata <- locate_sta_datastreams(url, token, var, lon, lat, from, to)
+  ds_metadata <- locate_sta_datastreams(url, token, var, lon, lat, radius, from, to)
   
   urls_obs <- paste0(
     ds_metadata$Datastream_link,
@@ -503,4 +510,3 @@ extract_iot <- function(url, token = NULL, var = c("air_temperature","solar_radi
   
   return(data)
 }
-
