@@ -242,7 +242,7 @@ patch_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","Da
 #' @importFrom tibble tibble
 #' 
 
-locate_sta_datastreams <- function(url, token = NULL, var, lon, lat, from, to, radius = 0,...){
+locate_sta_datastreams <- function(url, token = NULL, var, lon, lat,  radius = 0, from, to,...){
   
   # --- Identify all devices from the target server ---
   locate_sta_devices <- function(...) {
@@ -277,25 +277,46 @@ locate_sta_datastreams <- function(url, token = NULL, var, lon, lat, from, to, r
   url_dev_ds <- paste0(devices$url, "?$expand=Datastreams")
   response <- lapply(url_dev_ds, function(url) GET(url, add_headers(`Authorization` = paste("Bearer", token))))
   
-  url_ds <- lapply(response, function(x) {
-    fromJSON(content(x, as = "text", encoding = "UTF-8"))$Datastreams %>%
-      pull(`@iot.selfLink`)
+  url_ds_with_nulls <- lapply(response, function(x) {
+    tryCatch({
+      fromJSON(content(x, as = "text", encoding = "UTF-8"))$Datastreams %>%
+        pull(`@iot.selfLink`)
+    }, error = function(e) {
+      iot_id <- gsub(".*Things\\((\\d+)\\).*", "\\1", x$url)
+      warning(paste("Could not retrieve datastreams for Thing with @iot.id:", iot_id), 
+              call. = FALSE)
+      return(NULL)
+    })
   })
+  
+  # Create a logical index of which devices were successful
+  is_successful <- !sapply(url_ds_with_nulls, is.null)
+  devices_nms <- devices_nms[is_successful]
+  url_ds <- url_ds_with_nulls[is_successful]
   
   # Get datastreams metadata incl. observed properties
   url_ds_prop <- lapply(url_ds, function(url) paste0(url, "?$expand=ObservedProperty"))
   response <- lapply(url_ds_prop, function(urls) {
-    lapply(urls, function(url) {
-      GET(url, add_headers(`Authorization` = paste("Bearer", token)))
-    })
+    lapply(urls, function(url) GET(url, add_headers(`Authorization` = paste("Bearer", token))))
   })
   
   ds_ls <- lapply(response, function(dev) {
-    lapply(dev, function(x) fromJSON(content(x, as = "text", encoding = "UTF-8")))
+    lapply(dev, function(x) {
+      tryCatch({
+        fromJSON(content(x, as = "text", encoding = "UTF-8"))
+      }, error = function(e) {
+        datastream_id <- gsub(".*Datastreams\\((\\d+)\\).*", "\\1", x$url)
+        warning(
+          paste("Could not parse content for Datastream with @iot.id:", datastream_id),
+          call. = FALSE
+        )
+        return(NULL)
+      })
+    })
   })
   names(ds_ls) <- devices_nms
   
-  # Compile output
+  # Compile output [FIXED NESTED DEVICES [multiple sensors per device]]
   ds_out <- list()
   for (i in seq_along(ds_ls)) {
     ds_out[[i]] <- 
@@ -323,7 +344,10 @@ locate_sta_datastreams <- function(url, token = NULL, var, lon, lat, from, to, r
         })
       )
   }
-  datastreams <- do.call(rbind, ds_out)
+  names(ds_out) <- names(ds_ls)
+  ds_out <- Filter(Negate(is.null), ds_out)
+  
+  datastreams <- bind_rows(ds_out)
   if (is.null(datastreams) || nrow(datastreams) == 0) {
     return("No valid datastreams could be retrieved from the server.")
   }
@@ -356,7 +380,7 @@ locate_sta_datastreams <- function(url, token = NULL, var, lon, lat, from, to, r
   }
   
   out <- out %>%
-    mutate(is_contained = as.Date(from) >= start_date & as.Date(to) <= end_date) %>%
+    mutate(is_contained = start_date >= as.Date(from) & end_date <= as.Date(to)) %>%
     filter(is_contained)
   
   if (nrow(out) == 0) {
@@ -460,30 +484,34 @@ extract_iot <- function(url, token = NULL, var = c("air_temperature","solar_radi
   }
   
   # Find datastream
-  ds_metadata <- locate_sta_datastreams(url, token, var, lon, lat, radius, from, to)
+  ds_metadata <- locate_sta_datastreams(
+    url = url,
+    token = token,
+    var = var,
+    lon = lon,
+    lat = lat,
+    radius = radius,
+    from = from,
+    to = to
+  )
   
+  # --- Download all observations ---
   urls_obs <- paste0(
     ds_metadata$Datastream_link,
     "?$expand=Observations($select=phenomenonTime,result;$skip=0),ObservedProperty($select=name)"
   )
   data <- lapply(urls_obs, function(url) get_all_obs(url, token))
-  names(data) <- var
   
-  # Append metadata and format raw data
-  metadata <- list()
+  # Attach metadata to each ds
   for (i in seq_along(data)){
-    metadata[[i]] <- ds_metadata[i,]  #TODO: enrich metadata w/ device/sensor name and description
-    
-    data[[i]] <- data[[i]] %>%
+    df <- data[[i]] %>%
       mutate(measurement_date = ymd_hms(phenomenonTime)) %>%
-      mutate(!!metadata[[i]]$ObservedProperty_name := as.numeric(result)) %>%
+      mutate(!!ds_metadata$ObservedProperty_name[i] := as.numeric(result)) %>%
       select(-phenomenonTime, -result)
+    attr(df, "metadata") <- ds_metadata[i, ]
+    data[[i]] <- df
   }
-  
-  data_cmn <- Reduce(intersect, lapply(data, colnames))
-  data <- Reduce(function(x, y) merge(x, y, by = data_cmn, all = TRUE), data)
-  metadata_cmn <- Reduce(intersect, lapply(metadata, colnames))
-  metadata <- Reduce(function(x, y) merge(x, y, by = metadata_cmn, all = TRUE), metadata)
+  names(data) <- paste0("datastream_", ds_metadata$Datastream_id)
 
   # Map data to specified format
   if (format == "default") {
