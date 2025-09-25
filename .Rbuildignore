@@ -7,5 +7,4 @@ install_requirements.sh
 Dockerfile
 ^.*\.Rproj$
 ^\.Rproj\.user$
-^R/extract_transform_iot\.R$
 ^dev$
