@@ -251,30 +251,28 @@ locate_sta_datastreams <- function(url, token = NULL, var, lon, lat,  radius = 0
     response <- GET(url_locs, add_headers(`Authorization` = paste("Bearer", token)))
     
     devices <- fromJSON(content(response, as = "text", encoding = "UTF-8"))
-    locations <- devices$value$Locations
     
-    devices <- do.call(
-      rbind,
-      lapply(locations, function(df){
-        df %>%
-          rowwise() %>%
-          mutate(x = location$coordinates[[1]][1],
-                 y = location$coordinates[[1]][2],
-                 url = paste0(url, "Things(", `@iot.id`, ")")) %>%
-          rename(location_name = name, location_description = description) %>%
-          select(`@iot.id`, url, location_name, location_description, x, y) %>%
-          as.data.frame()
-      })
-    )
+    devices <- devices$value %>%
+      # Unnest the 'Locations' list-column.
+      unnest(Locations, names_sep = "_") %>%
+      # Unnest 'Locations_location' data frame column; creates new columns for 'type' and 'coordinates'.
+      unnest_wider(Locations_location, names_sep = "_") %>%
+      unnest(Locations_location_coordinates) %>%  # simplify
+      # Split coordinates into separate vectors
+      mutate(longitude = map_dbl(Locations_location_coordinates, ~ .x[1]),
+             latitude  = map_dbl(Locations_location_coordinates, ~ .x[2])) %>%
+      select(-Locations_location_coordinates)
+
     return(devices)
   }
   
   # --- Data retrieval ---
   devices <- locate_sta_devices(url, token)
-  devices_nms <- paste0("device_", devices$`@iot.id`)
+  devices_names <- devices$name
   
   # Retrieve all datastreams for the selected devices
-  url_dev_ds <- paste0(devices$url, "?$expand=Datastreams")
+  # CHECK: here could add logic to retrieve sensor type info and structure data model
+  url_dev_ds <- paste0(devices$`@iot.selfLink`, "?$expand=Datastreams")
   response <- lapply(url_dev_ds, function(url) GET(url, add_headers(`Authorization` = paste("Bearer", token))))
   
   url_ds_with_nulls <- lapply(response, function(x) {
@@ -290,11 +288,11 @@ locate_sta_datastreams <- function(url, token = NULL, var, lon, lat,  radius = 0
   })
   
   # Create a logical index of which devices were successful
-  is_successful <- !sapply(url_ds_with_nulls, is.null)
-  devices_nms <- devices_nms[is_successful]
-  url_ds <- url_ds_with_nulls[is_successful]
-  
-  # Get datastreams metadata incl. observed properties
+  is_valid <- !sapply(url_ds_with_nulls, is.null)
+  devices_names <- devices_names[is_valid]
+  url_ds <- url_ds_with_nulls[is_valid]
+
+  # Get datastreams metadata incl. observed properties and device identification
   url_ds_prop <- lapply(url_ds, function(url) paste0(url, "?$expand=ObservedProperty"))
   response <- lapply(url_ds_prop, function(urls) {
     lapply(urls, function(url) GET(url, add_headers(`Authorization` = paste("Bearer", token))))
@@ -305,7 +303,7 @@ locate_sta_datastreams <- function(url, token = NULL, var, lon, lat,  radius = 0
       tryCatch({
         fromJSON(content(x, as = "text", encoding = "UTF-8"))
       }, error = function(e) {
-        datastream_id <- gsub(".*Datastreams\\((\\d+)\\).*", "\\1", x$url)
+        datastream_id <- gsub(".*Datastreams\\((\\d+)\\).*", "\\1", x$url)  # TODO: fix regex
         warning(
           paste("Could not parse content for Datastream with @iot.id:", datastream_id),
           call. = FALSE
@@ -319,23 +317,23 @@ locate_sta_datastreams <- function(url, token = NULL, var, lon, lat,  radius = 0
   # Compile output [FIXED NESTED DEVICES [multiple sensors per device]]
   ds_out <- list()
   for (i in seq_along(ds_ls)) {
+
     ds_out[[i]] <- 
-      do.call(
-        rbind,
+      bind_rows(
         lapply(ds_ls[[i]], function(ds) {
           
           coords <- na.omit(as.numeric(ds$observedArea$coordinates))
           if (length(coords) < 2) return(NULL)  # Skip if coordinates are invalid
           
-          tibble(Datastream_id = ds$`@iot.id`,
-                 Datastream_link = ds$`@iot.selfLink`,
-                 Datastream_name = ds$name,
-                 Datastream_description = ds$description,
+          tibble(Datastream.id = ds$`@iot.id`,
+                 Datastream.link = ds$`@iot.selfLink`,
+                 Datastream.name = ds$name,
+                 Datastream.description = ds$description,
                  observationType = ds$observationType,
-                 ObservedProperty_id = ds$ObservedProperty$`@iot.id`,
-                 ObservedProperty_name = ds$ObservedProperty$name,
-                 unitOfMeasurement_name = ds$unitOfMeasurement$name,
-                 unitOfMeasurement_symbol = ds$unitOfMeasurement$symbol,
+                 ObservedProperty.id = ds$ObservedProperty$`@iot.id`,
+                 ObservedProperty.name = ds$ObservedProperty$name,
+                 unitOfMeasurement.name = ds$unitOfMeasurement$name,
+                 unitOfMeasurement.symbol = ds$unitOfMeasurement$symbol,
                  longitude = coords[1],
                  latitude = coords[2],
                  phenomenonTime = ds$phenomenonTime) %>%
@@ -344,10 +342,16 @@ locate_sta_datastreams <- function(url, token = NULL, var, lon, lat,  radius = 0
         })
       )
   }
-  names(ds_out) <- names(ds_ls)
-  ds_out <- Filter(Negate(is.null), ds_out)
   
-  datastreams <- bind_rows(ds_out)
+  # Re-assign names  
+  is_valid <- !sapply(ds_out, is.null)  # not null (has 2 geocoordinates)
+  ds_out_filtered <- ds_out[is_valid]
+  ds_names <- names(ds_ls)[is_valid]
+  names(ds_out_filtered) <- ds_names
+  ds_out_filtered <- ds_out_filtered[sapply(ds_out_filtered, function(df) length(df) > 0)]
+
+  # Combine datastreams in one dataframe
+  datastreams <- bind_rows(ds_out_filtered, .id = "Thing.name")
   if (is.null(datastreams) || nrow(datastreams) == 0) {
     return("No valid datastreams could be retrieved from the server.")
   }
@@ -374,7 +378,7 @@ locate_sta_datastreams <- function(url, token = NULL, var, lon, lat,  radius = 0
     return("No data was measured within the specified radius of the given location(s).")
   }
   
-  out <- out %>% filter(ObservedProperty_name %in% var)
+  out <- out %>% filter(ObservedProperty.name %in% var)
   if (nrow(out) == 0) {
     return("No data for the focal property could be retrieved at the specified location(s).")
   }
@@ -477,13 +481,16 @@ get_all_obs <- function(url, token) {
 #' 
 
 extract_iot <- function(url, token = NULL, var = c("air_temperature","solar_radiation","rainfall"),
-                        lon, lat, radius, from, to, format = "icasa") {
+                        lon, lat, radius, from, to, raw = FALSE) {
   
+  # --- Authentication ---
   if(is.null(token)) {
     token <- get_kc_token(url = url, client_id, client_secret, username, password)  # check token
   }
   
-  # Find datastream
+  # --- Identify datastreams macthing the input ---
+  message("Retrieving data streams...")
+  
   ds_metadata <- locate_sta_datastreams(
     url = url,
     token = token,
@@ -495,46 +502,45 @@ extract_iot <- function(url, token = NULL, var = c("air_temperature","solar_radi
     to = to
   )
   
-  # --- Download all observations ---
+  # --- Download all observations for the focal datastreams ---
+  message("Downloading observations ...")
+  
   urls_obs <- paste0(
-    ds_metadata$Datastream_link,
+    ds_metadata$Datastream.link,
     "?$expand=Observations($select=phenomenonTime,result;$skip=0),ObservedProperty($select=name)"
   )
-  data <- lapply(urls_obs, function(url) get_all_obs(url, token))
+  obs <- lapply(urls_obs, function(url) get_all_obs(url, token))
   
-  # Attach metadata to each ds
-  for (i in seq_along(data)){
-    df <- data[[i]] %>%
-      mutate(measurement_date = ymd_hms(phenomenonTime)) %>%
-      mutate(!!ds_metadata$ObservedProperty_name[i] := as.numeric(result)) %>%
-      select(-phenomenonTime, -result)
-    attr(df, "metadata") <- ds_metadata[i, ]
-    data[[i]] <- df
+  # Attach device metadata to each datastream
+  dataset <- list()
+  for (i in seq_along(obs)){
+    obs_df <- obs[[i]] %>%
+      mutate(phenomenonTime = ymd_hms(phenomenonTime)) %>%
+      mutate(!!ds_metadata$ObservedProperty.name[i] := as.numeric(result)) %>%
+      select(-result)
+    dataset[[i]] <- list(
+      DATASTREAM = obs_df,
+      METADATA = ds_metadata[i, ]
+    )
   }
-  names(data) <- paste0("datastream_", ds_metadata$Datastream_id)
+  names(dataset) <- paste(ds_metadata$Thing.name, ds_metadata$Datastream.id, sep = "_DS")
 
-  # Map data to specified format
-  if (format == "default") {
-    
-    # No transformation needed, just merge
-  } else if (format == "icasa") {
-
-      tmp <- map_data(data, input_model = "ogcAgrovoc", output_model = "icasa",
-                      map = load_map(), keep_unmapped = FALSE)
-      tmp1 <- map_data(metadata, input_model = "ogcAgrovoc", output_model = "icasa",
-                       map = load_map(), keep_unmapped = FALSE)
-      
-  } else {
-    
-    stop("Error: format must be either 'default' or 'icasa'.")
+  # --- Map data to ICASA ---
+  message("Mapping to ICASA ...")
+  
+  if (!raw) {
+    dataset <- lapply(dataset, function(ls) {
+      convert_dataset(
+        dataset = ls,
+        input_model = "user_sta",  # TODO: input routine
+        output_model = "icasa"
+      )
+    })
   }
   
+  # --- Group by device ---
+  keys <- sub("_[^_]+$", "", names(dataset))
+  out <- split(dataset, keys)
 
-  
-  attr(data, "metadata") <- do.call(
-    rbind, 
-    lapply(names(data), function(name) cbind(var = name, attributes(data[[name]])$metadata))
-  )
-  
-  return(data)
+  return(out)
 }
