@@ -783,7 +783,7 @@ apply_transformations <- function(dataset, data_model = c("icasa", "dssat"),
                                   config_path = "./inst/extdata/datamodels.yaml") {
   
   if (data_model == "icasa") {
-    
+
     # Get master key
     config <- yaml::read_yaml(config_path)
     model_config <- config[[data_model]]
@@ -800,11 +800,10 @@ apply_transformations <- function(dataset, data_model = c("icasa", "dssat"),
     treatment_col <- model_config$design_keys[["treatment"]]
     plot_col <- model_config$design_keys[["plot"]]
     
-    
     # Split data into major ICASA sections
     metadata <- dataset[intersect(c("GENERAL", "PERSONS", "INSTITUTIONS", "DOCUMENTS", "PLOT_DETAILS"), names(dataset))]
     measured <- dataset[intersect(c("SUMMARY", "TIME_SERIES"), names(dataset))]
-    weather <- dataset[intersect(c("WEATHER_METADATA", "WEATHER_DAILY"), names(dataset))]
+    weather <- dataset[intersect(c("STATION_METADATA", "WEATHER_DAILY"), names(dataset))]
     soil <- dataset[intersect(c("SOIL_METADATA", "SOIL_LAYERS"), names(dataset))]
     #TODO: handle soil data: unpractical profile/analysis/measured split in ICASA
     management_sec <- c("GENOTYPES", "FIELDS", "SOIL_ANALYSES", "INITIAL_CONDITIONS", "PLANTINGS",
@@ -812,55 +811,89 @@ apply_transformations <- function(dataset, data_model = c("icasa", "dssat"),
                         "TILLAGE", "ENVIRON_MODIFICATIONS", "HARVESTS", "SIMULATION_CONTROLS","TREATMENTS")
     management <- dataset[intersect(management_sec, names(dataset))]
     
+    # Initiate output objects
+    out_dataset <- list()
+    
+    # --- Aggregate weather per day ---
+    if (!is.null(weather[["WEATHER_DAILY"]])) {
+    
+      aggregated_daily <- weather[["WEATHER_DAILY"]] %>%
+        mutate(weather_date = as.Date(weather_date)) %>%
+        group_by(experiment_ID, weather_date) %>%
+        # Apply all variable specific aggrgation transformations
+        summarise(
+          across(any_of("maximum_temperature"), ~max(.x, na.rm = TRUE), .names = "{.col}"),
+          across(any_of("minimum_temperature"), ~min(.x, na.rm = TRUE), .names = "{.col}"),
+          across(any_of(c("precipitation", "solar_radiation", "sunshine_duration")),
+                 ~sum(.x, na.rm = TRUE),
+                 .names = "{.col}"),
+          across(any_of(c("realtive_humidity_avg", "atmospheric_wind_speed", "temperature_dewpoint", "sensor_voltage")),
+            ~ mean(.x, na.rm = TRUE),
+            .names = "{.col}"),
+          .groups = "drop"
+        )
+      # Append to output
+      out_dataset <- c(out_dataset, weather)
+      out_dataset[["WEATHER_DAILY"]] <- aggregated_daily
+    }
+
     # TODO: Replace by aggregate phase in yaml
-    management[["FIELDS"]] <- management[["FIELDS"]] %>%
-      # TODO: Add here function to split coordinates into distinct groups (regardless of coord system)
-      group_by(across(all_of(c(master_key, year_col)))) %>%
-      summarise(
-        field_latitude = mean(plot_latitude , na.rm = TRUE),
-        field_longitude = mean(plot_longitude, na.rm = TRUE),
-        # More direct calculation for the mean of midpoint elevations
-        field_elevation = mean(plot_elevation, na.rm = TRUE),
-        coordinate_system = first(na.omit(coordinate_system)),  # TODO: create if does not exists
-        .groups = "drop"
-      ) %>%
-      group_by(across(everything())) %>%
-      summarise(field_level = n(), .groups = "drop")
-    
-    management[["TREATMENTS"]] <- management[["TREATMENTS"]] %>%
-      # Remove old field ID column if it exists.
-      select(-any_of("field_level")) %>%
-      left_join(
-        management[["FIELDS"]] %>% select(all_of(c(master_key, year_col)), field_level),
-        by = c(master_key, year_col)
-      )
-    
-    # Structure management data in ICASA structure
-    management_fmt <- structure_icasa_mngt(management, master_key, year_col, treatment_col, plot_col)
-    
-    management <- management_fmt$management
-    management_matrix <- management_fmt$management_matrix
-    
-    out <- list(metadata, management, list(TREATMENTS = management_matrix), weather, soil, measured)
-    out <- do.call(c, out)
-    
-    # Sort values
-    sort_vars <- c("experiment_year", "treatment_number", "plot_number")
-    out <- lapply(out, function(df) {
+    if (length(management) > 0) {
       
-      if (treatment_col %in% names(df)) {
-        df <- df %>% mutate(!!rlang::sym(treatment_col) := as.numeric(!!rlang::sym(treatment_col)))
-      }
-      # Check which sorting variables exist in the current data frame
-      existing_vars <- intersect(sort_vars, names(df))
+      management[["FIELDS"]] <- management[["FIELDS"]] %>%
+        # TODO: Add here function to split coordinates into distinct groups (regardless of coord system)
+        group_by(across(all_of(c(master_key, year_col)))) %>%
+        summarise(
+          field_latitude = mean(plot_latitude , na.rm = TRUE),
+          field_longitude = mean(plot_longitude, na.rm = TRUE),
+          # More direct calculation for the mean of midpoint elevations
+          field_elevation = mean(plot_elevation, na.rm = TRUE),
+          coordinate_system = first(na.omit(coordinate_system)),  # TODO: create if does not exists
+          .groups = "drop"
+        ) %>%
+        group_by(across(everything())) %>%
+        summarise(field_level = n(), .groups = "drop")
       
-      # If there are existing variables, sort the data frame by them
-      if (length(existing_vars) > 0) {
-        df <- arrange(df, across(all_of(existing_vars)))
-      }
+      management[["TREATMENTS"]] <- management[["TREATMENTS"]] %>%
+        # Remove old field ID column if it exists.
+        select(-any_of("field_level")) %>%
+        left_join(
+          management[["FIELDS"]] %>% select(all_of(c(master_key, year_col)), field_level),
+          by = c(master_key, year_col)
+        )
       
-      return(df)
-    })
+      # Structure management data in ICASA structure
+      management_fmt <- structure_icasa_mngt(management, master_key, year_col, treatment_col, plot_col)
+      
+      management <- management_fmt$management
+      management_matrix <- management_fmt$management_matrix
+      
+      out <- list(metadata, management, list(TREATMENTS = management_matrix), weather, soil, measured)
+      out <- do.call(c, out)
+      
+      # Sort values
+      sort_vars <- c("experiment_year", "treatment_number", "plot_number")
+      out_management <- lapply(out, function(df) {
+        
+        if (treatment_col %in% names(df)) {
+          df <- df %>% mutate(!!rlang::sym(treatment_col) := as.numeric(!!rlang::sym(treatment_col)))
+        }
+        # Check which sorting variables exist in the current data frame
+        existing_vars <- intersect(sort_vars, names(df))
+        
+        # If there are existing variables, sort the data frame by them
+        if (length(existing_vars) > 0) {
+          df <- arrange(df, across(all_of(existing_vars)))
+        }
+        
+        return(df)
+      })
+      # Append to output
+      out_dataset <- c(out_dataset, out_management)
+    }
+    
+    out_dataset <- out_dataset[sapply(out_dataset, length) > 0]  # necesary?
+    return(out_dataset)
   }
   
   else if (data_model == "dssat") {
