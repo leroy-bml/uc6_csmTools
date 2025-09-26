@@ -1,6 +1,7 @@
 # ================================================================
 # BonaRes-LTE Data Model
 # ================================================================
+
 bonares-lte_de:
   # --- Definitional Properties ---
   master_key: "experiment"
@@ -46,6 +47,7 @@ bonares-lte_de:
 # ================================================================
 # ICASA Output Model
 # ================================================================
+
 icasa:
   master_key: "experiment"
   key_source_table: "GENERAL"
@@ -84,10 +86,13 @@ icasa:
   # --- Properties for when this model is an OUTPUT ---
   mappings:
     "bonares-lte_de": "./inst/extdata/map_bonares_icasa_v1-2.yaml"
+    "user_sta": "./inst/extdata/map_sta_custom_icasa_v1-0-0.yaml"
+
 
 # ================================================================
 # DSSAT Output Model
 # ================================================================
+
 dssat:
   master_key: "experiment"
   key_source_table: "GENERAL"
@@ -123,3 +128,20 @@ dssat:
     "icasa": "./inst/extdata/map_icasa_dssat_v1-1-0.yaml"
     
 
+# ================================================================
+# Custom SensorThings API data models
+# ================================================================
+
+user_sta:
+  master_key: "datastream"
+  key_source_table: "METADATA"
+  design_keys:
+    datastream: "Datastream.id"
+  data_tables:
+    - METADATA
+    - DATASTREAM
+  dict_source: null
+    
+  # --- Properties for when this model is an OUTPUT ---
+  # mappings:
+    

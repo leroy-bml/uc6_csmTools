@@ -1,0 +1,105 @@
+# Custom SensorThings API to ICASA data map (v1.0.0)
+
+# =================================================================
+# DEFINITIONS & ANCHORS
+# =================================================================
+
+# definitions:
+  
+
+
+# =================================================================
+# MAPPING RULES
+# =================================================================
+
+# ---- Phase 1: Data Transformation Rules ---
+
+rules:
+
+## --- WEATHER SENSORS
+
+  - mapping_uid: '1'
+    notes: "Builds an ICASA STATION metadata (pre-aggregation) from SensorThings API datastream metadata"
+    source:
+      section: METADATA
+    target:
+      section: STATION_METADATA
+    select_final_columns:
+      weather_station_name: Thing.name
+      weather_sta_longitude: longitude
+      weather_sta_latitude: latitude
+      weather_sta_start_date: start_date
+      weather_sta_end_date: end_date
+      # ref_height_windsp_meas: sensor_height
+      # ref_height_windsp_meas: sensor_height
+      # institute_name
+      # contact...
+
+  - mapping_uid: '2'
+    notes: "Builds an ICASA WEATHER table (pre-aggregation) from SensorThings API sensor data time series (user-defined properties)"
+    source:
+      section: DATASTREAM
+    target:
+      section: WEATHER_DAILY
+    actions:
+      # Convert 10-min solar radiation from W/m2 to MJ/m2/d.
+      - type: rowwise_transform
+        output_header: solar_radiation
+        input_map:
+          x: solar_radiation
+        formula: "x * 0.0006"  # TODO: improve changing conversion factor based on time internal
+      # Convert wind speed from m/s to km/d.
+      - type: rowwise_transform
+        output_header: atmospheric_wind_speed
+        input_map:
+          x: atmospheric_wind_speed
+        formula: "x * 86.4"
+      # Convert sunshine duration from minutes to hours.
+      - type: rowwise_transform
+        output_header: sunshine_duration
+        input_map:
+          x: sunshine_duration
+        formula: "x / 60"
+    select_final_columns:
+      weather_date: phenomenonTime
+      maximum_temperature: air_temperature
+      minimum_temperature: air_temperature
+      solar_radiation: solar_radiation
+      sunshine_duration: sunshine_duration
+      precipitation: volume_of_hydrological_precipitation
+      realtive_humidity_avg: relative_humidity  # Note: ICASA typo
+      temperature_dewpoint: dew_point
+      wind_speed_daily: atmospheric_wind_speed
+      # evapotranspiration_reference: evapotranspiration
+      # vapor_pressure: vapour_pressure_deficit
+      sensor_voltage: voltage
+
+
+## --- SOIL SENSORS
+
+  # - mapping_uid: '3'
+  #   notes: "Builds an ICASA SOIL data table (pre-aggregation) from SensorThings API sensor data time series (user-defined properties)"
+  #   source:
+  #     section: DATASTREAMS
+  #   target:
+  #     section: SOIL_LAYERS
+  #   select_final_columns:
+  #     # experiment_ID: datastream_ID
+  #     date_of_measurement: phenomenonTime
+  #     me_soil_layer_bot_depth: measurement_depth  # Note 2025-09-25: use bottom depth as measurement depth
+  #     sensor_voltage: voltage
+  #     # Note 2025-09-25: in ICASA, soil temperature variables split by depth within SOIL LAYERS subsection? Makes no sense!
+  #     # soil_temperature_by_layer: soil_temperature
+  #     soil_water_by_layer: soil_water_content   # Review: not in ICASA as of 2025-09-25
+
+
+# -----------------------------------------------------------------
+# PHASE 2: Schema Application
+# -----------------------------------------------------------------
+
+  # - mapping_uid: '999'
+  #   actions:
+  #     - type: apply_formats
+  #       target_section: INITIAL_CONDITIONS
+  #       formats:
+  #         ICDAT: "%y%j"
