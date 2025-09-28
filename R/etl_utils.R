@@ -445,3 +445,48 @@ strict_abbreviate <- function(string, minlength = 2) {
                 "XX")
   return(out)
 }
+
+
+#' Recursively Apply a Function to Data Frames in a List
+#'
+#' @description
+#' Traverses a list structure, including nested lists, and applies a given function `f` to every element that is a data frame.
+#'
+#' @param x An object, typically a list, which may contain data frames and other nested lists.
+#' @param f The function to apply to each data frame found within `x`.
+#' @param ... Additional arguments passed on to the function `f`.
+#'
+#' @return A list with the same structure as `x`, but where every data frame has been replaced by the result of `f(dataframe, ...)`.
+#' Non-data-frame elements are returned unchanged.
+#'
+#' @examples
+#' # Create a nested list containing data frames
+#' nested_list <- list(
+#'   a = data.frame(x = 1:3),
+#'   b = list(
+#'     c = "text",
+#'     d = data.frame(y = 4:5)
+#'   )
+#' )
+#'
+#' # Apply the `nrow` function to each data frame in the list
+#' apply_recursive(nested_list, nrow)
+#'
+#' # Apply a custom function with an additional argument
+#' add_col <- function(df, new_val) {
+#'   df$new_col <- new_val
+#'   df
+#' }
+#' apply_recursive(nested_list, add_col, new_val = 99)
+#'
+
+apply_recursive <- function(x, f, ...) {
+  
+  if (is.data.frame(x)) {
+    return(f(x, ...))
+  }
+  if (is.list(x)) {
+    return(lapply(x, apply_recursive, f = f, ...))
+  }
+  return(x)
+}
