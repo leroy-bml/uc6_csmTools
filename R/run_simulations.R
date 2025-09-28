@@ -25,20 +25,16 @@
 #' }
 #'
 #' @importFrom utils modifyList
-#' @importFrom DSSAT write_filex write_filea write_filet write_wth write_sol write_cul write_dssbatch run_dssat read_output
+#' @importFrom DSSAT read_filex write_dssbatch run_dssat read_output
 #' 
 #' @export
 #' 
 
-run_simulations <- function(dataset, framework = "dssat", dssat_dir = NULL, sim_dir = NULL, args = list()) {
+run_simulations <- function(filex_path, treatments,
+                            framework = "dssat", dssat_dir = NULL, sim_dir = NULL, args = list()) {
   
-  #
-  filex <- dataset$X
-  filea <- dataset$A
-  filet <- dataset$`T`
-  file_wth <- dataset$WTH
-  file_sol <- dataset$SOL
-  file_cul <- dataset$CUL
+  # Read file X
+  filex <- DSSAT::read_filex(filex_path)
   
   # Specify the location of the DSSAT CSM executable (can be passed as environment variable) and the location of input/output files
   if (is.null(dssat_dir)) {
@@ -66,32 +62,8 @@ run_simulations <- function(dataset, framework = "dssat", dssat_dir = NULL, sim_
 
   old_wd <- paste0(getwd(), "/") # trailing slash to avoid path issues
   setwd(sim_dir)
-  
-  # Set default starting date as the first management date if not specified
-  # TODO: add controls and error handling for mandatory variables
-  if (is.na(filex$SIMULATION_CONTROLS$SDATE)){  ### SPECIFY DATE
-    
-    all_dates <- na.omit(  # ignore warning
-      as.POSIXct(
-        as.numeric(
-          unlist(lapply(filex, function(df) {
-            df[grepl("DAT", colnames(df))]
-          }), use.names = FALSE)
-        )))
-    min_date <- as.Date(min(all_dates))
-    filex$SIMULATION_CONTROLS$SDATE <- format(min_date, "%y%j")
-  }
-  
-  # Write all files in adequte location
-  write_filex(filex, file_name = attr(filex, "file_name"))  # management
-  if(!is.null(filea)) write_filea(filea, file_name = attr(filea, "file_name"))  # observed summary
-  if(!is.null(filet)) write_filet(filet, file_name = attr(filet, "file_name"))  # observed time series
-  write_wth2(file_wth, file_name = paste0(dssat_dir, "/Weather/", attr(file_wth, "file_name")))  # weather
-  write_sol(file_sol, file_name = paste0(dssat_dir, "/Soil/", attr(file_sol, "file_name")), append = FALSE)  # soil profile
-  if(!is.null(file_cul)) write_cul(file_cul, file_name = paste0(dssat_dir, "/Genotype/", attr(file_cul, "file_name")))  # cultivars
-  
+
   # Default parameters
-  treatments <- min(filex$TREATMENTS$N):max(filex$TREATMENTS$N)
   default <- list(
     TRTNO = treatments,
     RP = rep(1, length(treatments)),
@@ -99,12 +71,11 @@ run_simulations <- function(dataset, framework = "dssat", dssat_dir = NULL, sim_
     OP = rep(0, length(treatments)),
     CO = rep(0, length(treatments))
   )
-  
   params <- modifyList(default, args)  # set simulation parameters
   
   # Simulations
   batch_tbl <- data.frame(
-    FILEX = rep(attr(filex, "file_name"), length(params$TRTNO)),  # TODO: retrieve filename is not associated as attr (read through regular filex call)
+    FILEX = rep(filex_path, length(params$TRTNO)),  # TODO: retrieve filename is not associated as attr (read through regular filex call)
     TRTNO = params$TRTNO,
     RP = params$RP,
     SQ = params$SQ,
@@ -116,8 +87,8 @@ run_simulations <- function(dataset, framework = "dssat", dssat_dir = NULL, sim_
   run_dssat(run_mode = "B")  # run simulations
   
   # Read output
+  setwd(old_wd)  # reset wd
   #out_files <- list.files(path = sim_dir, pattern = "\\.OUT$", full.names = TRUE)
-  #message("UNO")
   
   #output <- list()
   #for (nm in out_files){
@@ -125,11 +96,12 @@ run_simulations <- function(dataset, framework = "dssat", dssat_dir = NULL, sim_
   #  output[[nm]] <- read_output(file_name = nm)
   #}
   #names(output) <- out_files
-  output <- read_output(file_name = paste0(sim_dir, "/PlantGro.OUT"))
+  output <- read_output(file_name = file.path(sim_dir, "PlantGro.OUT"))
   
-  out <- list(plant_growth = as.data.frame(output), OBSERVED_Summary = filea, OBSERVED_TimeSeries = filet)  # Append observed data
+  out <- list(plant_growth = as.data.frame(output),
+              SUMMARY = filea,
+              TIME_SERIES = filet)  # Append observed data
 
-  setwd(old_wd)  # reset wd
   return(out)
 }
 
@@ -163,13 +135,13 @@ run_simulations <- function(dataset, framework = "dssat", dssat_dir = NULL, sim_
 plot_output <- function(sim_output){
   
   # Observed data
-  obs_summary_growth <- sim_output$OBSERVED_Summary %>%
-    filter(TRTNO %in% 1:4) %>%
-    mutate(MDAT = as.POSIXct(as.Date(MDAT, format = "%y%j")),
-           ADAT = as.POSIXct(as.Date(ADAT, format = "%y%j")))
+  obs_summary_growth <- sim_output$SUMMARY %>%
+    filter(TRNO %in% 1:3)
+    # mutate(MDAT = as.POSIXct(as.Date(MDAT, format = "%y%j")),
+    #        ADAT = as.POSIXct(as.Date(ADAT, format = "%y%j")))
   
   # Simulated data
-  sim_growth <- output$plant_growth
+  sim_growth <- sim_output$plant_growth
   
   # Plot
   plot_growth <- sim_growth %>%
@@ -178,7 +150,7 @@ plot_output <- function(sim_output){
     # Line plot for simulated data
     geom_line(aes(group = TRNO, colour = TRNO, linewidth = "Simulated")) +
     # Points for observed data
-    geom_point(data = obs_summary_growth, aes(x = MDAT, y = HWAM, colour = as.factor(TRTNO), size = "Observed"), shape = 20) +
+    #geom_point(data = obs_summary_growth, aes(x = MDAT, y = HWAM, colour = as.factor(TRTNO), size = "Observed"), shape = 20) +
     # General appearance
     scale_colour_manual(name = "Fertilization (kg[N]/ha)",
                         breaks = c("1","2","3","4"),
@@ -194,59 +166,8 @@ plot_output <- function(sim_output){
     ) +
     theme_bw() + 
     theme(legend.text = element_text(size = 8), legend.title = element_text(size = 8),
-          axis.title.x = element_blank(), axis.title.y = element_text(size = 10),
+          axis.title.x = ggplot2::element_blank(), axis.title.y = element_text(size = 10),
           axis.text = element_text(size = 9, colour = "black"))
   
   return(plot_growth)
 }
-
-# Mandatory soil profile variables
-# soil_dssat$SOIL_METADATA$SLDR <- 0.1  # drainage rate
-# soil_dssat$SOIL_METADATA$SLRO <- 70  # runoff curve
-# soil_dssat$SOIL_METADATA$SALB <- 0.09  # albedo
-# soil_dssat$SOIL_PROFILE_LAYERS$SLLL <- c(0.228,0.228,0.249,0.249,0.207,0.259)  # drained upper limit
-# soil_dssat$SOIL_PROFILE_LAYERS$SDUL <- c(0.385,0.385,0.406,0.449,0.341,0.361)  # drained upper limit
-# soil_dssat$SOIL_PROFILE_LAYERS$SSAT <- 0.45
-# soil_dssat$SOIL_PROFILE_LAYERS$SRGF <- c(1,1,0.638,0.350,0.223,0.018)
-# soil_dssat$SOIL_PROFILE_LAYERS$SLNF <- 1
-# soil_dssat$SOIL_PROFILE_LAYERS$SLU1 <- 6
-# soil_dssat$SOIL_PROFILE_LAYERS$SLPF <- 1
-
-
-# TODO: eventually a wrapper for plotting essential results likes the obs vs. sim comparisons
-# Should link to the input data to retrieve treatment names and levels
-# Plot results: phenology
-# 
-# lteSe_sim_growth <- read_output(file_name = "./inst/extdata/lte_seehausen/2_sim/PlantGro.OUT")
-#
-# # Plot results: phenology
-# lteSe_sim_growth %>%
-#   mutate(TRNO = as.factor(TRNO)) %>%
-#   ggplot(aes(x = DATE, y = DCCD)) +
-#   # Zadoks lines for comparison
-#   geom_hline(yintercept = 69, linetype = "dashed", colour = "black") +  # anthesis date (Zadoks65)
-#   geom_hline(yintercept = 95, linetype = "dashed", colour = "black") +  # maturity date (Zadoks95)
-#   # Line plot for simulated data
-#   geom_line(aes(group = TRNO, colour = TRNO, linewidth = "Simulated")) +
-#   # Points for observed data
-#   geom_point(data = lteSe_obs_growth, aes(x = ADAT, y = 69, colour = as.factor(TRTNO), size = "Observed"),
-#              shape = 20) +  # obs anthesis date (Zadosk65)
-#   geom_point(data = lteSe_obs_growth, aes(x = MDAT, y = 95, colour = as.factor(TRTNO), size = "Observed"),
-#              shape = 20) +  # obs maturity data (Zadoks95)
-#   # General appearance
-#   scale_colour_manual(name = "Fertilization (kg[N]/ha)",
-#                       breaks = c("1","2","3","4"),
-#                       labels = c("0","100","200","300"),
-#                       values = c("#20854E","#FFDC91", "#E18727", "#BC3C29")) +
-#   scale_size_manual(values = c("Simulated" = 1, "Observed" = 2), limits = c("Simulated", "Observed")) +
-#   scale_linewidth_manual(values = c("Simulated" = 1, "Observed" = 2), limits = c("Simulated", "Observed")) +
-#   labs(size = NULL, linewidth = NULL, y = "Zadoks scale") +
-#   guides(
-#     size = guide_legend(
-#       override.aes = list(linetype = c("solid", "blank"), shape = c(NA, 16))
-#     )
-#   ) +
-#   theme_bw() + 
-#   theme(legend.text = element_text(size = 8), legend.title = element_text(size = 8),
-#         axis.title.x = element_blank(), axis.title.y = element_text(size = 10),
-#         axis.text = element_text(size = 9, colour = "black"))

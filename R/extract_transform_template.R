@@ -128,7 +128,8 @@ get_template_codes <- function(wb){
 #' }
 #'
 #' @importFrom magrittr %>%
-#' @importFrom dplyr mutate filter select
+#' @importFrom dplyr mutate filter select across
+#' @importFrom purrr map keep reduce map_chr compact
 #' @importFrom openxlsx2 wb_load wb_get_sheet_names wb_to_df
 #' 
 #' @export
@@ -203,62 +204,62 @@ extract_template <- function(path = NULL, exp_id = NA_character_, headers = c("s
   # Re-structure template to ICASA:
   # CHECK: to revise
   # This function split provenance metadata (persons, institutes, documents) among sections (management, soil, weather)
-  structure_itpl_metadata <- function(dataset) {
-    
-    # Drop empty tables
-    dataset <- Filter(function(x) nrow(x) > 0, dataset)
-    
-    # Identify core and provenance metadata tables
-    metadata <- dataset[grepl("METADATA", names(dataset))]
-    prov_meta <- dataset[grepl("PERSONS|INSTITUTIONS|DOCUMENTS", names(dataset))]
-    
-    # Remove template drop down list helpers (institute names appended to IDs)
-    prov_meta[["PERSONS"]] <- prov_meta[["PERSONS"]] %>%
-      mutate(institute_ID = sub("\\|.*", "", institute_ID)) %>%
-      mutate(institute_ID = as.numeric(institute_ID))
-    
-    # Merge core metadata with provenance attributes
-    metadata <- lapply(metadata, function(df){
-      
-      join_nm <- names(df)[1]  # Get the first column name dynamically
-      
-      prov_meta <- lapply(prov_meta, function(x){
-        colnames(x)[1] <- join_nm
-        return(x)
-      })
-      
-      # Merge provenance attributes
-      prov_merged <- Reduce(function(x, y) full_join(x, y, by = base::intersect(names(x), names(y))), prov_meta)
-      # Append to metadata table
-      df <- Reduce(function(x, y) left_join(x, y, by = join_nm), list(df, prov_merged))
-    })
-    
-    # Rename merged provenance attributes in compliance with ICASA
-    add_header_suffix <- function(df, suffix) {
-      colnames(df) <- ifelse(grepl("^(digital|document)", colnames(df)), 
-                             paste0(colnames(df), "_", suffix), 
-                             colnames(df))
-      return(df)
-    }
-    
-    if (!is.null(metadata[["WEATHER_METADATA"]])) {
-      dataset[["WEATHER_METADATA"]] <- add_header_suffix(metadata[["WEATHER_METADATA"]], "wst")
-    }
-    if (!is.null(metadata[["SOIL_METADATA"]])) {
-      dataset[["SOIL_METADATA"]] <- add_header_suffix(metadata[["SOIL_METADATA"]], "sl")
-    }
-    dataset[["EXP_METADATA"]] <- metadata[["EXP_METADATA"]]
-    
-    out <- dataset[base::setdiff(names(dataset), names(prov_meta))]
-    return(out)
-  }
-  dfs <- structure_itpl_metadata(dfs)
+  # structure_itpl_metadata <- function(dataset) {
+  #   
+  #   # Drop empty tables
+  #   dataset <- Filter(function(x) nrow(x) > 0, dataset)
+  #   
+  #   # Identify core and provenance metadata tables
+  #   metadata <- dataset[grepl("METADATA", names(dataset))]
+  #   prov_meta <- dataset[grepl("PERSONS|INSTITUTIONS|DOCUMENTS", names(dataset))]
+  #   
+  #   # Remove template drop down list helpers (institute names appended to IDs)
+  #   prov_meta[["PERSONS"]] <- prov_meta[["PERSONS"]] %>%
+  #     mutate(institute_ID = sub("\\|.*", "", institute_ID)) %>%
+  #     mutate(institute_ID = as.numeric(institute_ID))
+  #   
+  #   # Merge core metadata with provenance attributes
+  #   metadata <- lapply(metadata, function(df){
+  # 
+  #     join_nm <- names(df)[1]  # Get the first column name dynamically
+  # 
+  #     prov_meta <- lapply(prov_meta, function(x){
+  #       colnames(x)[1] <- join_nm
+  #       return(x)
+  #     })
+  # 
+  #     # Merge provenance attributes
+  #     prov_merged <- Reduce(function(x, y) full_join(x, y, by = base::intersect(names(x), names(y))), prov_meta)
+  #     # Append to metadata table
+  #     df <- Reduce(function(x, y) left_join(x, y, by = join_nm), list(df, prov_merged))
+  #   })
+  #   
+  #   # Rename merged provenance attributes in compliance with ICASA
+  #   add_header_suffix <- function(df, suffix) {
+  #     colnames(df) <- ifelse(grepl("^(digital|document)", colnames(df)), 
+  #                            paste0(colnames(df), "_", suffix), 
+  #                            colnames(df))
+  #     return(df)
+  #   }
+  #   
+  #   if (!is.null(metadata[["WEATHER_METADATA"]])) {
+  #     dataset[["WEATHER_METADATA"]] <- add_header_suffix(metadata[["WEATHER_METADATA"]], "wst")
+  #   }
+  #   if (!is.null(metadata[["SOIL_METADATA"]])) {
+  #     dataset[["SOIL_METADATA"]] <- add_header_suffix(metadata[["SOIL_METADATA"]], "sl")
+  #   }
+  #   dataset[["EXP_METADATA"]] <- metadata[["EXP_METADATA"]]
+  #   
+  #   out <- dataset[base::setdiff(names(dataset), names(prov_meta))]
+  #   return(out)
+  # }
+  # dfs <- structure_itpl_metadata(dfs)
   
   # Map column headers to short format if applicable
   # TODO: extensive testing (e.g., no provenance sheets or empty)
   dict <- wb_to_df(wb, sheet = "Dictionary", startRow = 1) %>%
     # Change provenance section to experiment (now that provenance info has been incorporated to SOIL and WEATHER metadata)
-    mutate(Sheet = ifelse(Sheet %in% c("PERSONS","INSTITUTIONS","DOCUMENTS"), "EXP_METADATA", Sheet)) %>%
+    #mutate(Sheet = ifelse(Sheet %in% c("PERSONS","INSTITUTIONS","DOCUMENTS"), "EXP_METADATA", Sheet)) %>%
     filter(!var_order_custom == "-99" | is.na(var_order_custom))  # tmp: preserve NAs until measured data all sorted in template
   if(headers == "short") {
     dfs <- mapply(FUN = icasa_long_to_short,
@@ -267,13 +268,59 @@ extract_template <- function(path = NULL, exp_id = NA_character_, headers = c("s
                   MoreArgs = list(dict = dict, keep_unmapped = FALSE)
     )
   }
+  
+  # Merge composite tables into one
+  grouped_sec <- split(dfs, substr(names(dfs), 1, 5))
+  merged_sec <- map(grouped_sec, function(dfs) {
+    non_empty_dfs <- keep(dfs, ~ nrow(.x) > 0)
+    # If the data section is empty (no rows) skip the join
+    if (length(non_empty_dfs) == 1) {
+      return(non_empty_dfs[[1]]) 
+    } else if (length(non_empty_dfs) > 1) {
+      return(reduce(non_empty_dfs, left_join))
+    } else {
+      return(NULL)
+    }
+  })
+  sec_names <- purrr::map_chr(grouped_sec, ~ names(.x)[1])  # Assign name of the header table
+  names(merged_sec) <- sec_names
+  merged_sec <- merged_sec %>% compact()    # Remove NULLs from merged list
+  
+  # Merge all summary/time_series tables into one
+  sm_dfs <- merged_sec[grepl("SM_", names(merged_sec))]
+  if (length(sm_dfs) > 0) {
+    sm_df <- reduce(sm_dfs, left_join)
+    merged_sec[["SUMMARY"]] <- sm_df
+    merged_sec <- merged_sec[!grepl("SM_", names(merged_sec))]
+  }
+  # TS_ to TIME_SERIES
+  ts_dfs <- merged_sec[grepl("TS_", names(merged_sec))]
+  if (length(ts_dfs) > 0) {
+    ts_df <- reduce(ts_dfs, left_join)
+    merged_sec[["TIME_SERIES"]] <- ts_df
+    merged_sec <- merged_sec[!grepl("ts_", names(merged_sec))]
+  }
+  
+  # HACK tmp: rename resource_ID to
+  merged_sec <- apply_recursive(merged_sec, function(df) {
+    if ("resource_ID" %in% names(df)) {
+      names(df)[names(df) == "resource_ID"] <- "experiment_ID"
+    }
+    return(df)
+  })
+  merged_sec[["GENERAL"]] <- merged_sec[["EXP_METADATA"]]
+  merged_sec[["EXP_METADATA"]] <- NULL
 
   # Split experiments
-  out <- split_experiments(dfs, keep_empty = keep_empty, keep_na_cols = TRUE)
+  dfs_split <- split_experiments(merged_sec, keep_empty = keep_empty, keep_na_cols = TRUE)
   if(!all(is.na(exp_id))){
-    out <- out[exp_id %in% names(out)]
-  } 
-
+    dfs_split <- dfs_split[exp_id %in% names(dfs_split)]
+  }
+  
+  # Remove NA cols in all experiments
+  out <- apply_recursive(dfs_split, remove_all_na_cols)
+  
+  #
   return(out)
 }
 
@@ -398,7 +445,7 @@ desc_to_codes <- function(df, codes) {
 #' \itemize{
 #'   \item Removing any content after a pipe (\code{|}) in character columns.
 #'   \item Trimming leading whitespace from all columns.
-#'   \item Replacing \code{NA} values in level columns (\code{genotype_level_number} to \code{mulch_level}) with 0.
+#'   \item Replacing \code{NA} values in level columns (\code{genotype_level} to \code{mulch_level}) with 0.
 #'   \item Converting relevant columns to numeric type.
 #'   \item Ensuring \code{simulation_control_level} is numeric and defaults to 1 if missing.
 #' }
@@ -432,8 +479,8 @@ format_treatment_str <- function(ls){
   df <- df %>%
     mutate(across(where(is.character), ~ sub("\\|.*", "", .)),
            across(everything(), ~ trimws(., which = "left")),
-           across(genotype_level_number:mulch_level, ~ifelse(is.na(.x), 0, .x)),
-           across(c(treatment_number, genotype_level_number:mulch_level), ~as.numeric(.))) %>%
+           across(genotype_level:mulch_level, ~ifelse(is.na(.x), 0, .x)),
+           across(c(treatment_number, genotype_level:mulch_level), ~as.numeric(.))) %>%
     mutate(simulation_control_level = as.numeric(
       ifelse(is.na(simulation_control_level), 1, simulation_control_level))
     )
