@@ -754,28 +754,34 @@ process_actions <- function(actions, full_input_df, full_dataset, master_key_nam
 #'
 
 apply_mappings <- function(input_data, input_model, output_model, config, ...) {
-
+  
   # --- 1. CONFIGURATION SETUP ---
   output_model_config <- config[[output_model]]
   input_model_config  <- config[[input_model]]
   
-  # --- 2. PRE-PROCESSING: APPLY MASTER KEY ---
-  # This function uses the input_model_config to ensure the key is present in all tables.
-  prepared_data <- apply_master_key(input_data, input_model_config)
-  
-  # --- 3. PREPARE CONTEXT FOR THE LOOP ---
-  # MODIFIED: Define both input and output key names to handle cases where they differ.
-  input_master_key_name <- input_model_config$design_keys[[input_model_config$master_key]]
-  output_master_key_name <- output_model_config$design_keys[[output_model_config$master_key]]
-  
-  # Get the table where the master key is guaranteed to be found.
-  key_source_table  <- input_model_config$key_source_table
-  
-  # Create the master key data frame for final binding.
-  # This now correctly renames the key column if input and output names differ (e.g., "experiment_ID" -> "EXP_ID").
-  master_key_df <- tibble(
-    !!output_master_key_name := prepared_data[[key_source_table]][[input_master_key_name]]
-  )
+  if (input_model_config$master_key == 'none') {
+    
+    # If master_key is 'none', use the raw input data and skip key processing
+    prepared_data <- input_data
+    master_key_df <- NULL
+    input_master_key_name <- NULL
+    
+  } else {
+    
+    # --- 2. PRE-PROCESSING: APPLY MASTER KEY ---
+    # This function uses the input_model_config to ensure the key is present in all tables.
+    prepared_data <- apply_master_key(input_data, input_model_config)
+    
+    # --- 3. PREPARE CONTEXT FOR THE LOOP ---
+    input_master_key_name <- input_model_config$design_keys[[input_model_config$master_key]]
+    output_master_key_name <- output_model_config$design_keys[[output_model_config$master_key]]
+    key_source_table  <- input_model_config$key_source_table
+    
+    # Create the master key data frame for final binding.
+    master_key_df <- tibble(
+      !!output_master_key_name := prepared_data[[key_source_table]][[input_master_key_name]]
+    )
+  }
   
   # --- 4. PREPARE FOR MAIN LOOPS ---
   map_path <- output_model_config$mappings[[input_model]]
@@ -790,7 +796,7 @@ apply_mappings <- function(input_data, input_model, output_model, config, ...) {
     
     full_input_df <- prepared_data[[rule$source$section]]
     if (is.null(full_input_df)) next
-    
+
     # Execute all actions for the rule to get the transformed data
     transformed_df <- process_actions(
       actions = rule$actions,
@@ -894,7 +900,7 @@ convert_dataset <- function(dataset, input_model, output_model,
                             unmatched_code = "na", 
                             config_path = "./inst/extdata/datamodels.yaml") {
   
-  # ---- 1. MAPPING CONFIGURATION ----
+  # --- 1. MAPPING CONFIGURATION ---
   config <- yaml::read_yaml(config_path)
   model_config <- config[[output_model]]
   
@@ -912,7 +918,7 @@ convert_dataset <- function(dataset, input_model, output_model,
   key_source_table <- model_config$key_source_table
   data_tables <- unlist(model_config$data_tables)
   
-  # ---- 2. CORE MAPPING ----
+  # --- 2. CORE MAPPING ---
   
   message("Step 1: Mapping data terms...")
   # Converts columns from source names to canonical target names (e.g., Bonares -> ICASA)
@@ -928,7 +934,7 @@ convert_dataset <- function(dataset, input_model, output_model,
     unmatched_code = unmatched_code
   )
   
-  # ---- 3. POST-PROCESSING ----
+  # --- 3. POST-PROCESSING ---
   
   # Applies model-specific logic like aggregations and calculations.
   message("Step 2: Structuring and formatting model data...")
@@ -940,8 +946,12 @@ convert_dataset <- function(dataset, input_model, output_model,
   message("Step 3: Writing output files...")
   out <- apply_transformations(dataset = mapped_data_clean, data_model = output_model)
   
-  # ---- OUTPUT ----
-  return(out)
+  # --- OUTPUT ---
+  if (is.list(out) && length(out) == 1) {
+    return(out[[1]])  # Single experiment
+  } else {
+    return(out)  # Multiple experiment
+  }
 }
 
 
