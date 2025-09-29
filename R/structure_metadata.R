@@ -63,7 +63,11 @@ is_valid_dssat_code <- function(x, item, framework = "dssat"){
 
 
 generate_dssat_id <- function(type, institution, site = NA, year = NA, sequence_no = NA) {
-
+  
+  institution <- ifelse(is.na(institution), "XX", institution)
+  site <- ifelse(is.na(site), "XX", site)
+  year <- ifelse(is.na(year), "XX", as.character(year)) # Ensure year is character
+  
   inst_abbr <- strict_abbreviate(institution, 2)
   site_abbr <- ifelse(!is.na(site), strict_abbreviate(sub(" .*", "", site), 2), NA_character_)
   
@@ -111,6 +115,7 @@ structure_dssat_mngt <- function(dataset) {
   
   # Drop NA columns to avoid failed joins due to unmatched mapping rules
   dataset <- lapply(dataset, remove_all_na_cols)
+  
   
   # Extract main dataframes for easier handling
   provenance <- dataset[["GENERAL"]]
@@ -179,7 +184,7 @@ structure_dssat_mngt <- function(dataset) {
     group_by(INSTITUTION, SITE, XCRD, YCRD) %>%
     mutate(ID_FIELD = ifelse(is_valid_dssat_code(ID_FIELD, "field", "dssat"),
                              ID_FIELD,
-                             generate_dssat_id("field", INSTITUTION, SITE, EXP_YEAR, sequence_no = cur_group_id()))) %>%
+                             generate_dssat_id("field", INSTITUTION, SITE, sequence_no = cur_group_id()))) %>%
     ungroup() %>%
     select(colnames(locations), ELEV, ID_FIELD, FLNAME, SITE)
   
@@ -200,6 +205,7 @@ structure_dssat_mngt <- function(dataset) {
   # Generate standard experiment name
   provenance <- provenance %>%
     mutate(EXP_ID = if ("EXP_ID" %in% names(.)) EXP_ID else NA_character_) %>%
+    mutate(EXP_YEAR = if ("EXP_YEAR" %in% names(.)) EXP_YEAR else NA_character_) %>%
     # Join site name
     left_join(locations, by = intersect(names(.), names(locations))) %>%
     group_by(INSTITUTION, SITE, EXP_YEAR) %>%
@@ -576,7 +582,9 @@ structure_dssat_wth <- function(dataset, data_model = "dssat") {
   
   # Update dataset
   out <- dataset
-  out[["WTH_DAILY"]] <- wth_data_gs_filtered %>% select(EXP_ID, YEAR, colnames(wth_components$data), -EXP_YEAR)
+  out[["WTH_DAILY"]] <- wth_data_gs_filtered %>%
+    select(any_of(c("EXP_ID", "YEAR", colnames(wth_components$data)))) %>%
+    select(-any_of("EXP_YEAR"))
   # TODO: set correct DSSAT section in data map and subsequent code
   out[["WTH_META"]] <- wth_meta_out
   out[["WEATHER_METADATA"]] <- out[["WEATHER_DAILY"]] <- NULL  #tmp
@@ -771,7 +779,8 @@ structure_icasa_mngt <- function(ls, master_key, year_col, treatment_col, plot_c
 #'   for each experiment.
 #'
 #' @importFrom yaml read_yaml
-#' @importFrom dplyr %>% group_by across all_of summarise first left_join select any_of mutate arrange
+#' @importFrom magrittr %>%
+#' @importFrom dplyr group_by across all_of summarise first left_join select any_of mutate arrange
 #' @importFrom rlang sym
 #' @importFrom purrr imap compact
 #' @importFrom tidyr unite
@@ -803,7 +812,7 @@ apply_transformations <- function(dataset, data_model = c("icasa", "dssat"),
     # Split data into major ICASA sections
     metadata <- dataset[intersect(c("GENERAL", "PERSONS", "INSTITUTIONS", "DOCUMENTS", "PLOT_DETAILS"), names(dataset))]
     measured <- dataset[intersect(c("SUMMARY", "TIME_SERIES"), names(dataset))]
-    weather <- dataset[intersect(c("STATION_METADATA", "WEATHER_DAILY"), names(dataset))]
+    weather <- dataset[intersect(c("WEATHER_METADATA", "WEATHER_DAILY"), names(dataset))]
     soil <- dataset[intersect(c("SOIL_METADATA", "SOIL_LAYERS"), names(dataset))]
     #TODO: handle soil data: unpractical profile/analysis/measured split in ICASA
     management_sec <- c("GENOTYPES", "FIELDS", "SOIL_ANALYSES", "INITIAL_CONDITIONS", "PLANTINGS",
@@ -819,12 +828,16 @@ apply_transformations <- function(dataset, data_model = c("icasa", "dssat"),
     
       aggregated_daily <- weather[["WEATHER_DAILY"]] %>%
         mutate(weather_date = as.Date(weather_date)) %>%
-        group_by(experiment_ID, weather_date) %>%
+        group_by(across(any_of(c("experiment_ID", "weather_station_id", "weather_station_name", "weather_date")))) %>%
         # Apply all variable specific aggrgation transformations
         summarise(
           across(any_of("maximum_temperature"), ~max(.x, na.rm = TRUE), .names = "{.col}"),
           across(any_of("minimum_temperature"), ~min(.x, na.rm = TRUE), .names = "{.col}"),
-          across(any_of(c("precipitation", "solar_radiation", "sunshine_duration")),
+          # HACK: specific case for 10 minutes intervals (600 seconds) to get J/m2/d
+          # TODO: define aggregation at the map level: different weather types
+          #across(any_of("solar_radiation"), ~sum(.x, na.rm = TRUE)*600, .names = "{.col}"),
+          across(any_of("solar_radiation"), ~.x, .names = "{.col}"),
+          across(any_of(c("precipitation",  "sunshine_duration")),
                  ~sum(.x, na.rm = TRUE),
                  .names = "{.col}"),
           across(any_of(c("realtive_humidity_avg", "atmospheric_wind_speed", "temperature_dewpoint", "sensor_voltage")),
@@ -892,8 +905,12 @@ apply_transformations <- function(dataset, data_model = c("icasa", "dssat"),
       out_dataset <- c(out_dataset, out_management)
     }
     
-    out_dataset <- out_dataset[sapply(out_dataset, length) > 0]  # necesary?
-    return(out_dataset)
+    out_dataset <- c(
+      metadata,
+      out_dataset, # Weather + management
+      soil,
+      measured
+    )
   }
   
   else if (data_model == "dssat") {
@@ -931,11 +948,15 @@ apply_transformations <- function(dataset, data_model = c("icasa", "dssat"),
       dataset
     })
     
+    # Deduplicate all dataframes
+    dataset_split <- apply_recursive(dataset_split, dplyr::distinct)
+    
     # Output formatting
-    out <- lapply(dataset_split, function(ls) {
+    out_dataset <- lapply(dataset_split, function(ls) {
       
       weather_header <- ls[grepl("WTH_META", names(ls))]
       soil_header <- ls[["SOIL_HEADER"]]
+      fields_table <- ls[["FIELDS"]]
       
       # Make base names
       wth_file_base <- sapply(weather_header, function(df){
@@ -946,10 +967,10 @@ apply_transformations <- function(dataset, data_model = c("icasa", "dssat"),
           pull(file_base)
       })
       
-      sol_file_base <- soil_header %>%
-        # TODO: add PEDON to header
+      sol_file_base <- fields_table %>%
+        # TODO: add PEDON to header and replace fields table
         #group_by(PEDON) %>%  
-        mutate(file_base = strict_abbreviate(INST_NAME, 2)) %>%
+        mutate(file_base = substr(ID_SOIL, 1, 2)) %>%
         pull(file_base)
       
       # Set section metadata
@@ -1042,11 +1063,8 @@ apply_transformations <- function(dataset, data_model = c("icasa", "dssat"),
       
       return(data_fmt)
     })
-    
-    return(out)
   }
-  
-  return(out)
+  return(out_dataset)
 }
 
 
@@ -1089,6 +1107,13 @@ split_dataset <- function(dataset, key, data_model,
   model_config <- config[[data_model]]
   split_key <- model_config$design_keys[[key]]
   
+  # Guard clause if no keys are defined for the focal data model
+  if (is.null(split_key)) {
+    stop(paste0("Cannot split dataset: the key '", key, "' is not defined in the 'design_keys' for the '", 
+                data_model, "' model."),
+         call. = FALSE)
+  }
+  
   # ---- Splitting logic ----
   # 1. Find all unique levels of the split key across all tables that have it.
   all_levels <- unique(unlist(lapply(dataset, function(df) {
@@ -1100,7 +1125,8 @@ split_dataset <- function(dataset, key, data_model,
   
   # Handle case where the key is not found anywhere
   if (is.null(all_levels) || length(all_levels) == 0) {
-    warning(paste0("Split key '", split_key, "' not found in any data frame."), call. = FALSE)
+    warning(paste0("Split key '", split_key, "' not found in any data frame."),
+            call. = FALSE)
     return(dataset) 
   }
   
