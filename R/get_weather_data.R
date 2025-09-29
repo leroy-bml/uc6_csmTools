@@ -99,61 +99,103 @@ nearbyStations_solar <- function(lat, lon, res, max_radius = 50){  ##inherit
 
 
 # Get station data for each year based on the set quality parameters
-find_stations <- function(lat, lon, min_date, params){
+find_stations <- function(lat, lon, min_date, max_date, params){
   
   message("Searching for weather stations...")
   
-  # Set period
-  per <- if(min_date <= Sys.Date() %m-% months(18)) { "historical" } else { "recent" }
+  # Determine which periods to search (historical, recent, or both) ---
+  min_date <- as.Date(min_date)
+  max_date <- as.Date(max_date)
+  boundary_date <- Sys.Date() %m-% months(18)
   
-  # Find closest station for each weather variable
-  if("solar_radiation" %in% names(params)){
-    
-    params_ipt <- params[!names(params)=="solar_radiation"]
-    
-  } else {
-    
-    params_ipt <- params
+  # Set search period
+  search_periods <- c()
+  if (min_date <= boundary_date) {
+    search_periods <- c(search_periods, "historical")
+  }
+  if (max_date > boundary_date) {
+    search_periods <- c(search_periods, "recent")
   }
   
-  
-  wst <- lapply(params_ipt, function(x){
-    
-    nearbyStations(lat = lat,
-                   lon = lon,
-                   radius = x[["max_radius"]][[1]],
-                   var = x[["vars"]][[1]],
-                   res = x[["res"]][[1]],
-                   per = per,
-                   mindate = min_date,
-                   quiet = TRUE)
+  if (length(search_periods) == 0) {
+    stop("Date range does not fall into a searchable period.")
   }
-  )
-
-  #
-  if("solar_radiation" %in% names(params)){
-    
-    params_solar <- params$solar_radiation
-    
-    wst_solar <- nearbyStations_solar(lat = lat,
-                                      lon = lon,
-                                      res = params_solar[["res"]][[1]],
-                                      max_radius = params_solar[["max_radius"]][[1]])
-    
-    wst_solar$var <- "solar"
-    wst <- append(wst, list(wst_solar))
-    names(wst)[length(wst)] <- "solar_radiation"
-     
-  }
+  message(paste("Searching in:", paste(search_periods, collapse = " & ")))
   
-  # Keep the closest station that meets the minimum date requirement
-  wst_sub <- lapply(wst, function(df){
-    suppressWarnings(df %>%
-                       filter(von_datum <= min_date & bis_datum >= min_date)
-    )
+  # Find stations (HACK: except solar_radiation)
+  params_ipt <- params[!names(params) == "solar_radiation"]
+  
+  wst_list <- lapply(names(params_ipt), function(param_name) {
+    x <- params_ipt[[param_name]]
+    
+    # Search in each required period
+    stations_per_period <- lapply(search_periods, function(per) {
+      rdwd::nearbyStations(
+        lat = lat,
+        lon = lon,
+        radius = x[["max_radius"]][[1]],
+        var = x[["pars"]][[1]],
+        res = x[["res"]][[1]],
+        per = per,
+        mindate = min_date,
+        quiet = TRUE
+      )
+    })
+    # Combine results from historical/recent and keep unique stations
+    combined_stations <- bind_rows(stations_per_period) %>% 
+      distinct(Stations_id, .keep_all = TRUE)
+    
+    return(combined_stations)
   })
   
-  return(do.call(rbind, wst_sub))
+  # Handle special case for solar radiation
+  if ("solar_radiation" %in% names(params)) {
+    params_solar <- params$solar_radiation
+    wst_solar <- nearbyStations_solar(
+      lat = lat,
+      lon = lon,
+      res = params_solar[["res"]][[1]],
+      max_radius = params_solar[["max_radius"]][[1]]
+    )
+    wst_solar$var <- "solar" # Assign var for later grouping
+    wst_list <- append(wst_list, list(wst_solar))
+  }
+  
+  # Combine all found stations into a single data frame
+  all_stations <- bind_rows(wst_list)
+  
+  if (nrow(all_stations) == 0) {
+    message("No stations found within the given search criteria.")
+    return(NULL)
+  }
+  
+  # --- 3. Filter stations based on the precise date range and current-year logic ---
+  current_year <- as.integer(format(Sys.Date(), "%Y"))
+  max_date_year <- as.integer(format(max_date, "%Y"))
+  
+  valid_stations <- all_stations %>%
+    filter(
+      # Basic requirement: station's activity must overlap with the requested period
+      von_datum <= max_date & bis_datum >= min_date
+    ) %>%
+    filter(
+      # End-date requirement: must cover the period until max_date OR meet the special current-year condition
+      bis_datum >= max_date | (max_date_year == current_year & as.integer(format(bis_datum, "%Y")) == current_year)
+    )
+  
+  if (nrow(valid_stations) == 0) {
+    message("Found stations, but none meet the required date criteria.")
+    return(NULL)
+  }
+  
+  # --- 4. For each variable, select the single closest station that meets all criteria ---
+  closest_stations <- valid_stations %>%
+    group_by(var) %>%
+    slice_min(order_by = dist, n = 1, with_ties = FALSE) %>%
+    ungroup()
+  
+  message(paste("Successfully identified", nrow(closest_stations), "closest station(s)."))
+  return(closest_stations)
 }
 
 
@@ -166,7 +208,7 @@ find_stations <- function(lat, lon, min_date, params){
 #' 
 #' @export
 #'
-#' @param vars a character vector specifying the variable(s) to download
+#' @param pars a character vector specifying the variable(s) to download
 #' @param year an integer indicating the target year
 #' @param stations a data frame listing target weather stations, a generated by the functions nearbyStations",
 #' "nearbyStations_solar", and "find_stations"
@@ -180,7 +222,7 @@ find_stations <- function(lat, lon, min_date, params){
 #' 
 
 download_dwd <- function(
-    vars = c("air_temperature","precipitation","solar_radiation","dewpoint","relative_humidity","wind_speed"),
+    pars = c("air_temperature","precipitation","solar_radiation","dewpoint","relative_humidity","wind_speed"),
     year,
     stations,
     dir = tempdir()){
@@ -188,7 +230,7 @@ download_dwd <- function(
   from_date <- paste0(year, "-01-01")
   to_date <- paste0(year, "-12-31")
   
-  dwd_data <- lapply(vars, function(x){
+  dwd_data <- lapply(pars, function(x){
     
     # Sort the stations by distance from the field, from lower to higher
     station <- stations %>%
@@ -203,8 +245,6 @@ download_dwd <- function(
 
       # Download data starting from the closest station
       for (i in 1:nrow(station)){
-        
-        i = 1  #tmp
         
         url <- selectDWD(id = station[i, ]$Stations_id,
                          res = station[i, ]$res,
@@ -398,7 +438,7 @@ impute_weather <- function(df, na.rm = TRUE, rule = 2) {
 #' @param years a numeric vector specifying the target years
 #' @param src a character vector specifying the source repository (currently only "dwd" is supported).
 #' @param map_to a character vector specifying the target data standard (currently only "icasa" and "dssat" are supported)
-#' @param vars a character vector specifying the target weather variables.
+#' @param pars a character vector specifying the target weather variables.
 #' @param res a list of character vectors specifying the temporal resolution of the target weather variables. Length and
 #' indices should match the variable vector. A the function returns daily weather, only "hourly" and "daily" are supported.
 #' @param max_radius a numeric vector specifying the maximum distance around the location within which weather stations
@@ -414,177 +454,189 @@ impute_weather <- function(df, na.rm = TRUE, rule = 2) {
 #' @importFrom tibble rownames_to_column
 #' @importFrom purrr map2
 #' @importFrom lubridate month
+#' @importFrom nasapower get_power
 #' 
 #' 
 
-get_weather <- function(
-    years, lon, lat,
-    src = c("dwd","nasa_power"),  # may implement other sources in the future
-    map_to = c("icasa","dssat"),  # add option for not mapping to any standard
-    vars = c("air_temperature", "precipitation", "solar_radiation", "dewpoint", "relative_humidity", "wind_speed"),
-    res = list("hourly", c("daily", "hourly"), c("daily", "hourly"), "hourly", "hourly", "hourly") ,
-    # max radius in km; defined separately for each variable as quality requirements differ
-    max_radius = c(50, 10, 50, 20, 20, 20)){
+get_weather <- function(lon, lat, from, to, src, raw = TRUE, pars, res,
+                        # max radius in km; defined separately for each variable as quality requirements differ
+                        max_radius = 50){
   
+  # Check arguments
+  src_handlers <- c("dwd", "nasa-power")
+  src <- match.arg(src, src_handlers)
+  pars_handlers <- c("air_temperature", "precipitation", "solar_radiation", "dewpoint",
+                     "relative_humidity", "wind_speed", "par", "evaporation")
+  pars <- match.arg(pars, pars_handlers, several.ok = TRUE)
+  res_handlers <- c("daily", "hourly")
+  res <- match.arg(res, res_handlers)
   
-  # Define parameters -------------------------------------------------------
-  
-  #years <- ifelse(is.numeric(years), as.character(years), years)
-  start_dates <- sapply(years, function(x) paste0(x, "-01-01"))
-  
-  vars_ipt <- lapply(vars, function(x) {
-    switch(x,
-           precipitation = c("precipitation","more_precip"),
-           solar_radiation = "solar",
-           wind_speed = "wind",
-           dewpoint = "dew_point",
-           relative_humidity = "moisture",
-           x)
-  }
-  )
-  
-  params <- data.frame(vars = I(vars_ipt), res = I(res), max_radius = max_radius)
-  params <- split(params, seq(nrow(params)))
-  for (i in 1:length(params)){
-    names(params)[i] <- unique(vars[i])
-  }
-  
-  
-  # Download the data -------------------------------------------------------
-  
-  if (src == "dwd"){
-    
-    # Get stations metadata
-    
-    stations <- lapply(start_dates, function(x) find_stations(lat = lat, lon = lon, min_date = x, params = params))
-    names(stations) <- paste0("Y", substr(start_dates, 1, 4))
-    
-    stations <- do.call(rbind, stations) %>%
-      distinct() %>%
-      rownames_to_column("var_ipt") %>%
-      # Remove the data frame name prefix appended during row binding
-      mutate(var_ipt = gsub("^[^.]*\\.", "", var_ipt)) %>%
-      # Remove the station suffix
-      mutate(var_ipt = gsub("\\..*", "", var_ipt))
-    
-    
-    # Download the data
-    
-    # Here one caveat is that the rdwd::dataDWD function downloads the entire historical data for the specified station(s)
-    # Target year is only filtered afterwards in the custom function
-    # this makes the runtime needlessly slow for multiple years/variables
-    dwd_raw <- lapply(years, function(x){
-      data <- download_dwd(vars = names(params), year = x, stations)
-      names(data) <- names(params)
-      return(data)
-    }
-    )
-    names(dwd_raw) <- paste0("Y", years)
-  }
-  
-  # Extract metadata in a single data frame
-  #metadata <- as.data.frame(
-  #    t(vapply(dwd_raw, function(df) attr(df, "metadata"),
-  #             FUN.VALUE = vector(mode = "list", length = 8))))  # 8 is the number of metadata elements
-  metadata <- lapply(dwd_raw, function(ls){
-    nest_df <- as.data.frame(
-      t(sapply(ls, function(df){
-        if(is.null(attr(df, "metadata"))){
-          return(rep(NA, 8))
-        } else {
-          return(attr(df, "metadata"))
-        }
-      }))
-    )
-    df <- unnest(nest_df, cols = colnames(nest_df), keep_empty = TRUE) %>% distinct()
-    df <- df %>% drop_na()
-  })
-  
-  # Format and map the data -------------------------------------------------
-  
-  # Drop variables with no data (empty data frames)
-  dwd_ipt <- lapply(dwd_raw, function(df) Filter(function(x) nrow(x) > 0, df))##
-  
-  # Select adequate lookup
-  lookup <- switch(src,
-                   nasa = switch(map_to,
-                                 icasa = nasa_icasa,
-                                 dssat = nasa_dssat
-                   ),
-                   dwd = switch(map_to,
-                                icasa = dwd_icasa,
-                                dssat = dwd_dssat
-                   )
-  )
-  
-  vars <- c("MESS_DATUM", lookup[["repo_var"]][!is.na(lookup[["repo_var"]])])
-  
-  # Apply mapping
-  dwd_ipt <- lapply(dwd_ipt, function(ls) {
-    lapply(ls, function(df){
-      common_vars <- intersect(vars, names(df))
-      df[, common_vars, drop = FALSE]
-    })
-  })
-  
-  dwd_trans <- lapply(dwd_ipt, function(ls){
-    lapply(ls, function(df) data <- format_weather(df, lookup = lookup))
-  })
-  
-  dwd_out <- lapply(dwd_trans, function(ls){
-    Reduce(function(x, y) merge(x, y, by = intersect(names(x), names(y)), all = TRUE), ls)
-  })
-  
-  
-  # Impute missing data -----------------------------------------------------
-  
-  dwd_out <- lapply(dwd_out, function(df){
-    if (anyNA(df)) {
-      
-      col_order <- colnames(df)
-      
-      df <- impute_weather(df, na.rm = TRUE, rule = 2)
-      #df <- df %>% select(all_of(col_order))
-    }
-    return(df)
-  })
-  
-  # Calculate summary data for weather data header
-  TAV <- lapply(dwd_out, function(df){
-    df %>% summarise(TAV = mean((TMAX + TMIN)/2, na.rm = TRUE)) %>% pull(TAV)
-  })
-  metadata <- map2(metadata, TAV, ~cbind(.x, TAV = .y))
-  
-  AMP <- lapply(dwd_out, function(df){
-    df %>%
-      mutate(mo = month(W_DATE)) %>%
-      group_by(mo) %>%
-      summarise(mo_TAV = mean((TMAX + TMIN)/2, na.rm = TRUE)) %>%
-      summarise(AMP = (max(mo_TAV)-min(mo_TAV))/2) %>%
-      pull(AMP)
-  })
-  metadata <- map2(metadata, AMP, ~cbind(.x, AMP = .y))
-  
-  
-  # Bind all years in a single dataframe
-  dwd_out <- lapply(dwd_out, function(df){
-    df %>%
-      mutate(Year = year(W_DATE)) %>%  # add year column
-      relocate(Year, .before = everything())
-  })
-  
-  all_cols <- unique(unlist(lapply(dwd_out, colnames)))
-  
-  for (i in seq_along(dwd_out)) {
-    missing_cols <- setdiff(all_cols, names(dwd_out[[i]]))
-    for (j in missing_cols) {
-      dwd_out[[i]][[j]] <- NA
-    }
-  }
-  
-  dwd_out <- lapply(dwd_out, function(x) x[, all_cols])
-  dwd_out_df <- do.call(rbind, dwd_out)
-  row.names(dwd_out_df) <- NULL
+  # --- Fetch data from source ---
+  switch(src,
+         "dwd" = {
+           
+           # --- Define parameters ---
+           vars_ipt <- lapply(pars, function(x) {
+             switch(x,
+                    precipitation = c("precipitation","more_precip"),
+                    solar_radiation = "solar",
+                    wind_speed = "wind",
+                    dewpoint = "dew_point",
+                    relative_humidity = "moisture",
+                    x)
+           }
+           )
+           params <- data.frame(pars = I(vars_ipt), res = I(res), max_radius = max_radius)
+           params <- split(params, seq(nrow(params)))
+           for (i in 1:length(params)){
+             names(params)[i] <- unique(pars[i])
+           }
+           
+           # --- Find stations meeting the query ---  # TO CHECK
+           stations <- find_stations(lat = lat, lon = lon, min_date = from, params = params)
+           #names(stations) <- paste0("Y", substr(start_dates, 1, 4))  # old version
+           
+           stations <- do.call(rbind, stations) %>%
+             distinct() %>%
+             rownames_to_column("var_ipt") %>%
+             # Remove the data frame name prefix appended during row binding
+             mutate(var_ipt = gsub("^[^.]*\\.", "", var_ipt)) %>%
+             # Remove the station suffix
+             mutate(var_ipt = gsub("\\..*", "", var_ipt))
+           
+           # --- Downdload data ---
+           # Here one caveat is that the rdwd::dataDWD function downloads the entire historical data for the specified station(s)
+           # Target year is only filtered afterwards in the custom function
+           # this makes the runtime needlessly slow for multiple years/variables
+           wth_raw <- lapply(years, function(x){
+             data <- download_dwd(pars = names(params), year = x, stations)
+             names(data) <- names(params)
+             return(data)
+           }
+           )
+           names(wth_raw) <- paste0("Y", years)
+           
+           # metadata <- lapply(wth_raw, function(ls){
+           #   nest_df <- as.data.frame(
+           #     t(sapply(ls, function(df){
+           #       if(is.null(attr(df, "metadata"))){
+           #         return(rep(NA, 8))
+           #       } else {
+           #         return(attr(df, "metadata"))
+           #       }
+           #     }))
+           #   )
+           #   df <- unnest(nest_df, cols = colnames(nest_df), keep_empty = TRUE) %>% distinct()
+           #   df <- df %>% drop_na()
+           # })
+         },
+         "nasa-power" = {
+           
+           # --- Define parameters ---
+           params <- unlist(
+             lapply(pars, function(x) {
+               switch(x,
+                      air_temperature = c("T2M", "T2M_MAX", "T2M_MIN"), 
+                      precipitation = "PRECTOTCORR",
+                      solar_radiation = "ALLSKY_SFC_SW_DWN",
+                      wind_speed = "WS2M",
+                      dewpoint = "T2MDEW",
+                      relative_humidity = "RH2M",
+                      par = "ALLSKY_SFC_PAR_TOT",
+                      evaporation = "EVLAND",
+                      x)
+             })
+           )
 
-  return(list(data = dwd_out_df, metadata = metadata))
+           # --- Downdload data ---
+           wth_raw <- get_power(
+             community = "ag",
+             pars = params,
+             temporal_api = res,
+             lonlat = c(lon, lat),
+             dates = c(as.character(from), as.character(to))
+           )
+           wth_raw <- list(WEATHER_DAILY = wth_raw)
+         })
+  
+
+  # --- Map data to ICASA ---
+  if (!raw) {
+    wth_icasa <- convert_dataset(
+      dataset = wth_raw,
+      input_model = src,
+      output_model = "icasa"
+    )
+  }
+
+  # pars <- c("MESS_DATUM", lookup[["repo_var"]][!is.na(lookup[["repo_var"]])])
+  # 
+  # # Apply mapping
+  # dwd_ipt <- lapply(dwd_ipt, function(ls) {
+  #   lapply(ls, function(df){
+  #     common_vars <- intersect(pars, names(df))
+  #     df[, common_vars, drop = FALSE]
+  #   })
+  # })
+  # 
+  # dwd_trans <- lapply(dwd_ipt, function(ls){
+  #   lapply(ls, function(df) data <- format_weather(df, lookup = lookup))
+  # })
+  # 
+  # dwd_out <- lapply(dwd_trans, function(ls){
+  #   Reduce(function(x, y) merge(x, y, by = intersect(names(x), names(y)), all = TRUE), ls)
+  # })
+  # 
+  # 
+  # # Impute missing data -----------------------------------------------------
+  # 
+  # dwd_out <- lapply(dwd_out, function(df){
+  #   if (anyNA(df)) {
+  #     
+  #     col_order <- colnames(df)
+  #     
+  #     df <- impute_weather(df, na.rm = TRUE, rule = 2)
+  #     #df <- df %>% select(all_of(col_order))
+  #   }
+  #   return(df)
+  # })
+  # 
+  # # Calculate summary data for weather data header
+  # TAV <- lapply(dwd_out, function(df){
+  #   df %>% summarise(TAV = mean((TMAX + TMIN)/2, na.rm = TRUE)) %>% pull(TAV)
+  # })
+  # metadata <- map2(metadata, TAV, ~cbind(.x, TAV = .y))
+  # 
+  # AMP <- lapply(dwd_out, function(df){
+  #   df %>%
+  #     mutate(mo = month(W_DATE)) %>%
+  #     group_by(mo) %>%
+  #     summarise(mo_TAV = mean((TMAX + TMIN)/2, na.rm = TRUE)) %>%
+  #     summarise(AMP = (max(mo_TAV)-min(mo_TAV))/2) %>%
+  #     pull(AMP)
+  # })
+  # metadata <- map2(metadata, AMP, ~cbind(.x, AMP = .y))
+  # 
+  # 
+  # # Bind all years in a single dataframe
+  # dwd_out <- lapply(dwd_out, function(df){
+  #   df %>%
+  #     mutate(Year = year(W_DATE)) %>%  # add year column
+  #     relocate(Year, .before = everything())
+  # })
+  # 
+  # all_cols <- unique(unlist(lapply(dwd_out, colnames)))
+  # 
+  # for (i in seq_along(dwd_out)) {
+  #   missing_cols <- setdiff(all_cols, names(dwd_out[[i]]))
+  #   for (j in missing_cols) {
+  #     dwd_out[[i]][[j]] <- NA
+  #   }
+  # }
+  # 
+  # dwd_out <- lapply(dwd_out, function(x) x[, all_cols])
+  # dwd_out_df <- do.call(rbind, dwd_out)
+  # row.names(dwd_out_df) <- NULL
+
+  return(wth_icasa)
 }
