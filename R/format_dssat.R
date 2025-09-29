@@ -217,7 +217,7 @@ format_table <- function(df, template) {
 #' 
 
 build_filex <- function(management_data, title = NULL, site_code = NA_character_) {
-
+  
   # Apply the template format to each section
   sec_nms <- sort(names(management_data))
   filex <- mapply(format_table, management_data[sec_nms], FILEX_template[sec_nms], SIMPLIFY = FALSE)
@@ -470,13 +470,10 @@ build_wth <- function(weather_data) {
 #' @importFrom purrr walk
 #' 
 
-write_dssat <- function(ls, sol_append = TRUE, path = getwd()) {
+write_dssat <- function(ls, sol_append = TRUE) {
   
-  # temp workaround for date formatting issue with
-  # DSSAT::write_wth (open an issue on GitHub)
-  write_wth2 <- function(wth, file_name) {
-    write_wth(wth = wth, file_name = file_name, force_std_fmt = FALSE)
-  }
+  # Note: workaround for date and header formatting issue with base DSSAT package for write_wth
+  # Use forked DSSAT as original writes faulty wth files (TODO: open an issue on GitHub)
   
   # Write functions (from DSSAT package)
   write_funs <- list(
@@ -484,26 +481,27 @@ write_dssat <- function(ls, sol_append = TRUE, path = getwd()) {
     filea = write_filea,
     filet = write_filet,
     filesol = write_sol,
-    filewth = write_wth2
+    filewth = write_wth
   )
-  
+
+  # trouble shoot
   walk(names(write_funs), ~{
     if (!is.null(ls[[.]])) {
 
       # Add append = FALSE only for write_sol
       if (. == "filesol") {
-        write_funs[[.]](ls[[.]], file_name = paste0(path, "/", attr(ls[[.]], "file_name")), append = sol_append)
+        write_funs[[.]](ls[[.]], file_name = attr(ls[[.]], "file_name"), append = sol_append)
       } else if (. == "filewth") {
-        
+
         if (is.list(ls[[.]]) && all(sapply(ls[[.]], is.data.frame)) && length(ls[[.]]) > 1) {
-          lapply(ls[[.]], function(df) write_funs[[.]](df, file_name = paste0(path, "/", attr(df, "file_name"))))
+          lapply(ls[[.]], function(df) write_funs[[.]](df, file_name = attr(df, "file_name")))
         } else {
-          write_funs[[.]](ls[[.]], file_name = paste0(path, "/", attr(ls[[.]], "file_name")))
-        } 
+          write_funs[[.]](ls[[.]], file_name = attr(ls[[.]], "file_name"))
+        }
       } else {
-        write_funs[[.]](ls[[.]], file_name = paste0(path, "/", attr(ls[[.]], "file_name")))
+        write_funs[[.]](ls[[.]], file_name = attr(ls[[.]], "file_name"))
       }
-      
+
     } else if (. %in% c("filex", "filewth", "filesol")) {
       warning(paste0("Required ", ., " file is missing."))
     }
@@ -532,54 +530,128 @@ write_dssat <- function(ls, sol_append = TRUE, path = getwd()) {
 #' dssat_files <- compile_model_dataset(dataset, write = TRUE, path = "./dssat_inputs")
 #' }
 #'
+#' @importFrom dplyr filter pull
+#'
 #' @export
 #' 
 
-compile_model_dataset <-
-  function(dataset, framework = "dssat",
-           write = FALSE, sol_append = TRUE, path = getwd(), args = list()) {
-
-    # dataset <- duernast_dssat$TUDU1701
-    
-    
-    # Build management files
-    filex <- build_filex(dataset[["MANAGEMENT"]])
-    
-    # Build measured data files; facultative (handle nulls)
-    if(!is.null(dataset[["SUMMARY"]])) filea <- build_filea(dataset[["SUMMARY"]]) else filea <- NULL
-    if(!is.null(dataset[["TIME_SERIES"]])) filet <- build_filet(dataset[["TIME_SERIES"]]) else filet <- NULL
-    
-    # Build soil profile files; multiple profiles are combined in single DSSAT file
-    filesol <- build_sol(dataset[["SOIL"]])
-    
-    # BUild weather file; one individual file per calendar year
-    weather <- dataset[["WEATHER"]]
-    if (is.list(weather) && all(sapply(weather, is.data.frame)) && length(weather) > 1) {
-      filewth <- lapply(weather, build_wth)
-    } else {
-      filewth <- build_wth(weather)
+compile_model_dataset <- function(dataset, framework = "dssat", sol_append = TRUE, 
+                                  write = FALSE, write_in_dssat_dir = TRUE, path = getwd(),
+                                  args = list()) {
+  
+  # Build management files
+  filex <- build_filex(dataset[["MANAGEMENT"]])
+  
+  # Set default starting date as the first management date if not specified
+  # TODO: add controls and error handling for mandatory variables
+  if (is.na(filex$SIMULATION_CONTROLS$SDATE)){
+    all_dates <- na.omit(  # ignore warning
+      as.Date(
+          unlist(lapply(filex, function(df) {
+            df[grepl("DAT", colnames(df))]
+          }), use.names = FALSE),
+          format = "%y%j"))
+    min_date <- min(all_dates)
+    filex$SIMULATION_CONTROLS$SDATE <- format(min_date, "%y%j")
+  }
+  
+  # Build measured data files; facultative (handle nulls)
+  if(!is.null(dataset[["SUMMARY"]])) filea <- build_filea(dataset[["SUMMARY"]]) else filea <- NULL
+  if(!is.null(dataset[["TIME_SERIES"]])) filet <- build_filet(dataset[["TIME_SERIES"]]) else filet <- NULL
+  
+  # Build soil profile files; multiple profiles are combined in single DSSAT file
+  filesol <- build_sol(dataset[["SOIL"]])
+  
+  # Build weather file; one individual file per calendar year
+  weather <- dataset[["WEATHER"]]
+  if (is.list(weather) && all(sapply(weather, is.data.frame)) && length(weather) > 1) {
+    filewth <- lapply(weather, build_wth)
+  } else {
+    filewth <- build_wth(weather)
+  }
+  
+  # Set simulation controls (overwrite default with provided values)
+  for (name in names(args)) {
+    if (name %in% names(filex$SIMULATION_CONTROLS)) {
+      filex$SIMULATION_CONTROLS[[name]] <- args[[name]]
     }
+  }
+  
+  # TODO: Fetch cultivar file
+  #if(!is.null(file_cul)) file_cul <- build_cul(file_cul)  # TODO: fetch cultivar file
+  
+  # Output dataset
+  dataset <- list(filex = filex, filea = filea, filet = filet, filesol = filesol, filewth = filewth)
+  
+  # Write DSSAT files
+  if (write){
     
-    # Set simulation controls (overwrite default with provided values)
-    for (name in names(args)) {
-      if (name %in% names(filex$SIMULATION_CONTROLS)) {
-        filex$SIMULATION_CONTROLS[[name]] <- args[[name]]
+    # Format directory
+    if (write_in_dssat_dir) {
+      set_dssat_path <- function() {
+        dssat_dir_env <- Sys.getenv("DSSAT_CSM")
+        if (dssat_dir_env == "") {
+          options(DSSAT.CSM = "C:\\DSSAT48\\DSCSM048.EXE")
+          message("DSSAT CSM location not specified in global environment and set to the default location: C:\\DSSAT48\\DSCSM048.EXE")
+        } else {
+          dssat_exe <- Sys.getenv("DSSAT_CSM")
+          options(DSSAT.CSM = dssat_exe)
+          message(paste0("DSSAT CSM location set to:\n", dssat_exe))
+        }
+        return(invisible(unlist(options("DSSAT.CSM"))))
+      }
+      dssat_exe <- set_dssat_path()
+      
+      # Set subdirectory for each file
+      dssat_dir <- dirname(dssat_exe)
+      crop_id <- attr(dataset_dssat$MANAGEMENT, "metadata")$crop
+      crop_lookup <- get_dssat_terms(key = "crops")  #SUPPRESS WARNING
+      crop_name <- crop_lookup %>%
+        filter(`@CDE` == crop_id) %>%
+        pull(DESCRIPTION)
+      
+      exp_path <- file.path(dssat_dir, crop_name)
+      soil_path <- file.path(dssat_dir, "Soil")
+      weather_path <- file.path(dssat_dir, "Weather")
+      
+    } else {
+      
+      exp_path <- path
+      soil_path <- path
+      weather_path <- path
+    }
+    # Create dir lookup for each file type
+    dir_map <- list(
+      filex = exp_path,
+      filea = exp_path,
+      filet = exp_path,
+      filesol = soil_path,
+      filewth = weather_path
+    )
+    
+    # Prepend the target directory to file name attributes
+    prepend_path <- function(obj, dir) {
+      # Check that the object and its file_name attribute exist before modifying
+      if (!is.null(obj) && !is.null(attr(obj, "file_name"))) {
+        attr(obj, "file_name") <- file.path(dir, attr(obj, "file_name"))
+      }
+      return(obj)
+    }
+    for (name in names(dir_map)) {
+      if (!is.null(dataset[[name]])) {
+        current_obj <- dataset[[name]]
+        target_dir <- dir_map[[name]]
+        # Handle the special case where the data includes multiple weather files
+        if (name == "filewth" && is.list(current_obj) && !is.data.frame(current_obj)) {
+          dataset[[name]] <- lapply(current_obj, prepend_path, dir = target_dir)
+        } else {
+          dataset[[name]] <- prepend_path(current_obj, dir = target_dir)
+        }
       }
     }
-    
-    # TODO: Fetch cultivar file
-    #if(!is.null(file_cul)) file_cul <- build_cul(file_cul)  # TODO: fetch cultivar file
-    
-    # Output dataset
-    dataset <- list(filex = filex, filea = filea, filet = filet, filesol = filesol, filewth = filewth)
-    
-    # Write DSSAT files
-    if (write == TRUE){
-      # path = getwd()
-      # sol_append = FALSE
-      write_dssat(dataset, sol_append = sol_append, path)
-      message(paste("DSSAT data files written in", path))
-    }
-    
-    return(dataset)
+    write_dssat(dataset, sol_append = sol_append)
+    # message(paste("DSSAT data files written in", path))
   }
+  
+  return(dataset)
+}
