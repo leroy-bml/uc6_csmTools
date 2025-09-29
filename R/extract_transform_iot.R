@@ -237,8 +237,9 @@ patch_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","Da
 #' @importFrom httr GET add_headers content
 #' @importFrom jsonlite fromJSON
 #' @importFrom magrittr %>%
-#' @importFrom dplyr filter mutate pull rowwise select rename group_by_at summarise across all_of bind_rows distinct
-#' @importFrom tidyr separate
+#' @importFrom tidyr unnest unnest_wider separate
+#' @importFrom dplyr mutate select pull bind_rows across distinct filter
+#' @importFrom purrr map_dbl
 #' @importFrom tibble tibble
 #' 
 
@@ -337,7 +338,7 @@ locate_sta_datastreams <- function(url, token = NULL, var, lon, lat,  radius = 0
                  longitude = coords[1],
                  latitude = coords[2],
                  phenomenonTime = ds$phenomenonTime) %>%
-            tidyr::separate(phenomenonTime, into = c("start_date","end_date"), sep = "/") %>%
+            separate(phenomenonTime, into = c("start_date","end_date"), sep = "/") %>%
             mutate(across(start_date:end_date, ~ as.Date(.x)))
         })
       )
@@ -474,14 +475,15 @@ get_all_obs <- function(url, token) {
 #'
 #' @importFrom magrittr %>%
 #' @importFrom rlang !! :=
-#' @importFrom dplyr mutate select
+#' @importFrom dplyr mutate select bind_rows group_by summarise across where
 #' @importFrom lubridate ymd_hms
+#' @importFrom purrr map pluck
 #' 
 #' @export
 #' 
 
 extract_iot <- function(url, token = NULL, var = c("air_temperature","solar_radiation","rainfall"),
-                        lon, lat, radius, from, to, raw = FALSE) {
+                        lon, lat, radius, from, to, raw = FALSE, merge_ds = TRUE) {
   
   # --- Authentication ---
   if(is.null(token)) {
@@ -526,9 +528,8 @@ extract_iot <- function(url, token = NULL, var = c("air_temperature","solar_radi
   names(dataset) <- paste(ds_metadata$Thing.name, ds_metadata$Datastream.id, sep = "_DS")
 
   # --- Map data to ICASA ---
-  message("Mapping to ICASA ...")
-  
   if (!raw) {
+    message("Mapping to ICASA ...")
     dataset <- lapply(dataset, function(ls) {
       convert_dataset(
         dataset = ls,
@@ -540,7 +541,24 @@ extract_iot <- function(url, token = NULL, var = c("air_temperature","solar_radi
   
   # --- Group by device ---
   keys <- sub("_[^_]+$", "", names(dataset))
-  out <- split(dataset, keys)
+  aggregated_daily <- split(dataset, keys)
+  
+  # Merge same-attribute datastream per device
+  if (merge_ds) {
+    out_dataset <- map(aggregated_daily, function(station_data) {
+      
+      wth_daily <- map(station_data, ~ .x$WEATHER_DAILY)
+      
+      wth_daily_merged <- bind_rows(wth_daily) %>%
+        group_by(weather_date) %>%
+        summarise(across(
+          .cols = where(is.numeric),
+          .fns = ~mean(.x, na.rm = TRUE)
+        ))
+      WEATHER_METADATA <- pluck(station_data, 1, "WEATHER_METADATA")
+      list(WEATHER_METADATA = WEATHER_METADATA, WEATHER_DAILY = wth_daily_merged)
+    })
+  }
 
-  return(out)
+  return(out_dataset)
 }
