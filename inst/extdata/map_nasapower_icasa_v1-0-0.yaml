@@ -1,0 +1,95 @@
+# NASA POWER to ICASA data map (v1.0.0)
+
+# =================================================================
+# DEFINITIONS & ANCHORS
+# =================================================================
+
+# definitions:
+  
+
+
+# =================================================================
+# MAPPING RULES
+# =================================================================
+
+# ---- Phase 1: Data Transformation Rules ---
+
+rules:
+
+## --- WEATHER DAILY ---
+
+  - mapping_uid: '1'
+    notes: "Builds an ICASA STATION metadata (pre-aggregation) from Nasa POWER data"
+    source:
+      section: WEATHER_DAILY 
+    target:
+      section: WEATHER_METADATA
+    actions:
+      - type: add_column
+        output_header: institute_name
+        value: 'NASA POWER'
+      # If any 2m temperature column is present.
+      - type: add_column
+        output_header: temperature_sensor_ht
+        value: 2
+        condition_on_presence_of:
+          - T2M_MAX
+          - T2M_MIN
+          - T2MDEW
+      - type: add_column
+        output_header: ref_height_windsp_meas
+        value: 2
+        condition_on_presence_of:
+          - WS2M
+      - type: add_column
+        output_header: ref_height_weather_meas
+        value: 2
+        condition_on_presence_of:
+          - RH2M
+    select_final_columns:
+      weather_sta_longitude: LON
+      weather_sta_latitude: LAT
+      temperature_sensor_ht: temperature_sensor_ht
+      ref_height_windsp_meas: ref_height_windsp_meas
+      ref_height_weather_meas: ref_height_weather_meas
+
+      
+
+  - mapping_uid: '2'  # TODO: fix logic flaw
+    notes: "Builds an ICASA WEATHER table (pre-aggregation) from Nasa POWER data"
+    source:
+      section: WEATHER_DAILY
+    target:
+      section: WEATHER_DAILY
+    actions:
+      # Convert wind speed from m/s to km/d.
+      - type: rowwise_transform
+        output_header: WS2M
+        input_map:
+          x: WS2M
+        formula: "x * 86.4"
+    select_final_columns:
+      year: YEAR  #
+      weather_date: YYYYMMDD  # Date (YYYY-MM-DD)
+      dry_bulb_temper_avg_day: T2M
+      maximum_temperature: T2M_MAX  # Temperature at 2 Meters Maximum (oC)
+      minimum_temperature: T2M_MIN  # Temperature at 2 Meters Minimum (oC)
+      solar_radiation: ALLSKY_SFC_SW_DWN  # All Sky Surface Shortwave Downward Irradiance (MJ/m2/day)
+      precipitation: PRECTOTCORR  # Precipitation Corrected (mm/day)
+      realtive_humidity_avg: RH2M  # Relative Humidity at 2 Meters (%)
+      temperature_dewpoint: T2MDEW  # Dew/Frost Point at 2 Meters (oC)
+      PAR_photon_flux_density: ALLSKY_SFC_PAR_TOT  # All Sky Surface Total PAR (MJ/m2/day)
+      wind_speed_daily: WS2M  # Wind Speed at 2 Meters (m/s)
+      evaporation_pan: EVLAND  # Evaporation Land (mm/day)
+
+
+# -----------------------------------------------------------------
+# PHASE 2: Schema Application
+# -----------------------------------------------------------------
+
+  # - mapping_uid: '999'
+  #   actions:
+  #     - type: apply_formats
+  #       target_section: INITIAL_CONDITIONS
+  #       formats:
+  #         ICDAT: "%y%j"

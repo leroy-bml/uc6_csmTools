@@ -716,7 +716,7 @@ rules:
       O: option_for_crop_in_seq
       C: crop_component_number
       CU: genotype_level
-      FL: field_id   # REVIEW: fix as field_level in ICASA map post-processing
+      FL: field_level   # REVIEW: fix as field_level in ICASA map post-processing
       SA: soil_analysis_level
       IC: initial_conditions_level
       MP: planting_level

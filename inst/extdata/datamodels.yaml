@@ -39,8 +39,6 @@ bonares-lte_de:
     - BODENLABORWERTE
     - KLIMADATEN
     
-  # --- Properties for when this model is an OUTPUT ---
-  # 'mappings' would go here if you could map TO this model
   mappings: null 
 
 
@@ -86,6 +84,7 @@ icasa:
   # --- Properties for when this model is an OUTPUT ---
   mappings:
     "bonares-lte_de": "./inst/extdata/map_bonares_icasa_v1-2.yaml"
+    "nasa-power": "./inst/extdata/map_nasapower_icasa_v1-0-0.yaml"
     "user_sta": "./inst/extdata/map_sta_custom_icasa_v1-0-0.yaml"
 
 
@@ -101,6 +100,12 @@ dssat:
     year: "EXP_YEAR"
     treatment: "TRTNO"
     plot: "PLTID"
+  shared_tables:
+    - WEATHER_METADATA
+    - WEATHER_DAILY
+    - SOIL_META
+    - SOIL_GENERAL
+    - SOIL_LAYERS
   data_tables:
     - GENERAL
     - TREATMENTS
@@ -116,11 +121,6 @@ dssat:
     - TILLAGE
     - HARVEST
     - SIMULATION_CONTROLS
-    - WEATHER_METADATA
-    - WEATHER_DAILY
-    - SOIL_META
-    - SOIL_GENERAL
-    - SOIL_LAYERS
   dict_source: null
     
   # --- Properties for when this model is an OUTPUT ---
@@ -129,12 +129,26 @@ dssat:
     
 
 # ================================================================
+# NASA POWER
+# ================================================================
+
+nasa-power:
+  master_key: none
+  data_tables:
+    - WEATHER_DAILY
+    - WEATHER_HOURLY  # Add as mapping evolve
+  dict_source: null
+    
+  # --- Properties for when this model is an OUTPUT ---
+  # mappings:
+    
+
+# ================================================================
 # Custom SensorThings API data models
 # ================================================================
 
 user_sta:
-  master_key: "datastream"
-  key_source_table: "METADATA"
+  master_key: none
   design_keys:
     datastream: "Datastream.id"
   data_tables:
@@ -144,4 +158,4 @@ user_sta:
     
   # --- Properties for when this model is an OUTPUT ---
   # mappings:
-    
+

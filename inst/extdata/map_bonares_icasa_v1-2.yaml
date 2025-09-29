@@ -1043,7 +1043,7 @@ rules:
     target:
       section: WEATHER_DAILY
     actions:
-      # Convert solar radiation from W/m2 to MJ/m2/d.
+      # Convert daily solar radiation from W/m2 to MJ/m2/d.
       - type: rowwise_transform
         output_header: solar_radiation
         input_map:

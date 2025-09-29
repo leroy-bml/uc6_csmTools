@@ -23,14 +23,14 @@ rules:
     source:
       section: METADATA
     target:
-      section: STATION_METADATA
+      section: WEATHER_METADATA
     select_final_columns:
       weather_station_name: Thing.name
       weather_sta_longitude: longitude
       weather_sta_latitude: latitude
       weather_sta_start_date: start_date
       weather_sta_end_date: end_date
-      # ref_height_windsp_meas: sensor_height
+      # temperature_sensor_ht: sensor_height
       # ref_height_windsp_meas: sensor_height
       # institute_name
       # contact...
@@ -47,7 +47,7 @@ rules:
         output_header: solar_radiation
         input_map:
           x: solar_radiation
-        formula: "x * 0.0006"  # TODO: improve changing conversion factor based on time internal
+        formula: "x/1000000"  # TODO: for 10 min (600s) intervals; improve changing conversion factor based on time internal
       # Convert wind speed from m/s to km/d.
       - type: rowwise_transform
         output_header: atmospheric_wind_speed
@@ -61,6 +61,7 @@ rules:
           x: sunshine_duration
         formula: "x / 60"
     select_final_columns:
+      year: phenomenonYear
       weather_date: phenomenonTime
       maximum_temperature: air_temperature
       minimum_temperature: air_temperature
