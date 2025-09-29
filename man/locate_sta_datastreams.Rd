@@ -10,9 +10,9 @@ locate_sta_datastreams(
   var,
   lon,
   lat,
+  radius = 0,
   from,
   to,
-  radius = 0,
   ...
 )
 }

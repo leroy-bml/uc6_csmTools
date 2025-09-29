@@ -5,7 +5,8 @@
 \title{Run DSSAT Simulations from a Dataset and Return Output}
 \usage{
 run_simulations(
-  dataset,
+  filex_path,
+  treatments,
   framework = "dssat",
   dssat_dir = NULL,
   sim_dir = NULL,
@@ -13,8 +14,6 @@ run_simulations(
 )
 }
 \arguments{
-\item{dataset}{A list containing DSSAT input tables, including at least \code{X} (management), \code{A} (observed summary), \code{T} (observed time series), \code{WTH} (weather), \code{SOL} (soil), and \code{CUL} (cultivar).}
-
 \item{framework}{Character. Simulation framework to use (default: \code{"dssat"}).}
 
 \item{dssat_dir}{Character or NULL. Path to the DSSAT installation directory. If NULL, uses environment variable or default.}
@@ -22,6 +21,8 @@ run_simulations(
 \item{sim_dir}{Character or NULL. Directory for simulation input/output files. If NULL, uses DSSAT directory or default.}
 
 \item{args}{List. Additional simulation parameters (e.g., \code{TRTNO}, \code{RP}, \code{SQ}, \code{OP}, \code{CO}).}
+
+\item{dataset}{A list containing DSSAT input tables, including at least \code{X} (management), \code{A} (observed summary), \code{T} (observed time series), \code{WTH} (weather), \code{SOL} (soil), and \code{CUL} (cultivar).}
 }
 \value{
 A list containing:

@@ -4,37 +4,26 @@
 \alias{get_weather}
 \title{Wrapping function for downloading, formatting and imputing daily weather time series}
 \usage{
-get_weather(
-  years,
-  lon,
-  lat,
-  src = c("dwd", "nasa_power"),
-  map_to = c("icasa", "dssat"),
-  vars = c("air_temperature", "precipitation", "solar_radiation", "dewpoint",
-    "relative_humidity", "wind_speed"),
-  res = list("hourly", c("daily", "hourly"), c("daily", "hourly"), "hourly", "hourly",
-    "hourly"),
-  max_radius = c(50, 10, 50, 20, 20, 20)
-)
+get_weather(lon, lat, from, to, src, raw = TRUE, pars, res, max_radius = 50)
 }
 \arguments{
-\item{years}{a numeric vector specifying the target years}
-
 \item{lon}{a numeric; longitude (x coordinate) of the target location \link{degrees N/S, range 47:55}}
 
 \item{lat}{a numeric; latitude (y coordinate) of the target location \link{degrees E/W, range 6:15}}
 
 \item{src}{a character vector specifying the source repository (currently only "dwd" is supported).}
 
-\item{map_to}{a character vector specifying the target data standard (currently only "icasa" and "dssat" are supported)}
-
-\item{vars}{a character vector specifying the target weather variables.}
+\item{pars}{a character vector specifying the target weather variables.}
 
 \item{res}{a list of character vectors specifying the temporal resolution of the target weather variables. Length and
 indices should match the variable vector. A the function returns daily weather, only "hourly" and "daily" are supported.}
 
 \item{max_radius}{a numeric vector specifying the maximum distance around the location within which weather stations
 will be selected. Length and indices should match the variable and res vectors.}
+
+\item{years}{a numeric vector specifying the target years}
+
+\item{map_to}{a character vector specifying the target data standard (currently only "icasa" and "dssat" are supported)}
 }
 \value{
 a list of dataframes containing daily weather for the requested location, years and variables

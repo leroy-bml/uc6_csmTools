@@ -4,7 +4,7 @@
 \alias{find_stations}
 \title{Select closest DWD weather stations}
 \usage{
-find_stations(lat, lon, min_date, params)
+find_stations(lat, lon, min_date, max_date, params)
 }
 \arguments{
 \item{lat}{a numeric depicting the latitude (y component) of the target location \link{degrees N/S, range 47:55}}

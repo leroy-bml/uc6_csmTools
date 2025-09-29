@@ -7,8 +7,9 @@
 compile_model_dataset(
   dataset,
   framework = "dssat",
-  write = FALSE,
   sol_append = TRUE,
+  write = FALSE,
+  write_in_dssat_dir = TRUE,
   path = getwd(),
   args = list()
 )
@@ -18,9 +19,9 @@ compile_model_dataset(
 
 \item{framework}{Character. The modeling framework (default: \code{"dssat"}).}
 
-\item{write}{Logical. Whether to write the compiled files to disk. Default is \code{FALSE}.}
-
 \item{sol_append}{Logical. Whether to append to the soil file (\code{filesol}). Default is \code{TRUE}.}
+
+\item{write}{Logical. Whether to write the compiled files to disk. Default is \code{FALSE}.}
 
 \item{path}{Character. Directory path to write files to. Default is the current working directory.}
 

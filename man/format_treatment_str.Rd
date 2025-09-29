@@ -20,7 +20,7 @@ The function processes the "TREATMENTS" data frame by:
 \itemize{
 \item Removing any content after a pipe (\code{|}) in character columns.
 \item Trimming leading whitespace from all columns.
-\item Replacing \code{NA} values in level columns (\code{genotype_level_number} to \code{mulch_level}) with 0.
+\item Replacing \code{NA} values in level columns (\code{genotype_level} to \code{mulch_level}) with 0.
 \item Converting relevant columns to numeric type.
 \item Ensuring \code{simulation_control_level} is numeric and defaults to 1 if missing.
 }

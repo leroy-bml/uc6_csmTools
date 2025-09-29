@@ -10,9 +10,11 @@ extract_iot(
   var = c("air_temperature", "solar_radiation", "rainfall"),
   lon,
   lat,
+  radius,
   from,
   to,
-  format = "icasa"
+  raw = FALSE,
+  merge_ds = TRUE
 )
 }
 \arguments{

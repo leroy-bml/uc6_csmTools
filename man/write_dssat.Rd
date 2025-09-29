@@ -4,7 +4,7 @@
 \alias{write_dssat}
 \title{Write DSSAT Input Files from a List of Data Frames}
 \usage{
-write_dssat(ls, sol_append = TRUE, path = getwd())
+write_dssat(ls, sol_append = TRUE)
 }
 \arguments{
 \item{ls}{A named list of formatted DSSAT data frames, each with a \code{file_name} attribute (e.g., as produced by \code{build_sol}, \code{build_wth}, etc.).}

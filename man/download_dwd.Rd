@@ -5,7 +5,7 @@
 \title{Download DWD past weather in a specific year for a given set of variables}
 \usage{
 download_dwd(
-  vars = c("air_temperature", "precipitation", "solar_radiation", "dewpoint",
+  pars = c("air_temperature", "precipitation", "solar_radiation", "dewpoint",
     "relative_humidity", "wind_speed"),
   year,
   stations,
@@ -13,7 +13,7 @@ download_dwd(
 )
 }
 \arguments{
-\item{vars}{a character vector specifying the variable(s) to download}
+\item{pars}{a character vector specifying the variable(s) to download}
 
 \item{year}{an integer indicating the target year}
 
