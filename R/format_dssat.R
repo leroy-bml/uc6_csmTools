@@ -466,8 +466,9 @@ build_wth <- function(weather_data) {
 #' \dontrun{
 #' write_dssat(ls, sol_append = FALSE, path = \"./dssat_inputs\")
 #' }
-#'
+#' @importFrom DSSAT write_filex write_filea write_filet write_sol write_wth
 #' @importFrom purrr walk
+#' 
 #' 
 
 write_dssat <- function(ls, sol_append = TRUE) {

@@ -28,5 +28,4 @@ This is useful for exporting a complete set of DSSAT input files from a processe
 \dontrun{
 write_dssat(ls, sol_append = FALSE, path = \"./dssat_inputs\")
 }
-
 }
