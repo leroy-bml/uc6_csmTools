@@ -36,6 +36,7 @@ docs/
 /dev/
 # test data and manuscript files
 inst/extdata/test_data/
+inst/extdata/test_fixtures/
 /ms/
 # translation temp files
 po/*~
