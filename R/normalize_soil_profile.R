@@ -38,10 +38,10 @@
 # seq_nwheat <- c(5,10,20,30,40,50,60,70,90,110,130,150,170,190,210)  # default soil layer sequence for Nwheat modelk
 # TODO: compare base and given seq + aggregate?
 
-approx_profile <- function(data,
-                           depth_seq = c(5,10,20,30,40,50,60,70,90,110,130,150,170,190,210),
-                           method = "linear") {
-
+normalize_soil_profile <- function(data,
+                                   depth_seq = c(5,10,20,30,40,50,60,70,90,110,130,150,170,190,210),
+                                   method = "linear") {
+  
   depth_col <- which(colnames(data) == "SLB")
   headers <- data[, 1:depth_col]
   profile <- data[, depth_col:ncol(data)]  # profile profile starting with depth col in standard DSSAT format
@@ -86,7 +86,7 @@ approx_profile <- function(data,
     filter(SLB %in% depth_seq) %>%
     arrange(SLB) %>%
     select(colnames(data))
-
+  
   data_out <- collapse_cols(data_out, colnames(data_out[which(apply(data_out, 2, function(x) length(unique(x)))>1)]))
   
   out <- list()
