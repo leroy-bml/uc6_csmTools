@@ -978,7 +978,6 @@ apply_transformations <- function(dataset, data_model = c("icasa", "dssat"),
         list(
           MANAGEMENT = ls[!names(ls) %in% c("SUMMARY", "TIME_SERIES", "SOIL", "SOIL_HEADER") & !grepl("^WTH_", names(ls))],
           SOIL = ls[["SOIL"]],
-          SOIL_HEADER = ls[["SOIL_HEADER"]],
           SUMMARY = ls[["SUMMARY"]],
           TIME_SERIES = ls[["TIME_SERIES"]]
         ),
@@ -991,7 +990,7 @@ apply_transformations <- function(dataset, data_model = c("icasa", "dssat"),
         crop = unique(ls[["CULTIVARS"]]$CR)  # NOTE: should always be unique unless intercropping
       )
       
-      # Assign filenames to the respective weahter files
+      # Assign filenames to the respective weather files
       weather_map <- tibble(
         component = names(ls)[grepl("^WTH_DAILY_", names(ls))],
         file_base = wth_file_base)
@@ -1028,8 +1027,12 @@ apply_transformations <- function(dataset, data_model = c("icasa", "dssat"),
             NULL
           } else {
             # Otherwise attach corresponding attributes
-            attr(.x, "metadata") <- exp_metadata %>%
-              filter(component == .y)
+            attr(.x, "experiment") <- exp_metadata %>%
+              filter(component == .y) %>%
+              pull(exp_code)
+            attr(.x, "file_name") <- exp_metadata %>%
+              filter(component == .y) %>%
+              pull(filename)
             attr(.x, "comments") <- c(attr(.x, "comments"), signature)
             .x
           }
@@ -1040,8 +1043,8 @@ apply_transformations <- function(dataset, data_model = c("icasa", "dssat"),
       attr(data_fmt$MANAGEMENT$GENERAL, "exp_title") <- ls[["GENERAL"]]$EXP_NAME
       
       attr(data_fmt$SOIL, "title") <- soil_header$TITLE
-      attr(data_fmt$SOIL, "institute") <- soil_header$INST_NAME  # Note: should always be single row
-      attr(data_fmt$SOIL, "comments") <- unlist(soil_header$SL_METHOD_COMMENTS)
+      #attr(data_fmt$SOIL, "institute") <- soil_header$INST_NAME  # Note: should always be single row
+      attr(data_fmt$SOIL, "comments") <- c(attr(data_fmt$SOIL, "comments"), unlist(soil_header$SL_METHOD_COMMENTS))
       
       weather_data <- data_fmt[grepl("WTH_DAILY", names(data_fmt))]
       # Drop YEAR variable
@@ -1049,7 +1052,7 @@ apply_transformations <- function(dataset, data_model = c("icasa", "dssat"),
       weather_header <- lapply(weather_header, function(df) df %>% select(-YEAR))
       
       weather_data <- mapply(function(x, y){
-        attr(x, "station_metadata") <- y
+        attr(x, "GENERAL") <- y
         attr(x, "location") <- toupper(y$WST_SITE)
         x
       }, weather_data, weather_header, SIMPLIFY = FALSE)
@@ -1249,3 +1252,7 @@ split_dataset <- function(dataset, key, data_model,
 #   
 #   return(exp_design)
 # }
+
+# FILL TRT MATRIX 0 WITH NAS --> MOVE TO FORMAT MNGT
+# filex %>%  
+#   mutate(across(where(is.numeric), ~ifelse(is.na(.x), 0, .x)))  # exception is simulation controls
