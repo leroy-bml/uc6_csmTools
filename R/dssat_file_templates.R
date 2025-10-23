@@ -24,7 +24,7 @@ GENERAL_template$NOTES <- list(NA_character_)
 # Treatments
 TREATMENTS_template <-
   data.frame(
-    N = 1, R = 0, O = 0, C = 0, TNAME = "",
+    N = 1, R = 1, O = 0, C = 0, TNAME = "",
     CU = 1, FL = 1, SA = 0, IC = 0, MP = 1,
     MI = 0, MF = 0, MR = 0, MC = 0, MT = 0,
     ME = 0, MH = 0, SM = 1
@@ -342,6 +342,10 @@ WEATHER_template <-
 #   #TNAH = "%##6.0f", TWAH = "%##6.0f", `UN%H` = "%##6.0f", UNAM = "%##6.0f", UWAH = "%##6.0f", UYAH = "%##6.0f"
 # )
 
+SUMMARY_template <-
+  data.frame(
+    TRNO = NA_integer_
+  )
 
 v_fmt_filea <- c(
   TRNO = "%6.0f", ADAT = "%6s", BWAH = "%6.0f",
@@ -384,6 +388,12 @@ v_fmt_filea <- c(
 #   #UNAD = "%6s", UWAD = "%6s", UYAD = "%6s",
 #   `VN%D` = "%##6.0f", VNAD = "%##6.0f"
 # )
+
+TIME_SERIES_template <-
+  data.frame(
+    TRNO = NA_integer_,
+    DATE = NA_character_
+  )
 
 v_fmt_filet <- c(
   TRNO = "%6.0f", DATE = "%6s",
