@@ -34,6 +34,8 @@ Supported actions include:
 \item \strong{\code{coalesce_columns}}: Finds the first non-NA value across a set of columns.
 \item \strong{\code{rename_column} / \code{delete_column}}: Explicit. Basic column manipulation.
 \item \strong{\code{filter_rows}}: Subsets the data based on column presence.
-\item And others for creating or splitting columns.
+\item \strong{\code{split_and_map_text}}: Split column into multiple columns
+\item \strong{\code{add_column}}: (Conditionally) add a single-value attribute (column)
+\item \strong{\code{add_column_conditional}}: Add column and conditionally populate with set values
 }
 }
