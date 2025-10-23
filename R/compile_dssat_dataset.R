@@ -19,8 +19,7 @@
 #'   'SIMULATION_CONTROLS' and 'TREATMENTS' (e.g., \code{list(SDATE = "23001", R = 1)}).
 #'
 #' @details
-#' This function is a high-level wrapper that calls several internal helpers
-#' in sequence:
+#' This function is a high-level wrapper that calls several internal helpers in sequence:
 #' \enumerate{
 #'   \item \code{build_dssat_dataset} formats all raw data sections.
 #'   \item \code{set_dssat_controls} modifies the \code{MANAGEMENT} section
@@ -29,18 +28,18 @@
 #'     output file paths, and \code{write_dssat_dataset} writes the files to disk.
 #' }
 #'
-#' @return A named list containing the final, formatted, and parameterized
-#'   DSSAT dataset. The list names will be \code{"MANAGEMENT"}, \code{"SOIL"},
+#' @return A named list containing a simulation-ready, formatted, and parameterized DSSAT dataset.
+#'   The list names will be \code{"MANAGEMENT"}, \code{"SOIL"}, 
 #'   \code{"WEATHER"}, \code{"SUMMARY"}, and \code{"TIME_SERIES"}.
 #'
 #' @examples
 #' \dontrun{
 #' # Assuming 'my_raw_dataset' is a list of raw data
 #'
-#' # Just format and parameterize, without writing
+#' # Just format and parameterize (here, set start date and random seed), without writing
 #' formatted_data <- compile_dssat_dataset(
 #'   my_raw_dataset,
-#'   control_args = list(SDATE = "23001", NYERS = 1)
+#'   control_args = list(RSEED = 1234, SDATE = "23001")
 #' )
 #'
 #' # Format, parameterize, and write to a custom local directory
@@ -55,6 +54,7 @@
 #' # Format, parameterize, and write to standard DSSAT directories
 #' compile_dssat_dataset(
 #'   my_raw_dataset,
+#'   control_args = list(RSEED = 1234, SDATE = "23001"),
 #'   write = TRUE,
 #'   write_in_dssat_dir = TRUE
 #' )
@@ -63,9 +63,11 @@
 #' @export
 #'
 
-compile_dssat_dataset <- function(dataset, 
-                                  write = FALSE, sol_append = TRUE, write_in_dssat_dir = TRUE, path = getwd(),
-                                  control_args = list()) {
+compile_dssat_dataset <- function(
+    dataset,
+    write = FALSE, sol_append = TRUE, write_in_dssat_dir = TRUE, path = getwd(),
+    control_args = list()
+) {
   
   # Format all files to write-ready formats
   dataset_fmt <- build_dssat_dataset(dataset)
@@ -88,6 +90,6 @@ compile_dssat_dataset <- function(dataset,
     # Write the files
     write_dssat_dataset(dataset_fmt, sol_append = sol_append)
   }
-
+  
   return(dataset_fmt)
 }
