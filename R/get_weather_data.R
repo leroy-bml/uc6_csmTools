@@ -638,5 +638,5 @@ get_weather <- function(lon, lat, from, to, src, raw = TRUE, pars, res,
   # dwd_out_df <- do.call(rbind, dwd_out)
   # row.names(dwd_out_df) <- NULL
 
-  return(wth_icasa)
+  return(wth_raw)
 }
