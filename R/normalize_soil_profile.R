@@ -63,14 +63,14 @@ normalize_soil_profile <- function(data,
   plot_df <- std_profile %>%
     mutate(src = ifelse(SLB %in% setdiff(depth_seq, profile$SLB), "interpolated", "input")) %>%
     relocate(src, .before = SLB) %>%
-    gather("var", "value", 3:ncol(.))
+    gather("var", "value", 3:ncol(.)) %>%
+    arrange(var, -SLB)
   
-  plot <- ggplot(plot_df) +
-    geom_point(aes(x = value, y = -SLB, colour = src)) +
-    geom_line(aes(x = value, y = -SLB)) +
-    #geom_smooth(aes(x = SLB, y = value), method = "loess", formula = "y ~ x") +
+  plot <- ggplot(plot_df, aes(x = value, y = -SLB)) +
+    geom_point(aes(colour = src)) +
+    geom_path() +
     facet_wrap(~var, ncol = 4, scales = "free_x") +
-    theme_minimal()
+    theme_bw()
   
   data_out <- cbind(headers, profile_nas, profile_fct) %>%
     right_join(std_profile, by = "SLB") %>%
