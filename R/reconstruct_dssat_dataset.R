@@ -70,12 +70,12 @@ reconstruct_dssat_dataset <- function(dataset, data_nms) {
                   dplyr::any_of(grep("_NOTES|_COMMENTS", names(.), value = TRUE))) %>%
     dplyr::distinct()
   soil_data_out[["SOIL_GENERAL"]] <- data_nms$SOIL %>%
-    dplyr::select(file_name, EXP_ID, INST_NAME, PEDON, YEAR,
+    dplyr::select(EXP_ID, INST_NAME, PEDON, YEAR,
                   intersect(colnames(SOIL_GENERAL_template), colnames(data_nms$SOIL)),
                   dplyr::any_of(grep("_NOTES|_COMMENTS", names(.), value = TRUE))) %>%
     dplyr::distinct()
   soil_data_out[["SOIL_LAYERS"]] <- data_nms$SOIL %>%
-    dplyr::select(file_name, EXP_ID, INST_NAME, PEDON, YEAR,
+    dplyr::select(EXP_ID, INST_NAME, PEDON, YEAR,
                   intersect(colnames(SOIL_template), colnames(data_nms$SOIL)),
                   dplyr::any_of(grep("_NOTES|_COMMENTS", names(.), value = TRUE)))
   dataset_out[names(soil_data_out)] <- soil_data_out
