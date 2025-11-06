@@ -105,3 +105,32 @@ intersect_dfs <- function(list1, list2) {
   # Return the data frames from list1 that are in the intersection
   list1[which(str1 %in% common_strs)]
 }
+
+
+#' Reduce a list of related-data frames by joining them by their share columns
+#'
+#' Iteratively joins a list of data frames using any shared column names as keys.
+#'
+#' @param df_list A list of data frames to join.
+#' 
+#' @return A single, joined data frame.
+#' 
+#' @noRd
+#'
+
+reduce_by_join <- function(df_list) {
+  
+  .join_by_intersect <- function(.x, .y) {
+    join_keys <- intersect(names(.x), names(.y))
+    
+    if (length(join_keys) == 0) {
+      stop("Failed to reduce components. No common column names found across all input data frames.")
+    }
+    
+    dplyr::left_join(.x, .y, by = join_keys)
+  }
+  
+  df_list |>
+    purrr::compact() |>
+    purrr::reduce(.join_by_intersect)
+}

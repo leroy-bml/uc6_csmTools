@@ -14,11 +14,6 @@
 
 is_date <- function(x, dssat_fmt = FALSE, n_check = 5, threshold = 0.8) {
   
-  # DSSAT format handling
-  if (dssat_fmt && is.integer(x) && all(nchar(as.character(x)) == 5)) {
-    x <- format(as.Date(as.character(x), format = "%y%j"), "%Y-%m-%d")
-  }
-  
   # Date-like heuristics
   if (!is.character(x) && !is.factor(x) &&
       !lubridate::is.Date(x) && !lubridate::is.POSIXct(x) && !lubridate::is.POSIXlt(x)) {
@@ -27,7 +22,23 @@ is_date <- function(x, dssat_fmt = FALSE, n_check = 5, threshold = 0.8) {
   x <- as.character(x)
   x <- x[!is.na(x) & nzchar(x)] # remove NAs
   if (length(x) == 0) return(FALSE)
-  if (!any(grepl("[-/T]", x))) return(FALSE) # at least one date-like separator
+ 
+  # Check for standard separators
+  has_separators <- any(grepl("[-/T]", x))
+  # Check if it could be a DSSAT date (5 digits, all numeric)
+  is_dssat_string <- FALSE
+  if (dssat_fmt && !has_separators) {
+    x_non_na <- x[!is.na(x) & nzchar(x)]
+    if (length(x_non_na) > 0) {
+      # Check if all non-NA values are 5-digit numeric-like strings
+      is_dssat_string <- all(nchar(x_non_na) == 5) && 
+        !anyNA(suppressWarnings(as.numeric(x_non_na)))
+    }
+  }
+  if (!has_separators && !is_dssat_string) {
+    return(FALSE)
+  }
+  
   x <- head(x, n_check)
   
   formats <- c(
@@ -45,6 +56,9 @@ is_date <- function(x, dssat_fmt = FALSE, n_check = 5, threshold = 0.8) {
     "%Y-%m-%dT%H:%M:%OS", # ISO 8601 with fractional seconds
     "%Y-%m-%dT%H:%M:%OSZ" # ISO 8601 with Zulu time
   )
+  if (dssat_fmt) {
+    formats <- c(formats, "%y%j")
+  }
   
   n_valid <- 0
   for(fmt in formats) {

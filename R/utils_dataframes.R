@@ -22,7 +22,7 @@ substr_rows <- function(df1, df2) {
 #' Collapse specified columns into list-columns by group
 #'
 #' Groups a data frame by all columns *except* those specified in `cols`, then nests `cols` into
-#' list-columns.
+#' nested vector-columns.
 #'
 #' @param df A data frame.
 #' @param cols A character vector of column names to collapse.
@@ -38,7 +38,7 @@ collapse_cols <- function(df, cols) {
   
   df %>%
     dplyr::group_by_at(grp_cols) %>%
-    dplyr::summarise(dplyr::across(dplyr::all_of(cols), ~ list(.x)), .groups = "drop")
+    dplyr::summarise(dplyr::across(dplyr::all_of(cols), ~ list(unlist(.x))), .groups = "drop")
 }
 
 

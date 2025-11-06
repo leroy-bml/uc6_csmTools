@@ -19,47 +19,48 @@ find_common_prefix <- function(strings) {
 }
 
 
-#' Strictly abbreviate a string, handling non-ASCII
+#' Strictly abbreviate a string
 #'
-#' Uses `abbreviate(strict=TRUE)` and transliterates to ASCII if needed.
-#' Truncates if abbreviation is longer than `minlength`.
+#' Create a standard abbreviation; handles non-ASCII characters by transliterating them, then removes all punctuation
+#' (anything not alphanumeric or a space) before calling the base `abbreviate()` function.
 #'
 #' @param string Character vector to abbreviate.
-#' @param minlength Integer. The exact target length.
+#' @param minlength Integer. The minimum length of the abbreviation, passed to `abbreviate()`.
 #'
 #' @return A character vector of abbreviated strings.
-#' 
+#'
 #' @noRd
-#' 
+#'
 
 strict_abbreviate <- function(string, minlength = 2) {
   
   safe_abbreviate <- function(s) {
     warning_triggered <- FALSE
-    abbr <- NULL
     
+    # --- Check and correct for non-ASCII chars ---
     withCallingHandlers({
-      abbr <- abbreviate(s, minlength = minlength, strict = TRUE)
-    }, warning = function(w) {
-      if (grepl("non-ASCII", conditionMessage(w))) {
+      if (any(grepl("non-ASCII", iconv(s, "latin1", "ASCII")))) {
         warning_triggered <<- TRUE
-        invokeRestart("muffleWarning")
       }
+    }, warning = function(w) {
+      invokeRestart("muffleWarning")
     })
-    
     if (warning_triggered) {
       s <- stringi::stri_trans_general(s, "Latin-ASCII")
-      abbr <- abbreviate(s, minlength = minlength, strict = TRUE)
     }
     
-    if (nchar(abbr) > minlength) {
-      abbr <- substr(abbr, 1, minlength)
-    }
-    abbr
+    # Remove punctuation to correct 'abbreviate' behaviour
+    s_no_punct <- gsub("[^[:alnum:] ]", "", s)
+    
+    # Abbbreviate
+    result <- abbreviate(s_no_punct, minlength)
+    
+    return(result)
   }
   
+  # Apply to each element
   out <- ifelse(!is.na(string),
                 vapply(string, safe_abbreviate, character(1)),
-                "XX")
+                "XX") # Default for NA inputs
   return(out)
 }
