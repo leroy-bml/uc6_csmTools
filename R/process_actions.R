@@ -45,8 +45,9 @@ process_actions <- function(actions, input_df, dataset, ...) {
   for (action in actions) {
     
     # --- Main action dispatcher ---
-    switch(action$type,
+    output_df <- switch(action$type,
            
+           # --- Generic actions (from mapping_actions_generic.R) ---
            "lookup_and_add" = { 
              .action_lookup_and_add(action, output_df, dataset)
            },
@@ -95,12 +96,30 @@ process_actions <- function(actions, input_df, dataset, ...) {
              .action_filter_rows(action, output_df)
            },
            
+           "deduplicate" = {
+             .action_deduplicate(action, output_df)
+           },
+           
            "format_column" = {
              .action_format_column(action, output_df)
            },
            
            "summarise" = {
              .action_summarise(action, output_df)
+           },
+           
+           "replace_na" = {
+             .action_replace_na(action, output_df)
+           },
+           
+           'apply_function' = {
+             .action_apply_function(action, df_transformed)
+           },
+           
+           # --- Specific actions (from mapping_actions_specific.R) ---
+           # TODO: move to apply_function?
+           "define_icasa_management_id" = {
+             .action_define_icasa_management_id(action, output_df)
            },
            
            stop(paste("In rule '", mapping_uid, "', unknown or unhandled action type: ", action$type, sep = ""))
