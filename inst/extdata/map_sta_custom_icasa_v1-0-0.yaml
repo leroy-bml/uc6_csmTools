@@ -12,7 +12,9 @@
 # MAPPING RULES
 # =================================================================
 
-# ---- Phase 1: Data Transformation Rules ---
+# -----------------------------------------------------------------
+# PHASE 1: Data Transformation Rules
+# -----------------------------------------------------------------
 
 rules:
 
@@ -24,31 +26,15 @@ rules:
       section: METADATA
     target:
       section: WEATHER_METADATA
-    select_final_columns:
-      weather_station_name: Thing.name
-      weather_sta_longitude: longitude
-      weather_sta_latitude: latitude
-      weather_sta_start_date: start_date
-      weather_sta_end_date: end_date
-      # temperature_sensor_ht: sensor_height
-      # ref_height_windsp_meas: sensor_height
-      # institute_name
-      # contact...
 
   - mapping_uid: '2'
+    order: 1
     notes: "Builds an ICASA WEATHER table (pre-aggregation) from SensorThings API sensor data time series (user-defined properties)"
     source:
       section: DATASTREAM
     target:
-      section: WEATHER_DAILY
+      section: WEATHER_INTERVALS
     actions:
-      # Convert 10-min solar radiation from W/m2 to MJ/m2/d.
-      - type: rowwise_transform
-        output_header: solar_radiation
-        input_map:
-          x: solar_radiation
-        formula: "x/1000000"  # TODO: for 10 min (600s) intervals; improve changing conversion factor based on time internal
-      # Convert wind speed from m/s to km/d.
       - type: rowwise_transform
         output_header: atmospheric_wind_speed
         input_map:
@@ -60,20 +46,126 @@ rules:
         input_map:
           x: sunshine_duration
         formula: "x / 60"
-    select_final_columns:
-      year: phenomenonYear
-      weather_date: phenomenonTime
-      maximum_temperature: air_temperature
-      minimum_temperature: air_temperature
-      solar_radiation: solar_radiation
-      sunshine_duration: sunshine_duration
-      precipitation: volume_of_hydrological_precipitation
-      realtive_humidity_avg: relative_humidity  # Note: ICASA typo
-      temperature_dewpoint: dew_point
-      wind_speed_daily: atmospheric_wind_speed
-      # evapotranspiration_reference: evapotranspiration
-      # vapor_pressure: vapour_pressure_deficit
-      sensor_voltage: voltage
+      # CHECK weather affect the lag OR include output header
+      - type: format_column
+        formats:
+          phenomenonTime: { output_header: weather_date, format: "%Y-%m-%d" }
+      # Convert solar radiation from W/m2 to MJ/m2/d.
+      # 1- Sort by time to calculate intervals
+      - type: sort_rows
+        by_col: phenomenonTime
+      # 2- Calculate interval (in seconds) from the previous row.
+      - type: apply_function
+        function_name: calculate_time_lag
+        output_header: temp_interval_s
+        input_map: 
+          x: phenomenonTime
+        params:
+          units: 'secs'
+      # 3- Fill the 'NA' interval for the first row.
+      - type: apply_function
+        function_name: coalesce_with_adjacent
+        output_header: temp_interval_s # Overwrite the same column  # CHECK
+        input_map:
+          x: temp_interval_s
+        params:
+          direction: 'forward'
+      # 4- Calculate Joules for this interval (Energy = Power * Time)
+      # (W/m2) * s = (J/s/m2) * s = J/m2
+      - type: rowwise_transform
+        output_header: temp_joules_interval
+        input_map:
+          x: solar_radiation
+          y: temp_interval_s
+        formula: "x * y"
+
+  - mapping_uid: '3'
+    order: 2
+    notes: "Aggregates interval data to daily summaries and converts Joules to MJ."
+    source:
+      section: WEATHER_INTERVALS
+    target:
+      section: WEATHER_DAILY
+    actions:
+      - type: summarise
+        group_by: [experiment_ID, weather_date]  #!! check
+        summarise:
+          # 1. Sum all the interval Joules to get total Joules/day
+          # 2. Divide by 1,000,000 to get Megajoules/day
+          # 3. Rename the column to 'solar_radiation'
+          - fun: sum
+            columns: [temp_joules_interval]
+            output_header: total_joules_day
+            na_rm: true
+          - fun: max
+            columns: [air_temperature]
+            output_header: maximum_temperature
+            na_rm: true
+          - fun: min
+            columns: [air_temperature]
+            output_header: minimum_temperature
+            na_rm: true
+          - fun: sum
+            columns: [volume_of_hydrological_precipitation]
+            na_rm: true
+          - fun: sum
+            columns: [sunshine_duration]
+            na_rm: true
+          - fun: mean
+            columns: [relative_humidity]
+            na_rm: true
+          - fun: mean
+            columns: [atmospheric_wind_speed]
+            na_rm: true
+          - fun: mean
+            columns: [temperature_dewpoint]
+            na_rm: true
+          - fun: mean
+            columns: [sensor_voltage]
+            na_rm: true
+      - type: rowwise_transform
+        output_header: solar_radiation
+        input_map: { x: total_joules_day }
+        formula: "x / 1000000"
+
+
+# =================================================================
+# SELECT AND RENAME FINAL COLUMNS
+# =================================================================
+
+  - mapping_uid: '999'
+    notes: "Final schema application for all output tables."
+    actions:
+
+      - type: map_headers
+        target_section: WEATHER_METADATA
+        rename_map:
+          weather_station_name: Thing.name
+          weather_sta_longitude: longitude
+          weather_sta_latitude: latitude
+          weather_sta_start_date: start_date
+          weather_sta_end_date: end_date
+          # temperature_sensor_ht: sensor_height
+          # ref_height_windsp_meas: sensor_height
+          # institute_name
+          # contact...
+
+      - type: map_headers
+        target_section: WEATHER_DAILY
+        rename_map:
+          year: phenomenonYear
+          weather_date: phenomenonTime
+          maximum_temperature: maximum_temperature
+          minimum_temperature: minimum_temperature
+          solar_radiation: total_joules_day
+          sunshine_duration: sunshine_duration
+          precipitation: volume_of_hydrological_precipitation
+          realtive_humidity_avg: relative_humidity  # Note: ICASA typo
+          temperature_dewpoint: dew_point
+          wind_speed_daily: atmospheric_wind_speed
+          # evapotranspiration_reference: evapotranspiration
+          # vapor_pressure: vapour_pressure_deficit
+          sensor_voltage: voltage
 
 
 ## --- SOIL SENSORS
@@ -93,14 +185,3 @@ rules:
   #     # soil_temperature_by_layer: soil_temperature
   #     soil_water_by_layer: soil_water_content   # Review: not in ICASA as of 2025-09-25
 
-
-# -----------------------------------------------------------------
-# PHASE 2: Schema Application
-# -----------------------------------------------------------------
-
-  # - mapping_uid: '999'
-  #   actions:
-  #     - type: apply_formats
-  #       target_section: INITIAL_CONDITIONS
-  #       formats:
-  #         ICDAT: "%y%j"

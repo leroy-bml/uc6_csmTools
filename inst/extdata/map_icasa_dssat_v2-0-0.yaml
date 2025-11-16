@@ -1,4 +1,4 @@
-# ICASA to DSSAT data map (v1.1.0; verbose)
+# ICASA to DSSAT data map (v2.0.0; verbose)
 
 # =================================================================
 # DEFINITIONS & ANCHORS
@@ -606,8 +606,6 @@ definitions:
 # MAPPING RULES
 # =================================================================
 
-# ---- Phase 1: Data Transformation Rules ---
-
 rules:
 
 ## --- SECTION METADATA
@@ -620,15 +618,18 @@ rules:
       section: GENERAL
     actions:
       - type: lookup_and_add
-        lookup_data_source: { section: INSTITUTIONS }  # REVIEW: Only EXP_ID (EXP_YEAR?) --> no 'on_key'?
+        lookup_data_source: { section: INSTITUTIONS }  # REVIEW: Only EXP_ID (EXP_YEAR?)
+        on_key: { source_key: experiment_id, lookup_key: experiment_id }
         select_columns:
           institute_name: institute_name
       - type: lookup_and_add
-        lookup_data_source: { section: DOCUMENTS }  # REVIEW: Only EXP_ID (EXP_YEAR?) --> no 'on_key'?
+        lookup_data_source: { section: DOCUMENTS }  # REVIEW: Only EXP_ID (EXP_YEAR?)
+        on_key: { source_key: experiment_id, lookup_key: experiment_id }
         select_columns:
           digital_object_id: digital_object_id
       - type: lookup_and_add
         lookup_data_source: { section: PLOT_DETAILS }  # REVIEW: EXP_YEAR handling
+        on_key: { source_key: experiment_id, lookup_key: experiment_id }
         select_columns:
           experiment_year: experiment_year
           plot_area: plot_area
@@ -640,6 +641,7 @@ rules:
           plot_harvest_row_number: plot_harvest_row_number
           plot_harvest_length: plot_harvest_length
           plot_layout: plot_layout
+          # TODO: CHECK!
           temp_hm_plots:
             type: map_values
             input_map: { x: harvest_method_plot }
@@ -647,6 +649,7 @@ rules:
             default_value: *harvest_method_default
       - type: lookup_and_add
         lookup_data_source: { section: HARVESTS }
+        on_key: { source_key: experiment_id, lookup_key: experiment_id }
         select_columns:
           temp_hm_harvests:
             type: map_values
@@ -656,10 +659,11 @@ rules:
       - type: coalesce_columns
         output_header: harvest_method_plot
         input_map:
-          x: temp_hm_plots
-          y: temp_hm_harvests
+          v1: temp_hm_plots
+          v2: temp_hm_harvests
       - type: lookup_and_add
         lookup_data_source: { section: PERSONS }
+        on_key: { source_key: experiment_id, lookup_key: experiment_id }
         select_columns:
           researcher_first_name: researcher_first_name
           researcher_name_mi: researcher_name_mi
@@ -667,17 +671,17 @@ rules:
       - type: concatenate_columns
         output_header: people
         input_map:
-          first: researcher_first_name
-          mid: researcher_name_mi
-          last: researcher_last_name
+          v1: researcher_first_name
+          v2: researcher_name_mi
+          v3: researcher_last_name
         separator: " "
         on_missing: proceed
       # Concatenate misc. unmapped variables to notes
       - type: concatenate_columns
         output_header: notes
         input_map:
-          a: suite_notes
-          b: digital_object_id
+          v1: suite_notes
+          v2: digital_object_id
         separator: "; "
         on_missing: proceed
 
@@ -690,8 +694,7 @@ rules:
       section: TREATMENTS
     target:
       section: TREATMENTS
-    # REMOVE?
-
+      # CHECK: PASS THROUGH JUST WITH SECTION?
 
 
   ## --- SECTION GENOTYPES
@@ -727,10 +730,10 @@ rules:
       - type: concatenate_columns
         output_header: site
         input_map:
-          name: field_name
-          lev1: field_sub_sub_country
-          lev2: field_sub_country
-          lev3: field_country
+          v1: field_name
+          v2: field_sub_sub_country
+          v3: field_sub_country
+          v4: field_country
         separator: "; "
         on_missing: proceed
       - type: map_values
@@ -773,6 +776,9 @@ rules:
         output_header: residue_nature_prev_crop
         map: *crop_name_map
         default_value: *crop_name_default
+      - type: format_column
+        formats:
+          ICDAT: "%y%j"
 
 
   ## --- SECTION SOIL_ANALYSES
@@ -799,6 +805,9 @@ rules:
         output_header: soil_anal_meth_P_extract
         map: *soil_analysis_method_codes
         default_value: *soil_k_method_default
+      - type: format_column
+        formats:
+          SADAT: "%y%j"
 
 
   ## --- SECTION PLANTINGS
@@ -836,8 +845,12 @@ rules:
       - type: coalesce_columns
         output_header: temp_planting_material_merged
         input_map:
-          x: planting_material
-          y: temp_bedded_material
+          v1: planting_material
+          v2: temp_bedded_material
+      - type: format_column
+        formats:
+          PDATE: "%y%j"
+          EDATE: "%y%j"
 
 
   ## --- SECTION IRRIGATIONS
@@ -859,6 +872,9 @@ rules:
         output_header: method_auto_applications
         map: *irrigation_codes
         default_value: *irrigation_default
+      - type: format_column
+        formats:
+          IDATE: "%y%j"
 
 
   ## --- SECTION FERTILIZERS
@@ -915,11 +931,11 @@ rules:
       - type: coalesce_columns
         output_header: other_element_fert_code
         input_map:
-          e1: temp_S_code
-          e2: temp_Mg_code
-          e3: temp_B_code
-          e4: temp_Zn_code
-          e5: temp_Fe_code
+          v1: temp_S_code
+          v2: temp_Mg_code
+          v3: temp_B_code
+          v4: temp_Zn_code
+          v5: temp_Fe_code
       # Consolidated sequence to gather applied amount of additional elements in one column
       - type: rowwise_transform
         output_header: temp_S_amount
@@ -950,12 +966,15 @@ rules:
       - type: coalesce_columns
         output_header: other_element_fert_amount
         input_map:
-          a1: temp_S_amount
-          a2: temp_Mg_amount
-          a3: temp_B_amount
-          a4: temp_Zn_amount
-          a5: temp_Fe_amount
-          a0: other_elements_appl_fert
+          v1: temp_S_amount
+          v2: temp_Mg_amount
+          v3: temp_B_amount
+          v4: temp_Zn_amount
+          v5: temp_Fe_amount
+          v0: other_elements_appl_fert
+      - type: format_column
+        formats:
+          FDATE: "%y%j"
 
 
   ## --- SECTION ORGANIC_MATERIALS
@@ -977,7 +996,9 @@ rules:
         output_header: org_material_applic_meth
         map: *application_method_codes
         default_value: *application_method_default
-    select_final_columns:
+      - type: format_column
+        formats:
+          RDATE: "%y%j"
 
 
   ## --- SECTION CHEMICALS
@@ -1000,6 +1021,9 @@ rules:
         output_header: chemical_applic_method
         map: *application_method_codes
         default_value: *application_method_default
+      - type: format_column
+        formats:
+          CDATE: "%y%j"
   
 
   ## --- SECTION TILLAGE
@@ -1016,6 +1040,9 @@ rules:
         output_header: tillage_implement
         map: *tillage_implement_codes
         default_value: *tillage_implement_default
+      - type: format_column
+        formats:
+          TDATE: "%y%j"
 
 
   ## --- SECTION ENVIRON_MODIFICATIONS
@@ -1083,6 +1110,9 @@ rules:
           value: environ_modif_wind
         separator: ""
         on_missing: skip
+      - type: format_column
+        formats:
+          ODATE: "%y%j"
 
 
   ## --- SECTION HARVESTS
@@ -1104,6 +1134,9 @@ rules:
         output_header: harv_operat_size_categor
         map: *harvest_size_codes
         default_value: *harvest_size_default
+      - type: format_column
+        formats:
+          HDATE: "%y%j"
 
 
   ## --- SECTION SIMULATION_CONTROLS
@@ -1137,6 +1170,7 @@ rules:
     actions:
       - type: lookup_and_add
         lookup_data_source: { section: SOIL_META }
+        on_key: { source_key: experiment_id, lookup_key: experiment_id }
         select_columns:
           soil_classification: soil_classification
       - type: map_values
@@ -1189,6 +1223,10 @@ rules:
       section: WEATHER_DAILY
     target:
       section: WEATHER_DAILY
+    actions:
+      - type: format_column
+        formats:
+          DATE: "%y%j"
 
 
   ## --- SECTION SUMMARY
@@ -1205,6 +1243,13 @@ rules:
         output_header: harv_yield_harv_f_wt
         input_map: { x: harv_yield_harv_f_wt }
         formula: "x * 1000"
+      - type: format_column
+        formats:
+          ADAT: "%y%j"
+          MDAT: "%y%j"
+          HDAT: "%y%j"
+          EDAT: "%y%j"
+          TDAT: "%y%j"
 
 
   ## --- SECTION TIME_SERIES
@@ -1215,40 +1260,513 @@ rules:
       section: TIME_SERIES
     target:
       section: TIME_SERIES
+    actions:
+      - type: format_column
+        formats:
+          DATE: "%y%j"
 
 
-
-# -----------------------------------------------------------------
-# PHASE 2: Schema Application
-# -----------------------------------------------------------------
+# =================================================================
+# SELECTING AND RENAMING
+# =================================================================
 
   - mapping_uid: '999'
-    type: apply_formats
-    notes: 'Applies DSSAT date format across all date variables'
+    notes: "Final schema application for all output tables."
     actions:
-      - type: apply_formats
+
+      - type: map_headers
+        target_section: GENERAL
+        rename_map:
+          EXP_ID: experiment_id
+          EXP_NAME: name_of_experiment
+          EXP_YEAR: experiment_year
+          SITE: site
+          PEOPLE: people
+          INSTITUTION: institute_name
+          PAREA: plot_area
+          PRNO: plot_row_number
+          PLEN: plot_length
+          PLDR: plots_relative_to_drains
+          PLSP: plot_separation
+          HAREA: plot_harvest_area
+          HRNO: plot_harvest_row_number
+          HLEN: plot_harvest_length
+          HARM: harvest_method_plot
+          PLAY: plot_layout
+          NOTES: notes
+
+      - type: map_headers
+        target_section: TREATMENTS
+        rename_map:
+          EXP_ID: experiment_id
+          EXP_YEAR: experiment_year
+          'N': treatment_number
+          TNAME: treatment_name
+          R: sequence_number
+          O: option_for_crop_in_seq
+          C: crop_component_number
+          CU: genotype_level
+          FL: field_level   # REVIEW: fix as field_level in ICASA map post-processing
+          SA: soil_analysis_level
+          IC: initial_conditions_level
+          MP: planting_level
+          MI: irrigation_level
+          MF: fertilizer_level
+          MR: org_materials_applic_lev
+          MC: chemical_applic_level
+          MT: tillage_level
+          ME: environmental_modif_lev
+          MH: harvest_operations_level
+          SM: simulation_control_level
+          TR_NOTES: treatment_comments
+
+      - type: map_headers
+        target_section: CULTIVARS
+        rename_map:
+          EXP_ID: experiment_id
+          EXP_YEAR: experiment_year
+          CR: crop_id
+          C: genotype_level
+          CNAME: genotype_name
+          GENO_NOTES: genotype_notes
+
+      - type: map_headers
+        target_section: FIELDS
+        rename_map:
+          EXP_ID: experiment_id
+          EXP_YEAR: experiment_year
+          CR: crop_id
+          C: genotype_level
+          CNAME: genotype_name
+          'L': field_level
+          ID_FIELD: field_id
+          XCRD: field_longitude
+          YCRD: field_latitude
+          ELEV: field_elevation
+          FLSA: field_slope   # Note 2025-09-03: DSSAT equivalent Xbuild definition (FLSA) seems innacurate (doesnt take strings). Proper definition should be "Slope, degrees from horizontal"
+          SLEN: field_slope_length   # Note 2025-09-03: Unit not mentioned in DSSAT key, assumed identical to ICASA (m)
+          SLAS: field_slope_aspect,
+          FLST: field_surface_stones
+          AREA: field_area
+          FLOB: obstruction_to_sun
+          FLWR: field_length_width_ratio
+          FLHST: field_history
+          FHDUR: field_history_duration   # Note 2025-09-03: Unit not mentioned in DSSAT key, assumed identical to ICASA (year)
+          FLDT: drainage_type
+          FLDD: depth_to_drain
+          FLDS: drain_spacing
+          WSTA: weather_station_id
+          ID_SOIL: soil_profile_id
+          SLTX: field_soil_texture
+          FL_NOTES: field_notes
+
+      - type: map_headers
         target_section: INITIAL_CONDITIONS
-        formats:
-          ICDAT: "%y%j"
-      - type: apply_formats
+        rename_map:
+          EXP_ID: experiment_id
+          EXP_YEAR: experiment_year
+          C: initial_conditions_level
+          ICDAT: initial_conditions_date
+          # ICDAT: init_residu_measure_date   # Note 2025-09-04: potential conflict as formatting if 2 different dates
+          ICNAME: initial_conditions_name
+          PCR: residue_nature_prev_crop
+          ICRID: residue_incorpor_depth
+          ICRIP: residue_incorporated
+          ICRES: residue_above_ground_wt
+          ICREN: residue_N_conc
+          ICREP: residue_P_conc
+          ICRT: root_wt_previous_crop
+          ICND: nodule_wt_previous_crop
+          ICWD: initial_water_tabl_depth
+          ICRN: rhizobia_number
+          ICRE: rhizobia_effectiveness
+          ICBL: initial_soil_layer_base_depth
+          SH2O: initial_watr_conc_by_lyr
+          SNH4: initial_NH4_concen_layer
+          SNO3: initial_NO3_concen_layer
+          IC_NOTES: initial_conditions_notes
+          IC_LAYER_NOTES: initial_soil_comment
+
+      - type: map_headers
         target_section: SOIL_ANALYSIS
-        formats:
-          SADAT: "%y%j"
-      - type: apply_formats
+        rename_map:
+          EXP_ID: experiment_id
+          EXP_YEAR: experiment_year
+          SADAT: soil_analysis_date
+          'A': soil_analysis_level
+          SANAME: soil_analysis_name
+          SMHB: soil_analys_meth_pH_buff
+          SMPX: soil_anal_meth_P_extract
+          SMKE: soil_anal_meth_exch_K
+          SABL: soil_analysis_layer_base_depth
+          SADM: soil_bulk_dens_moist
+          SAOC: organic_carbon_conc
+          SASC: soil_stable_C
+          SANI: soil_N_conc_total
+          SAPHW: pH_in_water
+          SAPHB: pH_in_buffer
+          SAPX: phosphorus_extractable
+          SAKE: potassium_exchangeable
+          SA_NOTES: soil_analysis_notes
+          SA_LAYER_NOTES: soil_analysis_comment
+
+      - type: map_headers
         target_section: PLANTING_DETAILS
-        formats:
-          PDATE: "%y%j"
-          EDATE: "%y%j"
-      - type: apply_formats
-        target_section: IRRIGATIONS
-        formats:
-          IDATE: "%y%j"
-      - type: apply_formats
+        rename_map:
+          EXP_ID: experiment_id
+          EXP_YEAR: experiment_year
+          'P': planting_level
+          PDATE: planting_date
+          PLNAME: planting_level_name
+          EDATE: emergence_date
+          PPOP: plant_pop_at_planting
+          PPOE: plant_pop_at_emergence
+          PLME: temp_planting_material_merged
+          PLDS: planting_distribution
+          PLRS: row_spacing
+          PLSP: plant_spacing
+          PLRD: row_direction
+          PLPH: plants_per_hill
+          PLDP: planting_depth
+          PLWT: planting_material_weight
+          PAGE: transplant_age
+          PENV: nursery_env_pl_material
+          SPRL: length_sprout_material
+          PL_NOTES: planting_notes
+
+      - type: map_headers
+        target_section: IRRIGATION
+        rename_map:
+          EXP_ID: experiment_id
+          EXP_YEAR: experiment_year
+          'I': irrigation_level
+          IRNAME: irrigation_level_name
+          IDATE: irrigation_date
+          IROP: irrigation_operation
+          IRVAL: irrig_amount_depth
+          IAME: method_auto_applications
+          IAMT: auto_irrig_amnt_applied
+          EFIR: irrigation_efficiency
+          IOFF: auto_irrig_growth_stg
+          IDEP: auto_irrig_manag_depth
+          ITHR: autoirrig_threshold_H2O
+          IEPT: autoirrigation_end_H2O
+          IR_NOTES: irrigation_notes
+          IR_EVENT_NOTES: irrig_applic_comment
+
+      - type: map_headers
         target_section: FERTILIZERS
-        formats:
-          FDATE: "%y%j"
-      - type: apply_formats
-        target_section: ORGANIC_MATERIALS
-        formats:
-          RDATE: "%y%j"
+        rename_map:
+          EXP_ID: experiment_id
+          EXP_YEAR: experiment_year
+          'F': fertilizer_level
+          FERNAME: fertilizer_level_name
+          FDATE: fertilization_date
+          FMCD: fertilizer_material
+          FACD: fertilizer_applic_method
+          FDEP: application_depth_fert
+          FAMN: N_in_applied_fertilizer
+          FAMP: phosphorus_applied_fert
+          FAMK: fertilizer_K_applied
+          FAMC: Ca_in_applied_fertilizer
+          FOCD: other_element_fert_code
+          FAMO: other_element_fert_amount
+          FE_NOTES: fertilizer_notes
+          FE_EVENT_NOTES: fertiliz_applic_comment
+
+      - type: map_headers
+        target_section: RESIDUES
+        rename_map:
+          EXP_ID: experiment_id
+          EXP_YEAR: experiment_year
+          'R': org_materials_applic_lev
+          RENAME: org_material_applic_name
+          RDATE: org_material_applic_date
+          RCOD: organic_material
+          RMET: org_material_applic_meth
+          RDEP: org_material_appl_depth
+          RINP: org_material_incorp_perc
+          RAMT: org_material_applic_amnt
+          RESN: organic_material_N_conc
+          RESP: organic_material_P_conc
+          RESK: organic_material_K_conc
+          RE_NOTES: org_material_notes
+          RE_EVENT_NOTES: org_matter_comment
+
+      - type: map_headers
+        target_section: RESIDUES
+        rename_map:
+          EXP_ID: experiment_id
+          EXP_YEAR: experiment_year
+          'C': chemical_applic_level
+          CHNAME: chemical_applic_name
+          CDATE: chemical_applic_date
+          CHCOD: chemical_applic_material
+          CHME: chemical_applic_method
+          CHDEP: application_depth_chem
+          CHAMT: chemical_applic_amount
+          CHT: chemical_applic_target
+          CH_NOTES: chemical_applic_notes
+          CH_EVENT_NOTES: chemical_applic_comment
+
+      - type: map_headers
+        target_section: TILLAGE
+        rename_map:
+          EXP_ID: experiment_id
+          EXP_YEAR: experiment_year
+          'T': tillage_level
+          TNAME: tillage_operation_name   # NOTE 2025-09-03: same header as treatment_name, should be replaced by TINAME?
+          TDATE: tillage_date
+          TIMPL: tillage_implement
+          TDEP: tillage_operations_depth
+          TI_NOTES: tillage_treatment_notes
+          TI_EVENT_NOTES: till_op_comment
+
+      - type: map_headers
+        target_section: ENVIRONMENT_MODIFICATIONS
+        rename_map:
+          EXP_ID: experiment_id
+          EXP_YEAR: experiment_year
+          'E': environmental_modif_lev
+          ENVNAME: environ_modif_name
+          ODATE: environ_modificat_date
+          EDAY: daylength_adjustment
+          ERAD: radiation_adjustment
+          EMAX: maxtemp_adjustment
+          EMIN: mintemp_adjustment
+          ERAIN: precipitation_adjustment
+          ECO2: co2_adjustment
+          EDEW: dewpt_adjustment
+          EWIND: windspeed_adjustment
+          EM_NOTES: environ_comments
+          EM_EVENT_NOTES: environ_modif_comment
+
+      - type: map_headers
+        target_section: HARVEST
+        rename_map:
+          EXP_ID: experiment_id
+          EXP_YEAR: experiment_year
+          'H': harvest_operations_level
+          HNAME: harvest_ops_level_name
+          HDATE: harvest_operations_date
+          HSTG: harvest_stage
+          HCOM: harvest_operat_component
+          HPC: harv_operat_main_product
+          HBPC: harv_operation_byproduct
+          HSIZE: harv_operat_size_categor
+
+      - type: map_headers
+        target_section: SIMULATION_CONTROLS
+        rename_map:
+          EXP_ID: experiment_id
+          EXP_YEAR: experiment_year
+          SDATE: simulation_start_date
+          ENDAT: simulation_end_date
+          HA_NOTES: harvest_notes
+          HA_EVENT_NOTES: harvest_op_comments
+
+      - type: map_headers
+        target_section: SOIL_META
+        rename_map:
+          EXP_ID: experiment_id  #!!
+          PEDON: soil_profile_ID
+          SITE: soil_site
+          COUNTRY: soil_location_country
+          LAT: latitude_soil_profile
+          LONG: longitude_soil_profile
+          DESCRIPTION: soil_notes
+          DEPTH: soil_depth
+          SOURCE: soil_source
+          SCS FAMILY: soil_classification
+          TEXTURE: soil_texture
+          SL_METHODS_COMMENTS: soil_profile_methods  # TODO: Add soil profile notes!
+          SL_NOTES: soil_notes
+
+      - type: map_headers
+        target_section: SOIL_GENERAL
+        rename_map:
+          EXP_ID: experiment_id  #!!
+          PEDON: soil_profile_ID
+          SALB: soil_albedo
+          SLU1: soil_evaporation_limit
+          SLDR: drainage_rate_per_day
+          SLRO: runoff_curve_no_SCS
+          SCOM: soil_surface_color
+          SLNF: mineralization_factor
+          SMHB: pH_buffer_determin_meth
+          SMKE: potassium_determ_method
+          SMPX: phosphorus_determ_method
+          SLPF: soil_fertility_on_photo
+          SL_PROF_NOTES: soil_profile_notes
+
+      - type: map_headers
+        target_section: SOIL_LAYERS
+        rename_map:
+          EXP_ID: experiment_id  #!!
+          PEDON: soil_profile_ID
+          SLB: soil_layer_base_depth
+          SLMH: master_horizon
+          SLCL: soil_clay_fraction
+          SLSI: soil_silt_fraction
+          SLCF: soil_coarse_fraction
+          SLOC: soil_organic_C_perc_layr
+          SLHB: soil_pH_in_buffer
+          SLHW: soil_pH_in_water
+          SBDM: soil_bulk_density_moist
+          SLLL: soil_water_lower_limit
+          SDUL: soil_wat_drned_upper_lim
+          SSAT: soil_water_saturated
+          SSKS: sat_hydraul_conductivity
+          SCEC: cation_exchange_capacity
+          SLNI: soil_organic_N_conc
+          SADC: soil_adsorption_coef
+          SRGF: root_growth_factor_soil
+          SLPX: phosphorus_extractable
+          SLPT: phosphorus_total
+          SLPO: phosphorus_organic
+          SLPA: phosphorus_isotherm_A
+          SLPB: phosphorus_iostherm_B
+          SLKE: potassium_exchangeable
+          CACO3: CaCO3_content
+          SLCA: soil_calcium_conc
+          SLAL: soil_aluminum_conc
+          SLFE: soil_iron_conc
+          SLMG: soil_magnesium_conc
+          SLMN: soil_manganese_conc
+          SLNA: soil_sodium_conc
+          SLSU: soil_sulfur_conc
+          SLEC: electric_conductivity
+          SL_LAYER_NOTES: soil_layer_comment
+
+      - type: map_headers
+        target_section: WEATHER_METADATA
+        rename_map:
+          EXP_ID: experiment_id  #!!
+          INSI: weather_station_id  # REVIEW: WST_ID?
+          # WST_NAME: weather_station_name
+          LAT: weather_sta_latitude
+          LONG: weather_sta_longitude
+          ELEV: weather_sta_elevation
+          TAV: temperature_avg_year
+          AMP: temp_amplit_month_avg
+          REFHT: temperature_sensor_ht
+          WNDHT: ref_height_windsp_meas
+          WHT_NOTES: weather_notes
+
+      - type: map_headers
+        target_section: WEATHER_DAILY
+        rename_map:
+          EXP_ID: experiment_id  #!!
+          DATE: weather_date
+          SRAD: solar_radiation
+          # DAYL: daylength_sunrise_sunset  # In key but not in demo files?
+          TMAX: maximum_temperature
+          TMIN: minimum_temperature
+          DEWP: temperature_dewpoint  # TDEW?
+          RAIN: precipitation
+          CO2: CO2_conc_atmosphere_daily
+          WIND: wind_speed_daily
+          PAR: PAR_photon_flux_density
+          EVAP: evaporation_pan
+          RHUM: realtive_humidity_avg  # RHMND?
+          VAPR: vapor_pressure
+          WHT_DAILY_NOTES: weather_daily_comments
+
+      - type: map_headers
+        target_section: SUMMARY
+        rename_map:
+          EXP_ID: experiment_id
+          EXP_YEAR: experiment_year
+          TRNO: treatment_number
+          ADAT: anthesis_date
+          MDAT: physiologic_maturity_dat
+          HDAT: harvest_date
+          EDAT: emergence_date
+          TDAT: tuber_initiation_stage
+          HWAM: harvest_yld_matur_dry_wt
+          CWAM: tops_dry_weight_maturity
+          CWAH: tops_dry_weight_harvest
+          LAIX: leaf_area_index_maximum
+          HWUM: unit_dry_wt_harv_matur
+          CWAA: tops_dry_weight_anthesis
+          GWAM: grain_dry_wt_at_maturity
+          PWAM: pod_dry_weight_maturity
+          TWAH: tot_dry_wt_at_harvest
+          UWAH: tuber_dry_wt_at_harvest
+          CHTA: canopy_height_anthesis
+          UYAH: tuber_fresh_wt_harvest
+          'H#UM': harv_no_per_unit
+          'L#SM': leaf_no_per_stem_matur
+          'H#AM': harvest_no_at_maturity
+          'T#AM': tiller_number_maturity
+          HIAM: harvest_index_maturity
+          BWAH: byprod_removed_at_harv
+          HWAH: harvest_yield_harvest_dw
+          HWAHF: harv_yield_harv_f_wt
+          CNAA: tops_N_at_anthesis
+          CNAM: tops_N_at_maturity
+          GNAM: grain_N_at_maturity
+          'GN%M': grain_N_conc_maturity
+          RNAH: root_N_at_harvest
+          SNAM: stem_N_at_maturity
+          TNAH: tuber_stem_leaf_N_harv
+          UNAM: tuber_N_at_harvest
+          'UN%H': tuber_N_conc_harvest
+          SM_NOTES: observation_note
+
+      - type: map_headers
+        target_section: TIME_SERIES
+        rename_map:
+          EXP_ID: experiment_id
+          EXP_YEAR: experiment_year
+          TRNO: treatment_number
+          DATE: date_of_measurement
+          HWAD: harvest_yield_at_day_dw
+          CHTD: canopy_height
+          SLAD: specific_leaf_area
+          CDAD: dead_canopy_dry_wt
+          CWAD: tops_dry_weight
+          GWAD: grain_dry_weight
+          LDAD: dead_leaf_dry_weight
+          LWAD: leaf_dry_weight
+          PWAD: pod_dry_weight
+          PWDD: pod_detached_dry_weight
+          RWAD: root_dry_weight
+          SDAD: dead_stem_dry_weight
+          SHAD: shell_dry_weight
+          SWAD: stem_dry_weight
+          TWAD: tops_roots_storage_d_wt
+          UWAD: tuber_dry_weight
+          CWID: canopy_width
+          RDPD: root_depth
+          LAID: leaf_area_index
+          GWGD: grain_unit_dry_weight
+          UYAD: tuber_fresh_weight
+          'L#SD': leaf_number_per_stem
+          'G#AD': grain_number
+          'P#AD': pod_number
+          'T#AD': tiller_number
+          HIAD: harvest_index
+          HIPD: pod_harvest_index
+          'CN%D': tops_N_concentration
+          'GN%D': grain_N_conc
+          'LN%D': leaf_N_concentration
+          'RN%D': root_N_concentration
+          'SN%D': stem_N_conc
+          'VN%D': veg_stem_leaf_N_conc
+          CNAD: tops_N
+          NUPC: N_uptake
+          UNAD: tuber_N
+          VNAD: vegetative_N_content
+          GNAD: grain_N
+          LNAD: leaf_N
+          RNAD: root_N
+          SNAD: stem_N
+          'GP%D': grain_P_conc
+          'LP%D': leaf_P_concentration
+          'SP%D': stem_P_conc
+          GPAD: grain_P
+          LPAD: leaf_P
+          SPAD: stem_P
+          OTS_NOTES: obs_time_series_comment
 
