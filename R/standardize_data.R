@@ -9,7 +9,7 @@ standardize_data <- function(dataset, data_model = c("icasa", "dssat")) {
   switch(
     data_model,
     "icasa" = {
-      out <- .standardize_icasa_data(dataset)
+      out <- dataset
     },
     "dssat" = {
       out <- .standardize_dssat_data(dataset)
@@ -50,12 +50,4 @@ standardize_data <- function(dataset, data_model = c("icasa", "dssat")) {
   )
 
   return(dataset_split_fmt)
-}
-
-
-#-----
-
-# TODO
-.standardize_icasa_data <- function() {
-  print("TODO")
 }
