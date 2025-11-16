@@ -7,7 +7,7 @@
 compile_dssat_dataset(
   dataset,
   write = FALSE,
-  sol_append = TRUE,
+  sol_append = FALSE,
   write_in_dssat_dir = TRUE,
   path = getwd(),
   control_args = list()

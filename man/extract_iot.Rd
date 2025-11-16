@@ -14,7 +14,7 @@ extract_iot(
   from,
   to,
   raw = FALSE,
-  merge_ds = TRUE
+  aggregate = "median"
 )
 }
 \arguments{
@@ -43,7 +43,7 @@ Retrieves, merges, and formats observational data for specified variables, locat
 \details{
 This function orchestrates the retrieval of datastream metadata and observations for the specified variables, location, and time range. It merges the resulting data frames, optionally maps them to the ICASA format using \code{map_data}, and attaches metadata as an attribute. If \code{token} is NULL, it attempts to retrieve one using \code{get_kc_token}.
 
-The function uses the \strong{httr}, \strong{jsonlite}, \strong{dplyr}, \strong{lubridate}, and other helper functions such as \code{locate_sta_datastreams}, \code{get_all_obs}, and \code{map_data}.
+The function uses the \strong{httr}, \strong{jsonlite}, \strong{dplyr}, \strong{lubridate}, and other helper functions such as \code{locate_sta_datastreams}, \code{.get_all_obs}, and \code{map_data}.
 }
 \examples{
 \dontrun{

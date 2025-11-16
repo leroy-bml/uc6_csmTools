@@ -65,7 +65,7 @@
 
 compile_dssat_dataset <- function(
     dataset,
-    write = FALSE, sol_append = TRUE, write_in_dssat_dir = TRUE, path = getwd(),
+    write = FALSE, sol_append = FALSE, write_in_dssat_dir = TRUE, path = getwd(),
     control_args = list()
 ) {
   
