@@ -33,8 +33,10 @@
 run_simulations <- function(filex_path, treatments,
                             framework = "dssat", dssat_dir = NULL, sim_dir = NULL, args = list()) {
   
-  # Read file X
+  # Read file X and file A
+  filea_path <- gsub(".WHX", ".WHA", filex_path)  # HACK
   filex <- DSSAT::read_filex(filex_path)
+  filea <- DSSAT::read_filea(filea_path)
   
   # Specify the location of the DSSAT CSM executable (can be passed as environment variable) and the location of input/output files
   if (is.null(dssat_dir)) {
@@ -136,9 +138,9 @@ plot_output <- function(sim_output){
   
   # Observed data
   obs_summary_growth <- sim_output$SUMMARY %>%
-    filter(TRNO %in% 1:3)
-    # mutate(MDAT = as.POSIXct(as.Date(MDAT, format = "%y%j")),
-    #        ADAT = as.POSIXct(as.Date(ADAT, format = "%y%j")))
+    filter(TRNO %in% c(1,3,7)) %>%  # FIX
+    mutate(MDAT = as.POSIXct(as.Date(MDAT, format = "%y%j")),
+           HDAT = as.POSIXct(as.Date(HDAT, format = "%y%j")))
   
   # Simulated data
   sim_growth <- sim_output$plant_growth
@@ -150,7 +152,8 @@ plot_output <- function(sim_output){
     # Line plot for simulated data
     geom_line(aes(group = TRNO, colour = TRNO, linewidth = "Simulated")) +
     # Points for observed data
-    #geom_point(data = obs_summary_growth, aes(x = MDAT, y = HWAM, colour = as.factor(TRTNO), size = "Observed"), shape = 20) +
+    geom_point(data = obs_summary_growth,
+               aes(x = MDAT, y = HWAM, colour = as.factor(TRNO), size = "Observed"), shape = 20) +
     # General appearance
     scale_colour_manual(name = "Fertilization (kg[N]/ha)",
                         breaks = c("1","2","3","4"),
