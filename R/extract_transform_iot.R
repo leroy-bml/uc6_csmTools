@@ -483,7 +483,7 @@ get_all_obs <- function(url, token) {
 #' 
 
 extract_iot <- function(url, token = NULL, var = c("air_temperature","solar_radiation","rainfall"),
-                        lon, lat, radius, from, to, raw = FALSE, merge_ds = TRUE) {
+                        lon, lat, radius, from, to, raw = FALSE, aggregate = "median") {
   
   # --- Authentication ---
   if(is.null(token)) {
@@ -527,6 +527,14 @@ extract_iot <- function(url, token = NULL, var = c("air_temperature","solar_radi
   }
   names(dataset) <- paste(ds_metadata$Thing.name, ds_metadata$Datastream.id, sep = "_DS")
 
+
+  # --- Group by device ---
+  device_nms <- sub("_[^_]+$", "", names(dataset))
+  ds_device_list <- split(dataset, device_nms)
+  
+  ds_device_df <- .consolidate_datastreams(ds_device_list, aggregation = aggregate)
+  return(ds_device_df)  #tmp
+  
   # --- Map data to ICASA ---
   if (!raw) {
     message("Mapping to ICASA ...")
@@ -539,26 +547,100 @@ extract_iot <- function(url, token = NULL, var = c("air_temperature","solar_radi
     })
   }
   
-  # --- Group by device ---
-  keys <- sub("_[^_]+$", "", names(dataset))
-  aggregated_daily <- split(dataset, keys)
-  
-  # Merge same-attribute datastream per device
-  if (merge_ds) {
-    out_dataset <- map(aggregated_daily, function(station_data) {
-      
-      wth_daily <- map(station_data, ~ .x$WEATHER_DAILY)
-      
-      wth_daily_merged <- bind_rows(wth_daily) %>%
-        group_by(weather_date) %>%
-        summarise(across(
-          .cols = where(is.numeric),
-          .fns = ~mean(.x, na.rm = TRUE)
-        ))
-      WEATHER_METADATA <- pluck(station_data, 1, "WEATHER_METADATA")
-      list(WEATHER_METADATA = WEATHER_METADATA, WEATHER_DAILY = wth_daily_merged)
-    })
-  }
-
   return(out_dataset)
+}
+
+
+
+#' Process a nested list of device datastreams
+#'
+#' Cleans, aggregates, and joins datastreams for each device in a nested list.
+#'
+#' @param device_list The nested list.
+#' @param aggregation How to handle duplicate variable columns (e.g., two
+#'   'air_temperature' streams for one device).
+#'   - "mean" (default): Average the values.
+#'   - "median": Take the median of the values.
+#'   - "none": Keep all variables, appending .x, .y suffixes.
+#'
+#' @return A processed list with the same top-level names, but each element
+#'   contains only two items: `DATASTREAM` (a single, wide data frame) and
+#'   `METADATA` (a single, combined tibble).
+
+.consolidate_datastreams <- function(device_list, aggregation = "mean") {
+  
+  aggregation <- match.arg(aggregation, c("mean", "median", "none"))
+  
+  # Map aggregation functions
+  agg_func <- switch(aggregation,
+                     "mean" = mean,
+                     "median" = median)
+  
+  # Iterate over each device
+  data_processed <- map(device_list, ~ {
+
+    # --- Data cleaning ---
+    # Remove artefacts (duplicate time stamps)
+    data_clean <- map(.x, ~ {
+      df <- .x$DATASTREAM
+      value_col_name <- setdiff(names(df), "phenomenonTime")
+
+      df %>%
+        group_by(phenomenonTime) %>%
+        summarise(
+          !!value_col_name := mean(!!sym(value_col_name), na.rm = TRUE)
+        ) %>%
+        ungroup() %>%
+        mutate(
+          !!value_col_name := if_else(is.nan(!!sym(value_col_name)), NA_real_, !!sym(value_col_name))
+        )
+    })
+    
+    data_agg <- NULL
+    
+    # --- Aggregate same-named attributes ---
+    if (aggregation == "none") {
+      data_agg <- data_clean
+    } else {
+      
+      # Group dataframes by variable names
+      val_col_names <- map_chr(data_clean, ~ setdiff(names(.), "phenomenonTime"))
+      data_clean_grp <- split(data_clean, val_col_names)
+      
+      # Apply the selected aggregation function
+      data_agg <- map(data_clean_grp, ~ {
+        value_col_name <- setdiff(names(.x[[1]]), "phenomenonTime")
+        # Bind all dfs in the group, then group by time, and aggregate
+        bind_rows(.x) %>%
+          group_by(phenomenonTime) %>%
+          summarise(
+            !!value_col_name := agg_func(!!sym(value_col_name), na.rm = TRUE)
+          ) %>%
+          ungroup() %>%
+          mutate(
+            # Convert NaNs to NAs
+            !!value_col_name := if_else(is.nan(!!sym(value_col_name)), NA_real_, !!sym(value_col_name))
+          )
+      })
+    }
+    
+    # --- Join datastreams by device ---
+    joined_data <- if (length(data_agg) > 0) {
+      reduce(data_agg, full_join, by = "phenomenonTime")
+    } else {
+      NULL
+    }
+    
+    # --- Combine datastream metadata by device ---
+    metadata_clean <- map(.x, "METADATA")
+    combined_metadata <- bind_rows(metadata_clean)
+    
+    # --- Output
+    list(
+      DATASTREAM = joined_data,
+      METADATA = combined_metadata
+    )
+  })
+  
+  return(data_processed)
 }
