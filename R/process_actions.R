@@ -100,6 +100,10 @@ process_actions <- function(actions, input_df, dataset, ...) {
              .action_format_column(action, output_df)
            },
            
+           "convert_data_type" = {
+             .action_convert_data_type(action, output_df)
+           },
+           
            "summarise" = {
              .action_summarise(action, output_df)
            },
@@ -109,7 +113,7 @@ process_actions <- function(actions, input_df, dataset, ...) {
            },
            
            'apply_function' = {
-             .action_apply_function(action, df_transformed)
+             .action_apply_function(action, output_df)
            },
            
            # --- Specific actions (from mapping_actions_specific.R) ---

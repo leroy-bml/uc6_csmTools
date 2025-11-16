@@ -387,8 +387,7 @@
   # 1. Get all necessary input vectors.
   inputs <- .resolve_input_map(action$input_map, df)
   if (is.null(inputs) || length(inputs) == 0) {
-    # If any input column is not found, create an empty NA column and stop.
-    df[[action$output_header]] <- NA
+    #df[[action$output_header]] <- NA
     return(df)
   }
   
@@ -614,8 +613,7 @@
 
         # Set specific formatting logic for dates
         if (grepl("%", format_string)) {
-          # df[[col_name]] <- format(as.Date(df[[col_name]]), format_string)
-          df[[col_name]] <- format(
+          df[[output_col]] <- format(
             lubridate::parse_date_time(
               df[[col_name]],
               orders = c(
@@ -634,12 +632,69 @@
             ), format_string
           )
         } else {
-          df[[col_name]] <- sprintf(format_string, as.numeric(df[[col_name]]))
+          df[[output_col]] <- sprintf(format_string, as.numeric(df[[col_name]]))
         }
       }
     }
   }
   
+  return(df)
+}
+
+
+#' (Action) Convert the data type of one or more columns
+#'
+#' @noRd
+#' 
+
+.action_convert_data_type <- function(action, df) {
+  
+  col_map <- action$columns
+  if (is.null(col_map)) {
+    warning("Action 'convert_data_type' called without a 'columns' map. Skipping.", call. = FALSE)
+    return(df)
+  }
+  
+  for (col_name in names(col_map)) {
+    target_type <- col_map[[col_name]]
+    
+    resolved_name <- .resolve_column_name(col_name, names(df))
+    if (is.null(resolved_name)) {
+      warning(paste0("Column '", col_name, "' not found for data type conversion. Skipping."), call. = FALSE)
+      next
+    }
+    
+    # --- Type conversion logic ---
+    if (target_type == "datetime") {
+      df[[resolved_name]] <- parse_date_time(
+        df[[resolved_name]],
+        orders = c(
+          "Ymd HMS",  # 2025-11-16 14:45:30
+          "Ymd HM",   # 2025-11-16 14:45
+          "Ymd",      # 2025-11-16
+          "dmY HMS",  # 16-11-2025 14:45:30
+          "dmY HM",   # 16-11-2025 14:45
+          "mdY HMS",  # 11-16-2025 14:45:30
+          "mdY HM",   # 11-16-2025 14:45
+          "Y/m/d H:M:S", # 2025/11/16 14:45:30
+          "d/m/Y H:M:S", # 16/11/2025 14:45:30
+          "m/d/Y H:M:S"  # 11/16/2025 14:45:30
+          #"Ymd GMS z", # ISO 8601 with timezone
+          #"c"          # Full ISO 8601 format like "2025-11-16T14:45:30.123Z"
+        ),
+        tz = "UTC", # Always standardize to UTC
+        quiet = TRUE # Prevents printing messages for each parsed format
+      )
+      
+    } else if (target_type == "numeric") {
+      df[[resolved_name]] <- as.numeric(df[[resolved_name]])
+      
+    } else if (target_type == "character") {
+      df[[resolved_name]] <- as.character(df[[resolved_name]])
+    }
+    # Add other types like "integer", "factor" etc. as needed
+    
+  }
   return(df)
 }
 
@@ -678,8 +733,6 @@
             "mean" = rlang::expr(mean(!!rlang::sym(col), na.rm = !!op$na_rm %||% TRUE)),
             "first" = rlang::expr(dplyr::first(na.omit(!!rlang::sym(col))))
           )
-        } else {
-          cat("Debug - Column", col, "not found for operation", op$fun, "\n")
         }
       }
     } else if (op$fun == "count_rows") {
