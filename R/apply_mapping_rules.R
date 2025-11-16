@@ -33,20 +33,28 @@
       
       if (is.null(input_df)) next
       
+      # Merge input and output datasets
+      # Necesary for chained rules involving lookups
+      merged_data <- c(output_data, input_data)
+      # Remove duplicate names, keeping the one from output_data
+      merged_data <- merged_data[!duplicated(names(merged_data))]
+      
       # Execute data wrangling actions
       transformed_df <- process_actions(
+        # mapping_uid = rule$mapping_uid
         actions = rule$actions,
-        full_input_df = input_df,
-        full_dataset = input_data
+        input_df = input_df,
+        dataset = merged_data
+        # na_values?
       )
       if (nrow(transformed_df) == 0) next
       
       # Consolidate output table
       output_data <- .update_output_data(
-        rule$mapping_uid,
-        output_data,
-        rule$target$section,
-        transformed_df
+        mapping_uid = rule$mapping_uid,
+        output_data = output_data,
+        target_section = rule$target$section,
+        data_to_add = transformed_df
       )
     }
   }
@@ -80,7 +88,8 @@
         }
         # Only the selected and renamed columns form the final data frame
         final_df <- as_tibble(final_cols_list)
-        final_output_data[[target_section]] <- final_df
+        final_output_data[[target_section]] <- final_df %>%
+          distinct()
       }
     }
     # Here you could add logic to handle tables that didn't have a schema mapping
