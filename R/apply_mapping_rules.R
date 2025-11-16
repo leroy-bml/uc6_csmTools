@@ -1,7 +1,7 @@
 #' (Internal) Run Phase 2 Formatting Rules
 #' @noRd
 
-.apply_rules_wrapper <- function(dataset, rules) {
+.apply_mapping_rules <- function(input_data, rules, ...) {
   
   output_data <- list()
   schema_rule_uid <- '999' # Define the UID for the special schema rule
@@ -44,8 +44,8 @@
         # mapping_uid = rule$mapping_uid
         actions = rule$actions,
         input_df = input_df,
-        dataset = merged_data
-        # na_values?
+        dataset = merged_data,
+        ...
       )
       if (nrow(transformed_df) == 0) next
       
