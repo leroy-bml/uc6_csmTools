@@ -1,5 +1,5 @@
 #'
-#'
+#' @noRd
 #'
 
 standardize_data <- function(dataset, data_model = c("icasa", "dssat")) {
@@ -20,7 +20,7 @@ standardize_data <- function(dataset, data_model = c("icasa", "dssat")) {
 }
 
 #'
-#'
+#' @noRd
 #'
 
 # TODO TEST: whole routine should be robust to missing SOIL/WEATHER DATA
@@ -38,7 +38,7 @@ standardize_data <- function(dataset, data_model = c("icasa", "dssat")) {
   # Extract comments
   comments_split <- lapply(dataset_split, function(ls) {
     comments <- purrr::map(dataset, extract_dssat_notes)
-    keep(comments, ~ nrow(.x) > 0)
+    purrr::keep(comments, ~ nrow(.x) > 0)
   } )
   
   # Apply required object structure for file export with DSSAT library functions
@@ -53,9 +53,9 @@ standardize_data <- function(dataset, data_model = c("icasa", "dssat")) {
 }
 
 
-#'
-#'
-#'
+#-----
 
 # TODO
-.standardize_icasa_data <- function()
+.standardize_icasa_data <- function() {
+  print("TODO")
+}

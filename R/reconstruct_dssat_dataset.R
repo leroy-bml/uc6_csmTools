@@ -46,18 +46,18 @@ reconstruct_dssat_dataset <- function(dataset, data_nms) {
       data_nms$MANAGEMENT_CORE,
       by = c("EXP_ID", "L", "XCRD", "YCRD") # Your original keys
     ) %>%
-    dplyr::select(EXP_ID, dplyr::any_of(colnames(FIELDS_template)),
-                  dplyr::any_of(grep("_NOTES|_COMMENTS", names(.), value = TRUE)))
+    dplyr::select(EXP_ID, tidyr::any_of(colnames(FIELDS_template)),
+                  tidyr::any_of(grep("_NOTES|_COMMENTS", names(.), value = TRUE)))
 
   # --- Reconstruct Management tables ---
   mngt_data_out <- list()
   mngt_data_out[["GENERAL"]] <- data_nms$MANAGEMENT_CORE %>%
     dplyr::select(file_name,
-                  dplyr::any_of(union(colnames(dataset[["GENERAL"]]),
+                  tidyr::any_of(union(colnames(dataset[["GENERAL"]]),
                                       colnames(GENERAL_template))),
                   any_of(grep("_NOTES|_COMMENTS", names(.), value = TRUE)))
   mngt_data_out[["CULTIVARS"]] <- data_nms$MANAGEMENT_CORE %>%
-    dplyr::select(dplyr::any_of(union(colnames(dataset[["CULTIVARS"]]),
+    dplyr::select(tidyr::any_of(union(colnames(dataset[["CULTIVARS"]]),
                                       colnames(CULTIVARS_template))),
                   any_of(grep("_NOTES|_COMMENTS", names(.), value = TRUE)))
   dataset_out[names(mngt_data_out)] <- mngt_data_out
@@ -67,17 +67,17 @@ reconstruct_dssat_dataset <- function(dataset, data_nms) {
   soil_data_out[["SOIL_META"]] <- data_nms$SOIL %>%
     dplyr::select(file_name, EXP_ID, INST_NAME, PEDON, YEAR,
                   intersect(colnames(SOIL_META_template), colnames(data_nms$SOIL)),
-                  dplyr::any_of(grep("_NOTES|_COMMENTS", names(.), value = TRUE))) %>%
+                  tidyr::any_of(grep("_NOTES|_COMMENTS", names(.), value = TRUE))) %>%
     dplyr::distinct()
   soil_data_out[["SOIL_GENERAL"]] <- data_nms$SOIL %>%
     dplyr::select(EXP_ID, INST_NAME, PEDON, YEAR,
                   intersect(colnames(SOIL_GENERAL_template), colnames(data_nms$SOIL)),
-                  dplyr::any_of(grep("_NOTES|_COMMENTS", names(.), value = TRUE))) %>%
+                  tidyr::any_of(grep("_NOTES|_COMMENTS", names(.), value = TRUE))) %>%
     dplyr::distinct()
   soil_data_out[["SOIL_LAYERS"]] <- data_nms$SOIL %>%
     dplyr::select(EXP_ID, INST_NAME, PEDON, YEAR,
                   intersect(colnames(SOIL_template), colnames(data_nms$SOIL)),
-                  dplyr::any_of(grep("_NOTES|_COMMENTS", names(.), value = TRUE)))
+                  tidyr::any_of(grep("_NOTES|_COMMENTS", names(.), value = TRUE)))
   dataset_out[names(soil_data_out)] <- soil_data_out
 
   # --- Reconstruct Weather station tables ---
@@ -85,11 +85,11 @@ reconstruct_dssat_dataset <- function(dataset, data_nms) {
   wth_data_out[["WEATHER_DAILY"]] <- data_nms$WEATHER %>%
     dplyr::select(file_name, WST_NAME, EXP_ID, INSI, YEAR,
                   intersect(colnames(WEATHER_template), colnames(data_nms$WEATHER)),
-                  dplyr::any_of(grep("_NOTES|_COMMENTS", names(.), value = TRUE)))
+                  tidyr::any_of(grep("_NOTES|_COMMENTS", names(.), value = TRUE)))
   wth_data_out[["WEATHER_METADATA"]] <- data_nms$WEATHER %>%
     dplyr::select(file_name, WST_NAME, EXP_ID, INSI, YEAR,
                   intersect(colnames(WEATHER_header_template), colnames(data_nms$WEATHER)),
-                  dplyr::any_of(grep("_NOTES|_COMMENTS", names(.), value = TRUE))) %>%
+                  tidyr::any_of(grep("_NOTES|_COMMENTS", names(.), value = TRUE))) %>%
     dplyr::distinct()
   dataset_out[names(wth_data_out)] <- wth_data_out
 

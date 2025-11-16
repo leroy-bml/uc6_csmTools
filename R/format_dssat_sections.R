@@ -1,5 +1,7 @@
 #'
+#' @importFrom purrr compact
 #'
+#' @export
 #'
 
 format_dssat_sections <- function(dataset, comments, build = TRUE) {
@@ -72,7 +74,7 @@ format_dssat_sections <- function(dataset, comments, build = TRUE) {
 
 #
 #'
-#'
+#' @noRd
 #'
 
 .format_dssat_mngt <- function(mngt, comments) {

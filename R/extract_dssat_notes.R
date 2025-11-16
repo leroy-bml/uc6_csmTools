@@ -1,5 +1,5 @@
 #'
-#'
+#' @noRd
 #'
 
 extract_dssat_notes <- function(data) {
@@ -27,38 +27,38 @@ extract_dssat_notes <- function(data) {
 
   # If we get here, notes columns DO exist. Proceed as normal.
   data %>%
-    group_by(across(all_of(group_cols))) %>%
-    summarise(
-      across(
-        matches("_NOTES|_COMMENTS"),
+    dplyr::group_by(dplyr::across(tidyr::all_of(group_cols))) %>%
+    dplyr::summarise(
+      dplyr::across(
+        tidyr::matches("_NOTES|_COMMENTS"),
         ~ paste(unique(na.omit(.x[.x != ""])), collapse = "; "),
         .names = "{col}"
       ),
       .groups = "drop"
     ) %>%
-    pivot_longer(
-      cols = matches("_NOTES|_COMMENTS"), # This is now safe
+    tidyr::pivot_longer(
+      cols = tidyr::matches("_NOTES|_COMMENTS"), # This is now safe
       names_to = "Column",
       values_to = "Content"
     ) %>%
     # Split nested comments
-    mutate(
-      Content_List = if_else(
+    dplyr::mutate(
+      Content_List = dplyr::if_else(
         # Regex to fetch vector structures
-        str_detect(trimws(Content), "^c\\(.*\\)$"), 
+        stringr::str_detect(trimws(Content), "^c\\(.*\\)$"), 
         # Extract all quoted string
-        str_extract_all(Content, "\"(.*?)\""),
+        string::str_extract_all(Content, "\"(.*?)\""),
         list(Content)
       )
     ) %>%
-    unnest(Content_List) %>%
+    tidyr::unnest(Content_List) %>%
     # Overwrite original
-    mutate(
+    dplyr::mutate(
       # Remove leading/trailing quotes
-      Content = str_replace_all(Content_List, "^\"|\"$", ""),
+      Content = string::str_replace_all(Content_List, "^\"|\"$", ""),
       # Clean up any escaped quotes that are now literal
-      Content = str_replace_all(Content, "\\\\\"", "\"")
+      Content = string::str_replace_all(Content, "\\\\\"", "\"")
     ) %>%
-    select(-Content_List) %>%
-    filter(!is.na(Content) & Content != "")
+    dplyr::select(-Content_List) %>%
+    dplyr::filter(!is.na(Content) & Content != "")
 }

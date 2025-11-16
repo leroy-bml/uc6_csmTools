@@ -87,9 +87,9 @@
           }
         }
         # Only the selected and renamed columns form the final data frame
-        final_df <- as_tibble(final_cols_list)
+        final_df <- tibble::as_tibble(final_cols_list)
         final_output_data[[target_section]] <- final_df %>%
-          distinct()
+          dplyr::distinct()
       }
     }
     # Here you could add logic to handle tables that didn't have a schema mapping
@@ -119,7 +119,8 @@
 #' @param data_to_add The data frame to be added or merged.
 #'
 #' @return The `output_data` list with the target section updated.
-#' @importFrom dplyr full_join bind_cols
+#'
+#' @noRd
 #'
 
 .update_output_data <- function(mapping_uid, output_data, target_section, data_to_add) {
@@ -134,7 +135,7 @@
     # Intercept and muffle standard warning message
     output_data[[target_section]] <- withCallingHandlers(
       expr = {
-        full_join(existing_df, data_to_add, by = join_keys)
+        dplyr::full_join(existing_df, data_to_add, by = join_keys)
       },
       warning = function(w) {
         if (grepl("many-to-many relationship", w$message)) {
@@ -146,7 +147,7 @@
       }
     )
   } else {
-    output_data[[target_section]] <- bind_cols(existing_df, data_to_add)
+    output_data[[target_section]] <- dplyr::bind_cols(existing_df, data_to_add)
   }
   return(output_data)
 }

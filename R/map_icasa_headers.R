@@ -22,7 +22,7 @@
 map_icasa_headers <- function(dataset, header_type = "short", config_path = "./inst/extdata/datamodels.yaml") {
   
   # --- 1. Load ICASA Dictionary Configuration ---
-  config <- yaml::read_yaml(config_path)
+  config <- read_yaml(config_path)
   dict_source_config <- config$icasa$dict_source
   
   if (is.null(dict_source_config)) {

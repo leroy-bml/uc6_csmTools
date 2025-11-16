@@ -43,46 +43,44 @@
   # 2. Pass 1: Create global regime signatures and a preliminary ID
   df_regimes <- df %>%
     # Use only the relevant columns for the signature
-    select(all_of(c(plot_keys, regime_scope, treatment_key, order_col, event_cols))) %>%
+    dplyr::select(tidyr::all_of(c(plot_keys, regime_scope, treatment_key, order_col, event_cols))) %>%
     # Arrange events to ensure consistent order
-    arrange(across(all_of(c(plot_keys, order_col)))) %>%
-    mutate(across(all_of(c(event_cols, order_col)), as.character)) %>%
+    dplyr::arrange(dplyr::across(tidyr::all_of(c(plot_keys, order_col)))) %>%
+    dplyr::mutate(dplyr::across(tidyr::all_of(c(event_cols, order_col)), as.character)) %>%
     # Group by plot to create one signature per plot
-    group_by(across(all_of(plot_keys))) %>%
+    dplyr::group_by(dplyr::across(tidyr::all_of(plot_keys))) %>%
     # Create the signature by pasting all event data together
     # --- THIS IS THE FIX ---
     # Summarise the events into a signature.
     # The grouping keys (plot_keys) are automatically kept.
     # We only need to explicitly carry forward the non-grouping `treatment_key`.
-    summarise(
-      .regime_signature = paste(c_across(all_of(c(event_cols, order_col))), collapse = "|"),
+    dplyr::summarise(
+      .regime_signature = paste(c_across(tidyr::all_of(c(event_cols, order_col))), collapse = "|"),
       !!treatment_key := first(.data[[treatment_key]]),
       .groups = "drop"
     )
-    # distinct() is no longer needed as summarise already produces unique rows per group
-    
   
   # Create the preliminary global ID
   df_regimes <- df_regimes %>%
-    group_by(across(all_of(c(regime_scope, ".regime_signature")))) %>%
-    mutate(prelim_id = cur_group_id()) %>%
-    ungroup()
+    dplyr::group_by(dplyr::across(tidyr::all_of(c(regime_scope, ".regime_signature")))) %>%
+    dplyr::mutate(prelim_id = dplyr::cur_group_id()) %>%
+    dplyr::ungroup()
   
   # 3. Pass 2: Analyze the relationship between treatment and regime
   final_ids <- df_regimes %>%
-    group_by(across(all_of(regime_scope))) %>%
+    dplyr::group_by(dplyr::across(tidyr::all_of(regime_scope))) %>%
     # For each scope (e.g., experiment-year), perform the check
-    group_modify(~ {
+    dplyr::group_modify(~ {
       .x_scoped <- .x
       
       # Check for 1-to-1 mapping
       regime_to_treatment_map <- .x_scoped %>%
-        group_by(prelim_id) %>%
-        summarise(n_treatments = n_distinct(.data[[treatment_key]]))
+        dplyr::group_by(prelim_id) %>%
+        dplyr::summarise(n_treatments = dplyr::n_distinct(.data[[treatment_key]]))
       
       treatment_to_regime_map <- .x_scoped %>%
-        group_by(.data[[treatment_key]]) %>%
-        summarise(n_regimes = n_distinct(prelim_id))
+        dplyr::group_by(.data[[treatment_key]]) %>%
+        dplyr::summarise(n_regimes = dplyr::n_distinct(prelim_id))
       
       is_one_to_one <- max(regime_to_treatment_map$n_treatments) == 1 &&
         max(treatment_to_regime_map$n_regimes) == 1
@@ -91,26 +89,28 @@
       if (is_one_to_one) {
         # Scenario B: Management IS the treatment. Use the treatment ID.
         .x_scoped %>%
-          mutate(!!output_col := .data[[treatment_key]])
+          dplyr::mutate(!!output_col := .data[[treatment_key]])
       } else {
         # Scenario A: Management is baseline. Use the global preliminary ID.
         .x_scoped %>%
-          mutate(!!output_col := prelim_id)
+          dplyr::mutate(!!output_col := prelim_id)
       }
     }) %>%
-    ungroup()
+    dplyr::ungroup()
   
   # 4. Join the final, chosen ID back to the original dataframe
   # We only need the keys and the new ID column for the join
-  final_ids_to_join <- final_ids %>% select(all_of(c(plot_keys, output_col)))
+  final_ids_to_join <- final_ids %>%
+    dplyr::select(tidyr::all_of(c(plot_keys, output_col)))
   
   # Remove original unique event-plot identifier
   if (!is.null(event_key)) {
-    df <- df %>% select(-all_of(event_key))
+    df <- df %>%
+      dplyr::select(-tidyr::all_of(event_key))
   }
   
   result_df <- df %>%
-    left_join(final_ids_to_join, by = plot_keys)
+    dplyr::left_join(final_ids_to_join, by = plot_keys)
   
   return(result_df)
 }

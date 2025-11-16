@@ -1,4 +1,5 @@
 #'
+#' @noRd
 #'
 
 split_dssat_components <-  function(dataset,
@@ -22,14 +23,15 @@ split_dssat_components <-  function(dataset,
   
   # Drop NULL objects (sections not in input data)
   # TODO: test with missing soil/wth
-  components <- compact(components)
+  components <- purrr::compact(components)
   
   return(components)
 }
 
 
 #'
-#'
+#' @noRd
+#' 
 
 .extract_dssat_obs <- function(dataset, sec = c("SUMMARY", "TIME_SERIES")) {
   
@@ -41,7 +43,8 @@ split_dssat_components <-  function(dataset,
 
 
 #'
-#'
+#' @noRd
+#' 
 
 .extract_dssat_mngt <- function(dataset, merge = TRUE) {
   
@@ -67,10 +70,12 @@ split_dssat_components <-  function(dataset,
   # HACK! TODO: move to extract template??
   # Format provenance by nested attributes by experiment-year
   mngt_components[["GENERAL"]] <- mngt_components[["GENERAL"]] %>%
-    group_by(across(any_of(c("file_name", "EXP_ID", "EXP_YEAR")))) %>%
-    summarise(
-      across(
-        !any_of(c("EXP_ID", "EXP_YEAR")),
+    dplyr::group_by(
+      dplyr::across(
+        tidyr::any_of(c("file_name", "EXP_ID", "EXP_YEAR")))) %>%
+    dplyr::summarise(
+      dplyr::across(
+        !tidyr::any_of(c("EXP_ID", "EXP_YEAR")),
         ~paste(unique(na.omit(.x)), collapse = "; ")
       ),
       .groups = "drop"
@@ -85,7 +90,8 @@ split_dssat_components <-  function(dataset,
 
 
 #'
-#'
+#' @noRd
+#' 
 
 .extract_dssat_mngt_core <- function(dataset, merge = TRUE) {
   
@@ -96,10 +102,12 @@ split_dssat_components <-  function(dataset,
   # HACK! TODO: move to extract template??
   # Format provenance by nested attributes by experiment-year
   mngt_str_components[["GENERAL"]] <- mngt_str_components[["GENERAL"]] %>%
-    group_by(across(any_of(c("EXP_ID", "EXP_YEAR")))) %>%
-    summarise(
-      across(
-        !any_of(c("EXP_ID", "EXP_YEAR")),
+    dplyr::group_by(
+      dplyr::across(
+        tidyr::any_of(c("EXP_ID", "EXP_YEAR")))) %>%
+    dplyr::summarise(
+      dplyr::across(
+        !tidyr::any_of(c("EXP_ID", "EXP_YEAR")),
         ~paste(unique(na.omit(.x)), collapse = "; ")
       ),
       .groups = "drop"
@@ -114,7 +122,7 @@ split_dssat_components <-  function(dataset,
 
 
 #'
-#'
+#' @noRd
 #'
 
 .extract_dssat_soil <- function(dataset, merge = TRUE) {
@@ -138,6 +146,7 @@ split_dssat_components <-  function(dataset,
 }
 
 #'
+#' @noRd
 #'
 
 .extract_dssat_wth <- function(dataset, merge = TRUE) {

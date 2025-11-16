@@ -42,7 +42,7 @@
           
           # TODO: add more conditions!
           if (!is.null(filter_params$equals)) {
-            lookup_table <- filter(lookup_table, .data[[col_to_filter]] == filter_params$equals)
+            lookup_table <- dplyr::filter(lookup_table, .data[[col_to_filter]] == filter_params$equals)
           }
           
         } else {
@@ -59,7 +59,7 @@
           cols_to_check <- unlist(resolved_cols[!sapply(resolved_cols, is.null)])
           
           if (length(cols_to_check) > 0) {
-            lookup_table <- filter(lookup_table, if_any(all_of(cols_to_check), ~ !is.na(.)))
+            lookup_table <- dplyr::filter(lookup_table, dplyr::if_any(tidyr::all_of(cols_to_check), ~ !is.na(.)))
           } else {
             lookup_table <- lookup_table[0, ]
           }
@@ -78,8 +78,8 @@
                    lookup_section, "': ", paste(missing_cols, collapse = ", ")), call. = FALSE)
       }
       lookup_table <- lookup_table %>%
-        select(any_of(cols_to_keep)) %>%
-        distinct(across(all_of(lookup_keys)), .keep_all = TRUE)
+        dplyr::select(tidyr::any_of(cols_to_keep)) %>%
+        dplyr::distinct(dplyr::across(tidyr::all_of(lookup_keys)), .keep_all = TRUE)
 
       # Prevent duplicate columns by dropping any column from the lookup table
       # that already exists in the source table, unless it's a join key.
@@ -90,7 +90,7 @@
       # }
       
       # 4. Perform the join on the current state of the data.
-      joined_df <- left_join(
+      joined_df <- dplyr::left_join(
         df,
         lookup_table,
         by = stats::setNames(lookup_keys, source_keys)
@@ -104,26 +104,24 @@
           
           if (is.character(col_def)) {
             if (col_def %in% names(mutated_df)) {
-              mutated_df <- mutate(mutated_df, !!new_name := .data[[col_def]])
+              mutated_df <- dplyr::mutate(mutated_df, !!new_name := .data[[col_def]])
               
-              # --- NEW: Safely remove the original column after renaming ---
+              # Safely remove the original column after renaming
               # This prevents it from causing name collisions in subsequent joins.
-              # We check that the original name is not a key for this join.
               is_a_key <- col_def %in% source_keys || col_def %in% lookup_keys
               if (new_name != col_def && !is_a_key) {
-                mutated_df <- select(mutated_df, -all_of(col_def))
+                mutated_df <- dplyr::select(mutated_df, -tidyr::all_of(col_def))
               }
-              # --- END NEW ---
               
             } else {
-              mutated_df <- mutate(mutated_df, !!new_name := NA)
+              mutated_df <- dplyr::mutate(mutated_df, !!new_name := NA)
             }
             
           } else if (is.list(col_def) && !is.null(col_def$type)) {
             
             if (col_def$type == "static") {
               # Case B: Static value
-              mutated_df <- mutate(mutated_df, !!new_name := col_def$value)
+              mutated_df <- dplyr::mutate(mutated_df, !!new_name := col_def$value)
               
             } else if (col_def$type == "coalesce_map") {
               # Case C: Prioritized mapping
@@ -141,10 +139,10 @@
                   mapped_values <- unname(map_vector[source_vector])
                   
                   # Use the new values to fill in NAs from previous steps
-                  coalesced_vector <- coalesce(coalesced_vector, mapped_values)
+                  coalesced_vector <- dplyr::coalesce(coalesced_vector, mapped_values)
                 }
               }
-              mutated_df <- mutate(mutated_df, !!new_name := coalesced_vector)
+              mutated_df <- dplyr::mutate(mutated_df, !!new_name := coalesced_vector)
               
             } else if (col_def$type == "map_values") {
               # Case D: Nested value mapping
@@ -161,10 +159,10 @@
                   mapped_vector[unmapped_indices] <- col_def$default_value
                 }
                 
-                mutated_df <- mutate(mutated_df, !!new_name := mapped_vector)
+                mutated_df <- dplyr::mutate(mutated_df, !!new_name := mapped_vector)
               } else {
                 # If the input column for the map isn't found, create an NA column.
-                mutated_df <- mutate(mutated_df, !!new_name := NA)
+                mutated_df <- dplyr::mutate(mutated_df, !!new_name := NA)
               }
             }
           }
@@ -541,7 +539,7 @@
   
   # 3. Add the new columns to the working data frame.
   if (length(output_cols) > 0) {
-    df <- bind_cols(df, as_tibble(output_cols))
+    df <- dplyr::bind_cols(df, tibble::as_tibble(output_cols))
   }
   
   return(df)
@@ -581,7 +579,7 @@
     
     if (length(cols_to_check) > 0) {
       # Keep rows that have a non-NA value in AT LEAST ONE of the specified columns.
-      df <- filter(df, if_any(all_of(cols_to_check), ~ !is.na(.)))
+      df <- dplyr::filter(df, dplyr::if_any(tidyr::all_of(cols_to_check), ~ !is.na(.)))
     } else {
       # If NONE of the specified columns exist, the condition can never be met. Filter out all rows.
       df <- df[0, ]

@@ -27,10 +27,6 @@
 #' @param ... Optional arguments passed down from `convert_dataset`.
 #'
 #' @return A single data frame representing the result of all applied actions.
-#' 
-#' @importFrom dplyr mutate filter select left_join rename if_any all_of coalesce bind_cols
-#' @importFrom tibble as_tibble
-#' @importFrom rlang parse_expr
 #'
 #' @noRd
 #'
