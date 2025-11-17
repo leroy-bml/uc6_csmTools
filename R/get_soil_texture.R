@@ -6,9 +6,11 @@
 #' @param clay_frac Numeric vector of clay fraction (0-1).
 #' @param silt_frac Numeric vector of silt fraction (0-1).
 #' @param sand_frac Numeric vector of sand fraction (0-1).
+#' 
 #' @return A character vector of USDA soil texture classes.
 #'
-#'
+#' @noRd
+#' 
 
 # TODO: mappings to change coding?
 .get_texture_scalar <- function(clay_frac, silt_frac, sand_frac, system = "usda") {
@@ -62,6 +64,11 @@
   
   return(texture)
 }
+
+#'
+#'
+#' @export
+#' 
 
 # Vectorize the scalar function to accept vectors
 get_soil_texture <- Vectorize(

@@ -39,6 +39,7 @@
 #' @importFrom purrr map pluck
 #' 
 #' @export
+#' 
 
 extract_iot <- function(url, token = NULL, var = c("air_temperature","solar_radiation","rainfall"),
                         lon, lat, radius, from, to, raw = FALSE, aggregate = "median") {
@@ -141,6 +142,7 @@ extract_iot <- function(url, token = NULL, var = c("air_temperature","solar_radi
 #' @importFrom httr POST content add_headers verbose
 #' 
 #' @export
+#' 
 
 get_kc_token <- function(url, client_id, client_secret, username, password) {
   
@@ -344,6 +346,7 @@ patch_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","Da
 #' }
 #' 
 #' @noRd
+#' 
 
 .locate_sta_datastreams <- function(url, token = NULL, var, lon, lat,  radius = 0, from, to,...){
   
@@ -543,6 +546,8 @@ patch_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","Da
 #' )
 #' }
 #' 
+#' @noRd
+#' 
 
 .get_all_obs <- function(url, token) {
   
@@ -581,6 +586,9 @@ patch_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","Da
 #' @return A processed list with the same top-level names, but each element
 #'   contains only two items: `DATASTREAM` (a single, wide data frame) and
 #'   `METADATA` (a single, combined tibble).
+#'   
+#' @noRd
+#'   
 
 .consolidate_datastreams <- function(device_list, aggregation = "mean") {
   

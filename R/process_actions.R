@@ -184,6 +184,8 @@ process_actions <- function(actions, input_df, dataset, ...) {
 #'
 #' @return The character string of the first matching column name, or `NULL` if no match is found.
 #'
+#' @noRd
+#'
 
 .resolve_column_name <- function(name_spec, available_cols) {
   
