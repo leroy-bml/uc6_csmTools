@@ -46,10 +46,15 @@ rules:
         input_map:
           x: sunshine_duration
         formula: "x / 60"
-      # CHECK weather affect the lag OR include output header
+      # Create date variables for subsequent aggregations
+      - type: convert_data_type
+        columns:
+          phenomenonTime: "datetime"
       - type: format_column
         formats:
-          phenomenonTime: { output_header: weather_date, format: "%Y-%m-%d" }
+          phenomenonTime:
+            output_header: weather_date
+            format: "%Y-%m-%d"
       # Convert solar radiation from W/m2 to MJ/m2/d.
       # 1- Sort by time to calculate intervals
       - type: sort_rows
@@ -59,13 +64,13 @@ rules:
         function_name: calculate_time_lag
         output_header: temp_interval_s
         input_map: 
-          x: phenomenonTime
+          t: phenomenonTime
         params:
           units: 'secs'
       # 3- Fill the 'NA' interval for the first row.
       - type: apply_function
         function_name: coalesce_with_adjacent
-        output_header: temp_interval_s # Overwrite the same column  # CHECK
+        output_header: temp_interval_s  # Overwrite the same column  # CHECK
         input_map:
           x: temp_interval_s
         params:
@@ -75,9 +80,9 @@ rules:
       - type: rowwise_transform
         output_header: temp_joules_interval
         input_map:
-          x: solar_radiation
-          y: temp_interval_s
-        formula: "x * y"
+          v1: solar_radiation
+          v2: temp_interval_s
+        formula: "v1 * v2"
 
   - mapping_uid: '3'
     order: 2
@@ -88,11 +93,9 @@ rules:
       section: WEATHER_DAILY
     actions:
       - type: summarise
-        group_by: [experiment_ID, weather_date]  #!! check
+        group_by: [weather_date]  #!! TODO: add device_id if grouped in df
         summarise:
-          # 1. Sum all the interval Joules to get total Joules/day
-          # 2. Divide by 1,000,000 to get Megajoules/day
-          # 3. Rename the column to 'solar_radiation'
+          # Calculate total J/d
           - fun: sum
             columns: [temp_joules_interval]
             output_header: total_joules_day
@@ -123,6 +126,7 @@ rules:
           - fun: mean
             columns: [sensor_voltage]
             na_rm: true
+      # Convert J/m2/d to MJ/m2/d
       - type: rowwise_transform
         output_header: solar_radiation
         input_map: { x: total_joules_day }
@@ -153,11 +157,11 @@ rules:
       - type: map_headers
         target_section: WEATHER_DAILY
         rename_map:
-          year: phenomenonYear
-          weather_date: phenomenonTime
+          # year: phenomenonYear  #!!
+          weather_date: weather_date
           maximum_temperature: maximum_temperature
           minimum_temperature: minimum_temperature
-          solar_radiation: total_joules_day
+          solar_radiation: solar_radiation
           sunshine_duration: sunshine_duration
           precipitation: volume_of_hydrological_precipitation
           realtive_humidity_avg: relative_humidity  # Note: ICASA typo
