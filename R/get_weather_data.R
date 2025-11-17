@@ -556,14 +556,14 @@ get_weather <- function(lon, lat, from, to, src, raw = TRUE, pars, res,
              lonlat = c(lon, lat),
              dates = c(as.character(from), as.character(to))
            )
-           wth_raw <- list(WEATHER_DAILY = wth_raw)
+           wth_out <- list(WEATHER_DAILY = wth_raw)
          })
   
 
   # --- Map data to ICASA ---
   if (!raw) {
-    wth_icasa <- convert_dataset(
-      dataset = wth_raw,
+    wth_out <- convert_dataset(
+      dataset = wth_out,
       input_model = src,
       output_model = "icasa"
     )
@@ -638,5 +638,5 @@ get_weather <- function(lon, lat, from, to, src, raw = TRUE, pars, res,
   # dwd_out_df <- do.call(rbind, dwd_out)
   # row.names(dwd_out_df) <- NULL
 
-  return(wth_raw)
+  return(wth_out)
 }
