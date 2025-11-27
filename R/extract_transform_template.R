@@ -260,7 +260,7 @@ extract_template <- function(path = NULL, exp_id = NA_character_, headers = c("s
   dict <- wb_to_df(wb, sheet = "Dictionary", startRow = 1) %>%
     # Change provenance section to experiment (now that provenance info has been incorporated to SOIL and WEATHER metadata)
     #mutate(Sheet = ifelse(Sheet %in% c("PERSONS","INSTITUTIONS","DOCUMENTS"), "EXP_METADATA", Sheet)) %>%
-    filter(!var_order_custom == "-99" | is.na(var_order_custom))  # tmp: preserve NAs until measured data all sorted in template
+    filter(!var_order == "-99" | is.na(var_order))  # tmp: preserve NAs until measured data all sorted in template
   if(headers == "short") {
     dfs <- mapply(FUN = icasa_long_to_short,
                   df = dfs,
@@ -304,7 +304,7 @@ extract_template <- function(path = NULL, exp_id = NA_character_, headers = c("s
   # HACK tmp: rename resource_ID to
   merged_sec <- apply_recursive(merged_sec, function(df) {
     if ("resource_ID" %in% names(df)) {
-      names(df)[names(df) == "resource_ID"] <- "experiment_ID"
+      names(df)[names(df) == "resource_ID"] <- "experiment_id"
     }
     return(df)
   })
@@ -852,7 +852,7 @@ split_experiments <- function(ls, keep_empty = FALSE, keep_na_cols = FALSE) {
   if (all(grepl("^[A-Z_]+$", colnames(ls[[1]])))) {
     fcts <- c(exp = "EID", sol = "SOIL_SUBSET", wth = "WTH_SUBSET")
   } else {
-    fcts <- c(exp = "experiment_ID", sol = "soil_identifier", wth = "weather_sta_identifier")
+    fcts <- c(exp = "experiment_id", sol = "soil_identifier", wth = "weather_sta_identifier")
   }
   
   # Split into experiment-related and environment-related dataframes
