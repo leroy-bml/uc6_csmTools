@@ -4,7 +4,7 @@
 \alias{build_composite_data}
 \title{Build a Composite Data Frame from a List}
 \usage{
-build_composite_data(df_list, groups, action = "coalesce")
+build_composite_data(df_list, groups = NULL, action = "coalesce")
 }
 \arguments{
 \item{df_list}{A list of data frames to combine.}
