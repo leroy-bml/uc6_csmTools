@@ -36,6 +36,12 @@ calculate_initial_layers <- function(soil_profile, percent_available_water = NUL
     stop("Please provide a value for either percent_available_water or total_n_kgha.")
   }
   
+  # Unnest if profile in nested DSSAT write-ready format
+  nested_cols <- sapply(soil_profile, is.list)
+  if (any(nested_cols)) {
+    soil_profile <- unnest(soil_profile, cols = names(nested_cols[nested_cols]))
+  }
+  
   # Start with the original soil layer depths
   result <- data.frame(ICBL = soil_profile$SLB)
   

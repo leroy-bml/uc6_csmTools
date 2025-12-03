@@ -28,8 +28,9 @@
 #' @importFrom magrittr %>%
 #' @importFrom tidyselect everything
 #' @importFrom dplyr mutate relocate right_join filter arrange select across
-#' @importFrom tidyr gather
-#' @importFrom ggplot2 ggplot geom_point geom_line facet_wrap theme_minimal aes
+#' @importFrom tidyr gather replace_na
+#' @importFrom ggplot2 ggplot geom_point geom_path facet_wrap theme_minimal aes
+#' @importFrom DSSAT as_DSSAT_tbl
 #' 
 #' @export
 
@@ -41,6 +42,15 @@
 normalize_soil_profile <- function(data,
                                    depth_seq = c(5,10,20,30,40,50,60,70,90,110,130,150,170,190,210),
                                    method = "linear") {
+  
+  # Preserve additional attributes
+  attr <- attributes(data)[!names(attributes(data)) %in% c("names", "row.names", "class")]
+  
+  # Unnest if profile in nested DSSAT write-ready format
+  nested_cols <- sapply(data, is.list)
+  if (any(nested_cols)) {
+    data <- unnest(data, cols = names(nested_cols[nested_cols]))
+  }
   
   depth_col <- which(colnames(data) == "SLB")
   headers <- data[, 1:depth_col]
@@ -87,7 +97,18 @@ normalize_soil_profile <- function(data,
     arrange(SLB) %>%
     select(colnames(data))
   
-  data_out <- collapse_cols(data_out, colnames(data_out[which(apply(data_out, 2, function(x) length(unique(x)))>1)]))
+  # Return as nested format is input in nested format
+  if(any(nested_cols)) {
+    data_out <- collapse_cols(
+      data_out, colnames(data_out[which(apply(
+        data_out, 2, function(x) length(unique(x))
+        )>1)])
+      )
+    data_out <- as_DSSAT_tbl(data_out)
+  }
+  
+  # Append preserved attributes
+  attributes(data_out) <- c(attributes(data_out), attr)
   
   out <- list()
   out$data <- data_out

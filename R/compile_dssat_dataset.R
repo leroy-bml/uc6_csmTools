@@ -69,8 +69,25 @@ compile_dssat_dataset <- function(
     control_args = list()
 ) {
   
+  # Check if tables are in write-ready format
+  tbl_classes_nested <- apply_recursive(dataset, class)
+  tbl_classes <- list()
+  for (name in names(tbl_classes_nested)) {
+    current_element <- tbl_classes_nested[[name]]
+    if (is.list(current_element)) {
+      tbl_classes <- c(tbl_classes, current_element)
+    } else {
+      tbl_classes[[name]] <- current_element
+    }
+  }
+  is_built <- sapply(tbl_classes, function(x) "DSSAT_tbl" %in% x)
+  
   # Format all files to write-ready formats
-  dataset_fmt <- build_dssat_dataset(dataset)
+  if (all(is_built)) {
+    dataset_fmt <- dataset
+  } else {
+    dataset_fmt <- build_dssat_dataset(dataset)
+  }
   # TODO: handle cultivar file
   
   # Parameterize the simulation (overwrite default with provided values)
