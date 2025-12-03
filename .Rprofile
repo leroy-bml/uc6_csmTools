@@ -1,2 +1,2 @@
 source("renv/activate.R")
-options(error = traceback)
+options(error = NULL)
