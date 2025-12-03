@@ -30,20 +30,37 @@
 #' @export
 #' 
 
-build_composite_data <- function(df_list, groups, action = "coalesce") {
+build_composite_data <- function(df_list, groups = NULL, action = "coalesce") {
   
   combined_df <- df_list %>% reduce(bind_rows)
+  
   composite_df <- switch(action,
                          "coalesce" = {
-                           combined_df %>%
-                             group_by(across(any_of(groups))) %>%
-                             summarise(across(everything(), ~ first(na.omit(.x))), .groups = "drop")
+                           if (is.null(groups) || length(groups) == 0) {
+                             # No grouping: take first non-NA across entire dataset
+                             combined_df %>%
+                               summarise(across(everything(), ~ first(na.omit(.x))), .groups = "drop")
+                           } else {
+                             # Grouped coalesce (original behavior)
+                             combined_df %>%
+                               group_by(across(any_of(groups))) %>%
+                               summarise(across(everything(), ~ first(na.omit(.x))), .groups = "drop")
+                           }
                          },
                          "average" = {
-                           combined_df %>%
-                             group_by(across(any_of(groups))) %>%
-                             summarise(across(everything(), ~ mean(na.omit(.x))), .groups = "drop")
+                           if (is.null(groups) || length(groups) == 0) {
+                             # No grouping: average across entire dataset
+                             combined_df %>%
+                               summarise(across(everything(), ~ mean(na.omit(.x))), .groups = "drop")
+                           } else {
+                             # Grouped average (original behavior)
+                             combined_df %>%
+                               group_by(across(any_of(groups))) %>%
+                               summarise(across(everything(), ~ mean(na.omit(.x))), .groups = "drop")
+                           }
                          }
   )
+  
   return(composite_df)
 }
+
