@@ -16,8 +16,6 @@
 
 rules:
 
-## --- WEATHER DAILY ---
-
   - mapping_uid: '1'
     notes: "Builds an ICASA STATION metadata (pre-aggregation) from Nasa POWER data"
     source:
@@ -46,14 +44,6 @@ rules:
         value: 2
         condition_on_presence_of:
           - RH2M
-    select_final_columns:
-      weather_sta_longitude: LON
-      weather_sta_latitude: LAT
-      temperature_sensor_ht: temperature_sensor_ht
-      ref_height_windsp_meas: ref_height_windsp_meas
-      ref_height_weather_meas: ref_height_weather_meas
-
-      
 
   - mapping_uid: '2'  # TODO: fix logic flaw
     notes: "Builds an ICASA WEATHER table (pre-aggregation) from Nasa POWER data"
@@ -68,28 +58,41 @@ rules:
         input_map:
           x: WS2M
         formula: "x * 86.4"
-    select_final_columns:
-      year: YEAR  #
-      weather_date: YYYYMMDD  # Date (YYYY-MM-DD)
-      dry_bulb_temper_avg_day: T2M
-      maximum_temperature: T2M_MAX  # Temperature at 2 Meters Maximum (oC)
-      minimum_temperature: T2M_MIN  # Temperature at 2 Meters Minimum (oC)
-      solar_radiation: ALLSKY_SFC_SW_DWN  # All Sky Surface Shortwave Downward Irradiance (MJ/m2/day)
-      precipitation: PRECTOTCORR  # Precipitation Corrected (mm/day)
-      realtive_humidity_avg: RH2M  # Relative Humidity at 2 Meters (%)
-      temperature_dewpoint: T2MDEW  # Dew/Frost Point at 2 Meters (oC)
-      PAR_photon_flux_density: ALLSKY_SFC_PAR_TOT  # All Sky Surface Total PAR (MJ/m2/day)
-      wind_speed_daily: WS2M  # Wind Speed at 2 Meters (m/s)
-      evaporation_pan: EVLAND  # Evaporation Land (mm/day)
+      - type: convert_data_type
+        columns:
+          YYYYMMDD: "character"
 
 
-# -----------------------------------------------------------------
-# PHASE 2: Schema Application
-# -----------------------------------------------------------------
+# =================================================================
+# SELECT AND RENAME FINAL COLUMNS
+# =================================================================
 
-  # - mapping_uid: '999'
-  #   actions:
-  #     - type: apply_formats
-  #       target_section: INITIAL_CONDITIONS
-  #       formats:
-  #         ICDAT: "%y%j"
+  - mapping_uid: '999'
+    notes: "Final schema application for all output tables."
+    actions:
+
+      - type: map_headers
+        target_section: WEATHER_METADATA
+        rename_map:
+          weather_sta_longitude: LON
+          weather_sta_latitude: LAT
+          temperature_sensor_ht: temperature_sensor_ht
+          ref_height_windsp_meas: ref_height_windsp_meas
+          ref_height_weather_meas: ref_height_weather_meas    
+
+      - type: map_headers
+        target_section: WEATHER_DAILY
+        rename_map:
+          year: YEAR  #
+          weather_date: YYYYMMDD  # Date (YYYY-MM-DD)
+          dry_bulb_temper_avg_day: T2M
+          maximum_temperature: T2M_MAX  # Temperature at 2 Meters Maximum (oC)
+          minimum_temperature: T2M_MIN  # Temperature at 2 Meters Minimum (oC)
+          solar_radiation: ALLSKY_SFC_SW_DWN  # All Sky Surface Shortwave Downward Irradiance (MJ/m2/day)
+          precipitation: PRECTOTCORR  # Precipitation Corrected (mm/day)
+          realtive_humidity_avg: RH2M  # Relative Humidity at 2 Meters (%)
+          temperature_dewpoint: T2MDEW  # Dew/Frost Point at 2 Meters (oC)
+          PAR_photon_flux_density: ALLSKY_SFC_PAR_TOT  # All Sky Surface Total PAR (MJ/m2/day)
+          wind_speed_daily: WS2M  # Wind Speed at 2 Meters (m/s)
+          evaporation_pan: EVLAND  # Evaporation Land (mm/day)
+

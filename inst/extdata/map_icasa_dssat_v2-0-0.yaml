@@ -641,21 +641,23 @@ rules:
           plot_harvest_row_number: plot_harvest_row_number
           plot_harvest_length: plot_harvest_length
           plot_layout: plot_layout
+          temp_hm_plots: harvest_method_plot
           # TODO: CHECK!
-          temp_hm_plots:
-            type: map_values
-            input_map: { x: harvest_method_plot }
-            map: *harvest_method_codes
-            default_value: *harvest_method_default
+      - type: map_values
+        input_map: { x: temp_hm_plots }
+        output_header: temp_hm_plots
+        map: *harvest_method_codes
+        default_value: *harvest_method_default
       - type: lookup_and_add
         lookup_data_source: { section: HARVESTS }
         on_key: { source_key: experiment_id, lookup_key: experiment_id }
         select_columns:
-          temp_hm_harvests:
-            type: map_values
-            input_map: { x: harvest_method_plot }
-            map: *harvest_method_codes
-            default_value: *harvest_method_default
+          temp_hm_harvests: harvest_method_plot
+      - type: map_values
+        input_map: { x: temp_hm_harvests }
+        output_header: temp_hm_harvests
+        map: *harvest_method_codes
+        default_value: *harvest_method_default
       - type: coalesce_columns
         output_header: harvest_method_plot
         input_map:
@@ -778,7 +780,7 @@ rules:
         default_value: *crop_name_default
       - type: format_column
         formats:
-          ICDAT: "%y%j"
+          initial_conditions_date: "%y%j"
 
 
   ## --- SECTION SOIL_ANALYSES
@@ -807,7 +809,7 @@ rules:
         default_value: *soil_k_method_default
       - type: format_column
         formats:
-          SADAT: "%y%j"
+          soil_analysis_date: "%y%j"
 
 
   ## --- SECTION PLANTINGS
@@ -849,8 +851,8 @@ rules:
           v2: temp_bedded_material
       - type: format_column
         formats:
-          PDATE: "%y%j"
-          EDATE: "%y%j"
+          planting_date: "%y%j"
+          emergence_date: "%y%j"
 
 
   ## --- SECTION IRRIGATIONS
@@ -874,7 +876,7 @@ rules:
         default_value: *irrigation_default
       - type: format_column
         formats:
-          IDATE: "%y%j"
+          irrigation_date: "%y%j"
 
 
   ## --- SECTION FERTILIZERS
@@ -974,7 +976,7 @@ rules:
           v0: other_elements_appl_fert
       - type: format_column
         formats:
-          FDATE: "%y%j"
+          fertilization_date: "%y%j"
 
 
   ## --- SECTION ORGANIC_MATERIALS
@@ -998,7 +1000,7 @@ rules:
         default_value: *application_method_default
       - type: format_column
         formats:
-          RDATE: "%y%j"
+          org_material_applic_date: "%y%j"
 
 
   ## --- SECTION CHEMICALS
@@ -1023,7 +1025,7 @@ rules:
         default_value: *application_method_default
       - type: format_column
         formats:
-          CDATE: "%y%j"
+          chemical_applic_date: "%y%j"
   
 
   ## --- SECTION TILLAGE
@@ -1042,7 +1044,7 @@ rules:
         default_value: *tillage_implement_default
       - type: format_column
         formats:
-          TDATE: "%y%j"
+          tillage_date: "%y%j"
 
 
   ## --- SECTION ENVIRON_MODIFICATIONS
@@ -1112,7 +1114,7 @@ rules:
         on_missing: skip
       - type: format_column
         formats:
-          ODATE: "%y%j"
+          environ_modificat_date: "%y%j"
 
 
   ## --- SECTION HARVESTS
@@ -1136,7 +1138,7 @@ rules:
         default_value: *harvest_size_default
       - type: format_column
         formats:
-          HDATE: "%y%j"
+          harvest_operations_date: "%y%j"
 
 
   ## --- SECTION SIMULATION_CONTROLS
@@ -1226,7 +1228,7 @@ rules:
     actions:
       - type: format_column
         formats:
-          DATE: "%y%j"
+          weather_date: "%y%j"
 
 
   ## --- SECTION SUMMARY
@@ -1245,11 +1247,11 @@ rules:
         formula: "x * 1000"
       - type: format_column
         formats:
-          ADAT: "%y%j"
-          MDAT: "%y%j"
-          HDAT: "%y%j"
-          EDAT: "%y%j"
-          TDAT: "%y%j"
+          anthesis_date: "%y%j"
+          physiologic_maturity_dat: "%y%j"
+          harvest_date: "%y%j"
+          emergence_date: "%y%j"
+          tuber_initiation_stage: "%y%j"
 
 
   ## --- SECTION TIME_SERIES
@@ -1263,7 +1265,7 @@ rules:
     actions:
       - type: format_column
         formats:
-          DATE: "%y%j"
+          date_of_measurement: "%y%j"
 
 
 # =================================================================
