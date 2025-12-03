@@ -30,7 +30,7 @@ resolve_dssat_codes <- function(dataset) {
   wth_data <- dataset$WEATHER
   
   # --- Process Management ---
-  if (!is.null(mngt_data)) { 
+  if (!is.null(exp_metadata)) { 
     mngt_dssat_codes <- .resolve_dssat_mngt_codes(exp_metadata)
     # Append code map
     exp_id_map <- attr(mngt_dssat_codes, "code_map") 
@@ -40,7 +40,7 @@ resolve_dssat_codes <- function(dataset) {
   }
   
   # --- Process Soil ---
-  if (!is.null(dataset$SOIL)) {
+  if (!is.null(soil_data)) {
     soil_dssat_codes <- .resolve_dssat_soil_codes(soil_data)
     # Append code map
     soil_id_map <- attr(soil_dssat_codes, "code_map")
@@ -50,7 +50,7 @@ resolve_dssat_codes <- function(dataset) {
   }
   
   # --- Process Weather ---
-  if (!is.null(dataset$WEATHER)) {
+  if (!is.null(wth_data)) {
     wth_dssat_codes <- .resolve_dssat_wth_codes(wth_data)
     # Append code map
     wth_id_map <- attr(wth_dssat_codes, "code_map")

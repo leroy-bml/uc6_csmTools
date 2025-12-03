@@ -381,7 +381,7 @@ patch_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","Da
   
   # --- Data retrieval ---
   devices <- .locate_sta_devices(url, token)
-  devices_names <- devices$name
+  device_nms <- devices$name
   
   # Retrieve all datastreams for the selected devices
   # CHECK: here could add logic to retrieve sensor type info and structure data model
@@ -409,7 +409,7 @@ patch_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","Da
   
   # Create a logical index of which devices were successful
   is_valid <- !sapply(url_ds_with_nulls, is.null)
-  devices_names <- devices_names[is_valid]
+  device_nms <- device_nms[is_valid]
   url_ds <- url_ds_with_nulls[is_valid]
   
   # Get datastreams metadata incl. observed properties and device identification
@@ -439,7 +439,7 @@ patch_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","Da
       })
     })
   })
-  names(ds_ls) <- devices_nms
+  names(ds_ls) <- device_nms
   
   # Compile output [FIXED NESTED DEVICES [multiple sensors per device]]
   ds_out <- list()

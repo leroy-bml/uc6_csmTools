@@ -100,77 +100,13 @@ run_simulations <- function(filex_path, treatments,
   #names(output) <- out_files
   output <- read_output(file_name = file.path(sim_dir, "PlantGro.OUT"))
   
-  out <- list(plant_growth = as.data.frame(output),
-              SUMMARY = filea,
-              TIME_SERIES = filet)  # Append observed data
+  out <- list(plant_growth = as.data.frame(output))
+  if (exists("filea") && !is.null(filea)) {
+    out$SUMMARY <- filea
+  }
+  if (exists("filet") && !is.null(filet)) {
+    out$TIME_SERIES <- filet
+  }
 
   return(out)
-}
-
-
-#' Plot Simulated and Observed Plant Growth Output
-#'
-#' Creates a plot comparing simulated and observed plant growth (e.g., yield) for different treatments.
-#'
-#' @param sim_output A list containing simulation output and observed data, as returned by \code{run_simulations}.
-#'
-#' @details
-#' The function extracts observed summary data and simulated plant growth data from \code{sim_output}, formats dates, and creates a ggplot showing simulated growth as lines and observed data as points. The plot distinguishes treatments by color and includes custom legends for simulated and observed data.
-#'
-#' The function uses the \strong{dplyr} and \strong{ggplot2} packages for data manipulation and plotting.
-#'
-#' @return A ggplot object showing simulated and observed plant growth for each treatment.
-#'
-#' @examples
-#' \dontrun{
-#' plot_growth <- plot_output(sim_output)
-#' print(plot_growth)
-#' }
-#'
-#' @importFrom magrittr %>%
-#' @importFrom dplyr filter mutate
-#' @importFrom ggplot2 ggplot aes geom_line geom_point scale_colour_manual scale_size_manual scale_linewidth_manual labs guides guide_legend theme_bw theme element_text
-#' 
-#' @export
-#' 
-
-plot_output <- function(sim_output){
-  
-  # Observed data
-  obs_summary_growth <- sim_output$SUMMARY %>%
-    filter(TRNO %in% c(1,3,7)) %>%  # FIX
-    mutate(MDAT = as.POSIXct(as.Date(MDAT, format = "%y%j")),
-           HDAT = as.POSIXct(as.Date(HDAT, format = "%y%j")))
-  
-  # Simulated data
-  sim_growth <- sim_output$plant_growth
-  
-  # Plot
-  plot_growth <- sim_growth %>%
-    mutate(TRNO = as.factor(TRNO)) %>%
-    ggplot(aes(x = DATE, y = GWAD)) +
-    # Line plot for simulated data
-    geom_line(aes(group = TRNO, colour = TRNO, linewidth = "Simulated")) +
-    # Points for observed data
-    geom_point(data = obs_summary_growth,
-               aes(x = MDAT, y = HWAM, colour = as.factor(TRNO), size = "Observed"), shape = 20) +
-    # General appearance
-    scale_colour_manual(name = "Fertilization (kg[N]/ha)",
-                        breaks = c("1","2","3","4"),
-                        labels = c("0","100","200","300"),
-                        values = c("#20854E","#FFDC91", "#E18727", "#BC3C29")) +
-    scale_size_manual(values = c("Simulated" = 1, "Observed" = 2), limits = c("Simulated", "Observed")) +
-    scale_linewidth_manual(values = c("Simulated" = 1, "Observed" = 2), limits = c("Simulated", "Observed")) +
-    labs(size = NULL, linewidth = NULL, y = "Yield (kg/ha)") +
-    guides(
-      size = guide_legend(
-        override.aes = list(linetype = c("solid", "blank"), shape = c(NA, 16))
-      )
-    ) +
-    theme_bw() + 
-    theme(legend.text = element_text(size = 8), legend.title = element_text(size = 8),
-          axis.title.x = ggplot2::element_blank(), axis.title.y = element_text(size = 10),
-          axis.text = element_text(size = 9, colour = "black"))
-  
-  return(plot_growth)
 }

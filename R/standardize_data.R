@@ -33,13 +33,13 @@ standardize_data <- function(dataset, data_model = c("icasa", "dssat")) {
   # Split by experiment (as per DSSAT definition)
   dataset_split <- split_dataset(dataset_nms, key = "experiment", data_model = "dssat")
   # Split weather data to match the cultivation season for each experiment
-  dataset_split <- lapply(dataset_split, extract_season_weather)
+  dataset_split <- lapply(dataset_split, extract_season_weather)   #TOFIX: DSSAT DATE FORMATTING!
   
   # Extract comments
   comments_split <- lapply(dataset_split, function(ls) {
-    comments <- purrr::map(dataset, extract_dssat_notes)
+    comments <- purrr::map(ls, extract_dssat_notes)
     purrr::keep(comments, ~ nrow(.x) > 0)
-  } )
+  })
   
   # Apply required object structure for file export with DSSAT library functions
   dataset_split_fmt <- purrr::map2(

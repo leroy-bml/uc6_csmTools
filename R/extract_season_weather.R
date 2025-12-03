@@ -1,11 +1,11 @@
 #' Split Weather Data by Cultivation Year
 #'
-#' Filters weather tables within an experiment list (exp) 
+#' Filters weather tables within an experiment list (dssat_exp) 
 #' for the relevant cultivation season years, then returns 
 #' a flattened list of data frames, one for each year, 
 #' with the full year as a suffix in the name.
 #'
-#' @param exp A list element representing a single experiment, 
+#' @param dssat_exp A list element representing a single experiment, 
 #'            containing weather tables (names matching "WEATHER") 
 #'            and data needed by identify_production_season.
 #'
@@ -22,7 +22,7 @@ extract_season_weather <- function(dssat_exp) {
   
   # Identify bounds of the cultivation season
   cs_dates <- identify_production_season(
-    exp,
+    dssat_exp,
     period = "cultivation_season",
     dssat_date_fmt = TRUE
   )

@@ -47,7 +47,7 @@ extract_dssat_notes <- function(data) {
         # Regex to fetch vector structures
         stringr::str_detect(trimws(Content), "^c\\(.*\\)$"), 
         # Extract all quoted string
-        string::str_extract_all(Content, "\"(.*?)\""),
+        stringr::str_extract_all(Content, "\"(.*?)\""),
         list(Content)
       )
     ) %>%
@@ -55,9 +55,9 @@ extract_dssat_notes <- function(data) {
     # Overwrite original
     dplyr::mutate(
       # Remove leading/trailing quotes
-      Content = string::str_replace_all(Content_List, "^\"|\"$", ""),
+      Content = stringr::str_replace_all(Content_List, "^\"|\"$", ""),
       # Clean up any escaped quotes that are now literal
-      Content = string::str_replace_all(Content, "\\\\\"", "\"")
+      Content = stringr::str_replace_all(Content, "\\\\\"", "\"")
     ) %>%
     dplyr::select(-Content_List) %>%
     dplyr::filter(!is.na(Content) & Content != "")

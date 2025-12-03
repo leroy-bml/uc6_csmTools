@@ -343,3 +343,7 @@ check_data_requirements <- function(mngt, soil, obs, wth,
   
   return(tmp)
 }
+
+
+#### ---- 2025-10-23 IMPLEMENT SECTION CHECKS BASED ON MINIMUM REQUIREMENTS
+

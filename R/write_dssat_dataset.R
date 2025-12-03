@@ -12,10 +12,7 @@
 #' 
 
 write_dssat_dataset <- function(dataset, sol_append = FALSE) {
-  
-  dataset <- check0
-  sol_append = FALSE
-  
+
   # Map dataset names to the corresponding DSSAT write function
   write_funs <- list(
     MANAGEMENT = DSSAT::write_filex,

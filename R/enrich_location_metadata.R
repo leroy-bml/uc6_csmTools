@@ -22,7 +22,7 @@ enrich_spatial_data <- function(data, lat_col, lon_col) {
   
   # Enrich spatial metadata
   message(paste0("Enriching ", nrow(coords), " unique locations..."))
-  api_data <- enrich_location_data(coords, lat_col = lat_col, long_col = lon_col)
+  api_data <- .enrich_location_data(coords, lat_col = lat_col, long_col = lon_col)
   geocode_data <- dplyr::bind_cols(coords, api_data)
   
   # Join back to the original data frame

@@ -80,7 +80,7 @@
         final_cols_list <- list()
         for (new_name in names(rename_map)) {
           old_name_spec <- rename_map[[new_name]]
-          found_col_name <- resolve_column_name(old_name_spec, names(df_to_map))
+          found_col_name <- .resolve_column_name(old_name_spec, names(df_to_map))
           
           if (!is.null(found_col_name)) {
             final_cols_list[[new_name]] <- df_to_map[[found_col_name]]

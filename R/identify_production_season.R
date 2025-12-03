@@ -50,7 +50,7 @@ identify_production_season <- function(mngt_list, period = "cultivation_season",
         mutate(across(everything(), function(x) as.Date(as.character(x), format = "%y%j")))
     })
   } else {
-    date_list_fmt <- map(my_list, ~ {
+    date_list_fmt <- map(date_list, ~ {
       .x %>% 
         mutate(across(everything(), as.Date))
     })
