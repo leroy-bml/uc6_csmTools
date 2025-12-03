@@ -50,7 +50,7 @@ icasa:
   master_key: "experiment"
   key_source_table: "GENERAL"
   design_keys:
-    experiment: "experiment_ID"
+    experiment: "experiment_id"
     year: "experiment_year"
     treatment: "treatment_number"
     plot: "plot_id"
@@ -125,7 +125,7 @@ dssat:
     
   # --- Properties for when this model is an OUTPUT ---
   mappings:
-    "icasa": "./inst/extdata/map_icasa_dssat_v1-1-0.yaml"
+    "icasa": "./inst/extdata/map_icasa_dssat_v2-0-0.yaml"
     
 
 # ================================================================
