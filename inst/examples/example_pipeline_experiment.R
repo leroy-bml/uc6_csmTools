@@ -15,7 +15,8 @@
 
 ###----- Crop management/manually input data (template) ------------------------------
 ## -----------------------------------------------------------------------------------
-## This section demonstrates ###
+## This section demonstrates the import of ICASA-compliant field (meta)data via the
+## manual csmTemplate
 ##
 ## -----------------------------------------------------------------------------------
 
@@ -37,7 +38,7 @@ cseason <- identify_production_season(
 print(cseason)  # Note: the cultivation season overlaps 2024 and 2025
 
 
-###----- Weather data ----------------------------------------------------------------
+###----- IoT weather stations data ---------------------------------------------------
 ## -----------------------------------------------------------------------------------
 ## This section showcase the acquisition of IoT sensor data (weather ## time series)
 ## from a weather station operating on the study field in Triesdorf and stored on
@@ -52,79 +53,91 @@ print(cseason)  # Note: the cultivation season overlaps 2024 and 2025
 # Set FROST server credentials
 base_url <- "https://keycloak.hef.tum.de/realms/master/protocol/openid-connect/token"
 user_url <- Sys.getenv("FROST_USER_URL")
-client_id <- Sys.getenv("FROST_CLIENT_ID")
-client_secret <- Sys.getenv("FROST_CLIENT_SECRET")
-username <- Sys.getenv("FROST_USERNAME")
-password <- Sys.getenv("FROST_PASSWORD")
-keycloak_token <- get_kc_token(base_url, client_id, client_secret, username, password)
+
+keycloak_token <- get_kc_token(
+  url = base_url,
+  client_id = Sys.getenv("FROST_CLIENT_ID"),
+  client_secret = Sys.getenv("FROST_CLIENT_SECRET"),
+  username = Sys.getenv("FROST_USERNAME"),
+  password = Sys.getenv("FROST_PASSWORD")
+)
 
 # Set query arguments
 years <- sapply(cseason, lubridate::year)
 start_date <- paste0(years[1], "-01-01")
 end_date <- paste0(years[2], "-12-31")
 end_date <- if (Sys.Date() <= end_date) cseason[2] else end_date
-wth_parameters = c("air_temperature","volume_of_hydrological_precipitation")
+wth_parameters = c("air_temperature", "solar_radiation", "volume_of_hydrological_precipitation")
 longitude = 10.645269
 latitude = 49.20868
 
 # Data extraction and mapping
-wth_field_allstations_icasa <- extract_iot(
+wth_field_allstations_raw <- extract_iot(
   url = user_url,
   token = keycloak_token,
   var = wth_parameters,
   lon = longitude,
   lat = latitude, 
-  radius = 100,
+  radius = 1000,
   from = start_date,
   to = end_date,
-  raw = FALSE,
-  merge_ds = TRUE
+  raw = TRUE
 )
-names(wth_field_allstations_icasa)  # 3 weather stations found
+names(wth_field_allstations_raw)  # 3 weather stations found
+wth_field_raw <- wth_field_allstations_raw$`Weatherstation 002098A0`  # Select focal station
+# 2025-11-27 Locations not linked to weather stations anymore??!
 
-# Average data over all three stations
-wth_field_icasa <- wth_field_allstations_icasa %>%
-  map(~ .x$WEATHER_DAILY) %>%
-  bind_rows() %>%
-  group_by(weather_date) %>%
-  summarise(across(
-    .cols = where(is.numeric), 
-    .fns = ~mean(.x, na.rm = TRUE)
-  ))
-wth_field_metadata_merged <- wth_field_allstations_icasa %>%
-  map(~ .x$WEATHER_METADATA) %>%
-  bind_rows() %>%
-  summarise(across(where(is.numeric), \(x) mean(x, na.rm = TRUE))) %>%
-  distinct()
-
-weather_field_icasa <- list(
-  WEATHER_DAILY = wth_field_icasa,
-  WEATHER_METADATA = wth_field_metadata_merged
+# --- Map raw weather data to ICASA ---
+wth_field_icasa <- convert_dataset(
+  dataset = wth_field_raw,
+  input_model = "user_sta",
+  output_model = "icasa",
+  unmatched_code = "na"
 )
 
-# Check coverage of field weather data
-c(min(weather_field_icasa$WEATHER_DAILY$weather_date),
-  max(weather_field_icasa$WEATHER_DAILY$weather_date))  # Only one month of data!
 
-# Get complementary weather source
-weather_np_icasa <- get_weather(lon = longitude,
-                                lat = latitude,
-                                pars = c("air_temperature", "precipitation", "solar_radiation"),
-                                res = "daily",
-                                from = start_date,
-                                to = end_date,
-                                src = "nasa-power",
-                                raw = FALSE)
 
-# Assemble composite dataset
+###----- Complementary weather data --------------------------------------------------
+## -----------------------------------------------------------------------------------
+## This section showcase the extraction of standardization of weather data from a
+## third-party databases (NASA POWER) to complement the field-measured weather data
+## (i.e., fill data gaps).
+##
+## -----------------------------------------------------------------------------------
+
+# --- Check coverage of field monitoring ---
+c(min(wth_field_icasa$WEATHER_DAILY$weather_date),
+  max(wth_field_icasa$WEATHER_DAILY$weather_date))
+# >> Sensors were only installed in spring, no data from planting date!
+
+# --- Download complementary weather data ---
+wth_nasa_raw <- get_weather(
+  lon = longitude,
+  lat = latitude,
+  pars = c("air_temperature", "precipitation", "solar_radiation"),
+  res = "daily",
+  from = start_date,
+  to = end_date,
+  src = "nasa-power",
+  raw = TRUE
+)
+
+# --- Map complementary weather data to ICASA ---
+wth_nasa_icasa <- convert_dataset(
+  dataset = wth_nasa_raw,
+  input_model = "nasa-power",
+  output_model = "icasa"
+)
+
+# -- Assemble composite dataset ---
 weather_icasa <- list()
 weather_icasa$WEATHER_METADATA <- build_composite_data(
-  list(weather_field_icasa$WEATHER_METADATA, weather_np_icasa$WEATHER_METADATA),
-  groups = c("weather_station_id", "weather_station_name"),
+  list(wth_field_icasa$WEATHER_METADATA, wth_nasa_icasa$WEATHER_METADATA),
+  groups = NULL,
   action = "coalesce"
 )
 weather_icasa$WEATHER_DAILY <- build_composite_data(
-  list(weather_field_icasa$WEATHER_DAILY, weather_np_icasa$WEATHER_DAILY),
+  list(wth_field_icasa$WEATHER_DAILY, wth_nasa_icasa$WEATHER_DAILY),
   groups = c("weather_station_id", "weather_station_name", "weather_date"),
   action = "coalesce"
 )
@@ -142,7 +155,7 @@ weather_icasa$WEATHER_DAILY <- build_composite_data(
 ## ----------------------------------------------------------------------------------
 
 #####----- Extract profile data from SoilGrids --------------------------------------
-soil_icasa <- get_soilGrids_profile(lon = lon, lat = lat)
+soil_icasa <- get_soilGrids_profile(lon = longitude, lat = latitude)
 
 
 ###----- Data integration and mapping to DSSAT --------------------------------------
@@ -153,7 +166,6 @@ soil_icasa <- get_soilGrids_profile(lon = lon, lat = lat)
 
 # Merge all datasets
 dataset_icasa <- c(mngt_obs_icasa, weather_icasa, soil_icasa)
-# UPDATE TEMPLATE NAME OUTPUTS W/ ICASA MAP
 
 # Map to DSSAT
 dataset_dssat <- convert_dataset(
@@ -161,6 +173,7 @@ dataset_dssat <- convert_dataset(
   input_model = "icasa",
   output_model = "dssat"
 )
+
 
 ###----- Perform simulations --------------------------------------------------------
 ## ----------------------------------------------------------------------------------
@@ -174,58 +187,118 @@ dataset_dssat <- convert_dataset(
 ##
 ## ----------------------------------------------------------------------------------
 
+###----- Adjust data ----------------------------------------------------------------
+
+# TODO: add default + calibration
+
+# Normalize soil profile
+soil_dssat_std <- normalize_soil_profile(
+  data = dataset_dssat$SOIL,
+  depth_seq = c(5,10,20,30,40,50,60,70,90,110,130,150,170,190,210),
+  method = "linear"
+)
+dataset_dssat$SOIL <- soil_dssat_std$data
+dataset_dssat$SOIL$SRGF <- 1
+
+# Generate initial layers
+init_layers <- calculate_initial_layers(
+  soil_profile = dataset_dssat$SOIL,
+  percent_available_water = 100,
+  total_n_kgha = 50  # Value provided in field book, but only for 0-60 cm
+  )
+dataset_dssat$MANAGEMENT$INITIAL_CONDITIONS$ICBL <- list(init_layers$ICBL)
+dataset_dssat$MANAGEMENT$INITIAL_CONDITIONS$SH2O <- list(init_layers$SH2O)
+dataset_dssat$MANAGEMENT$INITIAL_CONDITIONS$SNH4 <- list(init_layers$SNH4)
+dataset_dssat$MANAGEMENT$INITIAL_CONDITIONS$SNO3 <- list(init_layers$SNO3)
+
+dataset_dssat$MANAGEMENT$FIELDS$ID_SOIL <- "IB00000007"
+
 ###----- Compile crop modeling data -------------------------------------------------
 
-# test runs and corrections
-dataset_dssat$MANAGEMENT$PLANTING_DETAILS$PLDP <- 2
-dataset_dssat$MANAGEMENT$PLANTING_DETAILS$PLME <- "S"
-dataset_dssat$MANAGEMENT$TILLAGE$TDEP <- 15
-dataset_dssat$MANAGEMENT$FERTILIZERS$FDEP <- 2
-dataset_dssat$MANAGEMENT$CULTIVARS$CNAME <- "Lely"
-dataset_dssat$MANAGEMENT$CULTIVARS$INGENO <- "IB0003"
-dataset_dssat$MANAGEMENT$FERTILIZERS <-
-  dataset_dssat$MANAGEMENT$FERTILIZERS %>%
-  mutate(FDATE = ifelse(is.na(FDATE), "25140", FDATE)) # 20 May 2025
-
-# from comparing with KSAS file
-dataset_dssat$MANAGEMENT$PLANTING_DETAILS$PPOE <- 250
-dataset_dssat$MANAGEMENT$INITIAL_CONDITIONS$ICRT <- 1200
-dataset_dssat$MANAGEMENT$INITIAL_CONDITIONS$ICND <- 0
-dataset_dssat$MANAGEMENT$INITIAL_CONDITIONS$ICRN <- 1
-dataset_dssat$MANAGEMENT$INITIAL_CONDITIONS$ICRE <- 1
-dataset_dssat$MANAGEMENT$INITIAL_CONDITIONS$ICRES <- 6500
-dataset_dssat$MANAGEMENT$INITIAL_CONDITIONS$ICREN <- 1.14
-dataset_dssat$MANAGEMENT$INITIAL_CONDITIONS$ICREP <- 0
-dataset_dssat$MANAGEMENT$INITIAL_CONDITIONS$ICRIP <- 100
-dataset_dssat$MANAGEMENT$INITIAL_CONDITIONS$ICRID <- 15
-
 # Assemble full input dataset
-dataset_dssat_input <- compile_model_dataset(
+dataset_dssat_input <- compile_dssat_dataset(
   dataset = dataset_dssat,
-  framework = "dssat",
   sol_append = FALSE,
   write = TRUE, write_in_dssat_dir = TRUE,
-  args = list(RSEED = 4250, SMODEL = "WHAPS",  # general
-              WATER = "Y", NITRO = "Y", TILL = "Y",  # options
-              PHOTO = "C", MESEV = "S", # methods
-              FERTI = "R", HARVS = "R",  # management
-              GROUT = "Y", VBOSE = "Y")  # output
+  control_args = list(
+    RSEED = 1243, SMODEL = "WHAPS",  # general
+    WATER = "Y", NITRO = "Y", TILL = "Y",  # options
+    PHOTO = "C", MESEV = "S", # methods
+    FERTI = "R", HARVS = "M",  # management
+    GROUT = "Y", VBOSE = "Y"  # output
+  )
 )
-
+# EDGE CASE: IF ICASA TEMPLATE GIVES TOT N LAYER FOR INIT COND BUT REST IS NA
+# ONLY DEPTHS IN INIT COND TABLE AND PARSER FAILS
 
 ###----- Run DSSAT simulation ------------------------------------------------------
 
-setwd(old_wd)
 output_directory <- paste0(getwd(), "/simulations")
 
-sims <- run_simulations(filex_path = "C:/DSSAT48/Wheat/HWOC2501.WHX",
-                        treatments = 1:3,
-                        framework = "dssat",
-                        dssat_dir = NULL,
-                        sim_dir = "./inst/extdata/test_fixtures")
+sims <- run_simulations(
+  filex_path = "C:/DSSAT48/Wheat/HWOC2501.WHX",
+  treatments = c(1, 3, 7),
+  framework = "dssat",
+  dssat_dir = NULL,
+  sim_dir = "./inst/extdata/test_fixtures"
+)
+
+View(sims$plant_growth)
 
 
 ###----- Plot output ---------------------------------------------------------------
+plot_output <- function(sim_output){
+  
+  # Observed data
+  obs_summary_growth <- sim_output$SUMMARY %>%
+    filter(TRNO %in% c(1,3,7)) %>%  # FIX
+    mutate(MDAT = as.POSIXct(as.Date(MDAT, format = "%y%j")),
+           HDAT = as.POSIXct(as.Date(HDAT, format = "%y%j")))
+  
+  # Simulated data
+  sim_growth <- sim_output$plant_growth
+  
+  # Plot
+  plot_growth <- sim_growth %>%
+    mutate(TRNO = as.factor(TRNO)) %>%
+    ggplot(aes(x = DATE, y = GWAD)) +
+    # Line plot for simulated data
+    geom_line(aes(group = TRNO, colour = TRNO, linewidth = "Simulated")) +
+    # Points for observed data
+    geom_point(data = obs_summary_growth,
+               aes(x = HDAT, y = GWAM, colour = as.factor(TRNO), size = "Observed"), shape = 20) +
+    # Phenology (estimated)
+    # geom_vline(data = obs_summary_growth, aes(xintercept = EDAT), colour = "darkblue") +
+    # geom_vline(data = obs_summary_growth, aes(xintercept = ADAT), colour = "darkgreen") +
+    # geom_vline(data = obs_summary_growth, aes(xintercept = MDAT), colour = "purple") +
+    # General appearance
+    scale_colour_manual(name = "Fertilization (kg[N]/ha)",
+                        breaks = c("1","3","7"),
+                        labels = c("0","147","180"),
+                        values = c("#999999", "#E18727", "#BC3C29")) +
+    scale_size_manual(values = c("Simulated" = 1, "Observed" = 2), limits = c("Simulated", "Observed")) +
+    scale_linewidth_manual(values = c("Simulated" = 1, "Observed" = 2), limits = c("Simulated", "Observed")) +
+    labs(size = NULL, linewidth = NULL, y = "Yield (kg/ha)") +
+    guides(
+      size = guide_legend(
+        override.aes = list(linetype = c("solid", "blank"), shape = c(NA, 16))
+      )
+    ) +
+    theme_bw() + 
+    theme(legend.text = element_text(size = 8), legend.title = element_text(size = 8),
+          axis.title.x = ggplot2::element_blank(), axis.title.y = element_text(size = 10),
+          axis.text = element_text(size = 9, colour = "black"))
+  
+  return(plot_growth)
+}
+
 plot_output(sims)
 
 
+# TODO: comparison soil moisture measured vs simulated
+# TODO: same thing for anthesis
+
+tmp <- sims$SUMMARY %>%
+  select(TRNO, GWAM) %>%
+  left_join(sims$plant_growth %>%
+              filter(DATE == max(DATE)))
