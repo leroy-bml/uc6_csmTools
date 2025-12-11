@@ -1,37 +1,32 @@
-#' Download and Extract SoilGrids Profiles from Han et al. (2015); Harvard Dataverse
+#' Download and Extract SoilGrids profile from Han et al. (2015); Harvard Dataverse
 #'
 #' Downloads and extracts the SoilGrids by-country soil profile dataset
 #' from the Harvard Dataverse (Han et al. 2015; https://doi.org/10.7910/DVN/1PEEY0), if not already present.
 #'
-#' @param dir Character. Directory in which to store and extract the SoilGrids profiles. Defaults to a temporary directory.
+#' @param dir Character. Directory in which to store and extract the SoilGrids profile. Defaults to a temporary directory.
 #'
 #' @details
-#' The function checks for the presence of the SoilGrids by-country zip file and its extracted directory in the specified location. If not found, it downloads the file from the Harvard Dataverse using the dataset DOI, saves it, and extracts its contents. If the data is already present, it simply returns the path to the extracted directory.
+#' The function checks for the presence of the SoilGrids by-country zip file and its extracted directory in the specified
+#'    location. If not found, it downloads the file from the Harvard Dataverse using the dataset DOI, saves it, and
+#'    extracts its contents. If the data is already present, it simply returns the path to the extracted directory.
 #'
 #' The function uses \code{dataset_files} and \code{get_file} to interact with the Dataverse API.
 #'
-#' @return The path to the directory containing the extracted SoilGrids profiles.
+#' @return The path to the directory containing the extracted SoilGrids profile.
 #'
-#' @examples
-#' \dontrun{
-#' soil_dir <- get_soilGrids_dataverse()
-#' list.files(soil_dir)
-#' }
-#'
-#' @importFrom dataverse get_file dataset_files
-#' @importFrom zip unzip
+#' @noRd
 #'
 
-get_soilGrids_dataverse <- function(dir = tempdir()) {
+.get_soilGrids_dataverse <- function(dir = tempdir()) {
   
   # Get metadata of the dataverse Soil Grids data publication (Han et al. 2015)
-  metadata <- dataset_files(
+  metadata <- dataverse::dataset_files(
     dataset = "10.7910/DVN/1PEEY0",
     server  = "dataverse.harvard.edu"
   )
   
   by_country <- lapply(metadata, function(x) grepl("by country", x$dataFile$filename))
-  ind <- which(unlist(by_country))  # identify the file containing the soil profiles
+  ind <- which(unlist(by_country))  # identify the file containing the soil profile
   filename <- metadata[[ind]]$dataFile$filename  # get the file name
   
   zip_file <- file.path(dir, filename)  # zip file path
@@ -44,8 +39,8 @@ get_soilGrids_dataverse <- function(dir = tempdir()) {
     
     if (!file.exists(zip_file)) {
       
-      message("Downloading soil profiles...")
-      file <- get_file(
+      message("Downloading soil profile...")
+      file <- dataverse::get_file(
         file = filename,
         dataset = "10.7910/DVN/1PEEY0",
         server  = "dataverse.harvard.edu"
@@ -55,23 +50,23 @@ get_soilGrids_dataverse <- function(dir = tempdir()) {
       rm(file)  # remove file from environment
       
       if (dir == tempdir()) {
-        outmsg <- paste("The downloaded SoilGrids profiles are in temp directory", 
+        outmsg <- paste("The downloaded SoilGrids profile are in temp directory", 
                         dir, 
                         "as 'dir' is unspecified", 
                         sep = "\n")
       } else {
-        outmsg <- paste("The downloaded SoilGrids profiles are in", 
+        outmsg <- paste("The downloaded SoilGrids profile are in", 
                         dir, 
                         sep = "\n")
       }
     } else {
-      outmsg <- paste("SoilGrids profiles were located in", dir, sep = "\n")
+      outmsg <- paste("SoilGrids profile were located in", dir, sep = "\n")
     }
     
-    message("Extracting soil profiles...")
-    unzip(zip_file, exdir = dir)  # extract the profiles
+    message("Extracting soil profile...")
+    zip::unzip(zip_file, exdir = dir)  # extract the profile
   } else {
-    outmsg <- paste("SoilGrids profiles were located in", dir, sep = "\n")
+    outmsg <- paste("SoilGrids profile were located in", dir, sep = "\n")
   }
   
   message(outmsg)
@@ -82,9 +77,9 @@ get_soilGrids_dataverse <- function(dir = tempdir()) {
 #'
 #' Downloads, extracts, and maps the closest SoilGrids soil profile to a specified latitude and longitude, returning the data in ICASA format.
 #'
-#' @param lat Numeric. Latitude of the target location.
-#' @param lon Numeric. Longitude of the target location.
-#' @param dir Character. Directory in which to store and extract the SoilGrids profiles. Defaults to a temporary directory.
+#' @param lat A numeric of length 1. Latitude of the target location.
+#' @param lon A numeric of length 1. Longitude of the target location.
+#' @param dir Character. Directory in which to store and extract the SoilGrids profile. Defaults to a temporary directory.
 #'
 #' @details
 #' The function downloads and extracts the SoilGrids by-country dataset if not already present, determines the country for the given coordinates using reverse geocoding, and loads the corresponding soil profile file. It selects the profile closest to the specified coordinates, splits the data into metadata, profile, and layer sections, and maps each section to the ICASA data model using a mapping file. The institution is set to "ISRIC" for provenance.
@@ -101,19 +96,26 @@ get_soilGrids_dataverse <- function(dir = tempdir()) {
 #'
 #' @importFrom magrittr %>%
 #' @importFrom tidygeocoder reverse_geocode
-#' @importFrom tidyselect everything
-#' @importFrom dplyr mutate filter row_number select pull distinct
-#' @importFrom tidyr unnest
+#' @importFrom dplyr mutate filter row_number select
 #' @importFrom DSSAT as_DSSAT_tbl read_sol
-#' @importFrom readr cols
+
 #'
 #' @export
 #' 
 
-get_soilGrids_profile <- function(lat, lon, dir = tempdir()) {
+get_soilGrids_profile <- function(lat, lon, dir = tempdir(), output_path = NULL) {
   
-  # Get Soil Grids DSSAT profiles by country
-  soil_dir <- get_soilGrids_dataverse(dir = dir)
+  # =================================================================
+  # 1- Downloading DSSAT SoilGrids profiles from dataverse
+  # =================================================================
+  
+  # Get Soil Grids DSSAT profile by country
+  soil_dir <- .get_soilGrids_dataverse(dir = dir)
+  
+  
+  # =================================================================
+  # 2- Locating soil profile for the target location
+  # =================================================================
   
   # Retrieve the country matching the target coordinates
   coords <- data.frame(x = lon, y = lat)
@@ -121,16 +123,16 @@ get_soilGrids_profile <- function(lat, lon, dir = tempdir()) {
   addr <- reverse_geocode(coords, long = x, lat = y, method = 'osm', full_results = TRUE, quiet = TRUE)
   cc <- toupper(addr$country_code)  # get country code (ISO-###)
   
-  # Read soil profiles for the target country
-  message("Loading soil profiles...")
+  # Read soil profile for the target country
+  message("Loading soil profile...")
   profilename <- paste0(cc, ".SOL")
   profilename <- file.path(soil_dir, profilename)
   sg_cc <- lapply(profilename, read_sol)
   
   # Filter out target profile
-  profiles <- list()
+  profile <- list()
   for (i in 1:length(sg_cc)){
-    profiles[[i]] <- sg_cc[[i]] %>%
+    profile[[i]] <- sg_cc[[i]] %>%
       mutate(LAT_diff = LAT - coords[i,]$y,
              LON_diff = LONG - coords[i,]$x,
              dd = abs(LAT_diff) + abs(LON_diff)) %>%
@@ -139,77 +141,39 @@ get_soilGrids_profile <- function(lat, lon, dir = tempdir()) {
       select(-LAT_diff, -LON_diff, -dd) %>%
       as_DSSAT_tbl()
   }
+  # If two profiles incidentally matching, takes first
+  if (length(profile) > 1) profile <- profile[1]
+  names(profile) <- "SOIL"
+
   
-  # Reshape and map to ICASA format
-  profile_metadata <- data_general <- data_layers <- list()
+  # =================================================================
+  # 3- Mapping to ICASA (soilGrids dataverse always as DSSAT tables)
+  # =================================================================
+    
+  # Map to ICASA format
+  profile_icasa <- convert_dataset(
+    dataset = profile,
+    input_model = "dssat",
+    output_model = "icasa"
+  )
+
   
-  for (i in 1:length(profiles)) {
-    
-    # Unnest layer data
-    profile_full <- profiles[[i]] %>% unnest(everything())
-    
-    # Identify metadata, profile metadata and layer data attributes
-    data_map <- load_map()
-    
-    attr_metadata <- data_map %>%
-      filter(data_model == "dssat" & icasa_group == "PROFILE_METADATA") %>%
-      pull(header)
-    
-    attr_general <- data_map %>%
-      filter(data_model == "dssat" & icasa_group == "SOIL_PROFILE" & is.na(icasa_subgroup)) %>%
-      pull(header)
-    
-    attr_layers <- data_map %>%
-      filter(data_model == "dssat" & icasa_group == "SOIL_PROFILE" & icasa_subgroup == "SOIL_PROFILE_LAYERS") %>%
-      pull(header)
-    
-    # Split sections
-    profile_metadata[[i]] <-
-      profile_full[names(profile_full) %in% attr_metadata] %>%
-      distinct()
-    data_general[[i]] <-
-      profile_full[names(profile_full) %in% attr_general] %>%
-      distinct()
-    data_layers[[i]] <-
-      profile_full[names(profile_full) %in% attr_layers]
-    
-    # Map to ICASA
-    # TODO: replace eventually by updated routine convert_dataset
-    profile_metadata[[i]] <- map_data(profile_metadata[[i]], input_model = "dssat", output_model = "icasa",
-                                      header = "long", map = data_map, keep_unmapped = FALSE)
-    data_general[[i]] <- map_data(data_general[[i]], input_model = "dssat", output_model = "icasa",
-                                  header = "long", map = data_map, keep_unmapped = FALSE)
-    data_layers[[i]] <- map_data(data_layers[[i]], input_model = "dssat", output_model = "icasa",
-                                 header = "long", map = data_map, keep_unmapped = FALSE)
-    
-    # Add ISRIC as institution
-    profile_metadata[[i]]$institute_name <- "ISRIC"
-  }
+  # =================================================================
+  # 3- Output formatting
+  # =================================================================
   
-  # Format output
-  out <- list(PROFILE_METADATA = profile_metadata,
-              SOIL_PROFILE = data_general,
-              SOIL_PROFILE_LAYERS = data_layers)
-  
-  out <- lapply(out, function(ls) {
-    if (length(ls)>1){
-      return(ls)
-    } else {
-      return(ls[[1]])
-    }
-  })
-  
-  # Attach comment on data provenance
+  # Attach comment on data source
   method_notes <- c(
     "Soil profile generated using ISRIC SoilGrid1km (see Han et al. [2015] 10.1016/j.envsoft.2019.05.012)",
     paste("Data extracted from the Harvard Dataverse (10.7910/DVN/1PEEY0) on", Sys.Date())
   )
-  out[["PROFILE_METADATA"]] <- out[["PROFILE_METADATA"]] %>%
+  profile_icasa[["PROFILE_METADATA"]]  <- profile_icasa[["PROFILE_METADATA"]] %>%
     group_by(soil_profile_ID) %>%
     mutate(soil_profile_methods = list(method_notes)) %>%
     ungroup()
   
+  # Write JSON if file name provided
+  out <- export_output(profile_icasa, output_path)
+  
   return(out)
 }
-
-# TODO: XY in metadata rather than data?
