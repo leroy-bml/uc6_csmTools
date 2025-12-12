@@ -339,7 +339,7 @@
   }
   
   # Clean up
-  result_vector[result_vector == ""] <- NA_character_.
+  result_vector[result_vector == ""] <- NA_character_
   # Fix numeric changed to character during the process
   result_vector <- type.convert(result_vector, as.is = TRUE)
   
@@ -823,4 +823,80 @@
   df[[output_col]] <- result_vector
   
   return(df)
+}
+
+
+#'
+#'
+#' @noRd
+#'
+
+.action_pivot_wider <- function(action, df) {
+  
+  # Resolve columns
+  map <- action$input_map
+  col_names_source <- .resolve_column_name(map$names_from, names(df))
+  col_values_source <- .resolve_column_name(map$values_from, names(df))
+  
+  if (is.null(col_names_source) || is.null(col_values_source)) {
+    warning("pivot_wider: could not find specified columns.")
+    return(df)
+  }
+  
+  # Enforce other column preservation/selection based on config
+  keep_only <- isTRUE(action$keep_only_pivot_cols)
+  
+  if (keep_only) {
+    df <- df[, c(col_names_source, col_values_source), drop = FALSE]
+    id_cols_arg <- NULL
+  } else {
+    # Keep ID columns (default)
+    id_cols_arg <- setdiff(names(df), c(col_names_source, col_values_source))
+  }
+  
+  df_pivoted <- tidyr::pivot_wider(
+    data = df,
+    id_cols = if(keep_only) NULL else all_of(id_cols_arg),
+    names_from = all_of(col_names_source),
+    values_from = all_of(col_values_source)
+  )
+  
+  return(df_pivoted)
+}
+
+
+#'
+#'
+#' @noRd
+#' 
+
+.action_pivot_longer <- function(action, df) {
+  
+  # Resolve columns
+  targets_raw <- action$columns_to_pivot
+  real_cols_to_pivot <- unlist(lapply(targets_raw, function(x) {
+    .resolve_column_name(x, names(df))
+  }))
+  
+  if (length(real_cols_to_pivot) == 0) {
+    warning("pivot_longer: No matching columns found to pivot.")
+    return(df)
+  }
+  
+  # Set output names
+  name_dest <- action$output_map$names_to %||% "name"
+  value_dest <- action$output_map$values_to %||% "value"
+  
+  # Enforce NA handling
+  drop_na <- isTRUE(action$values_drop_na)
+  
+  df_long <- tidyr::pivot_longer(
+    data = df,
+    cols = all_of(real_cols_to_pivot),
+    names_to = name_dest,
+    values_to = value_dest,
+    values_drop_na = drop_na
+  )
+  
+  return(df_long)
 }

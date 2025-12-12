@@ -116,6 +116,14 @@ process_actions <- function(actions, input_df, dataset, ...) {
              .action_apply_function(action, output_df)
            },
            
+           'pivot_wider' = {
+             .action_pivot_wider(action, output_df)
+           },
+           
+           'pivot_longer' = {
+             .action_pivot_longer(action, output_df)
+           },
+           
            # --- Specific actions (from mapping_actions_specific.R) ---
            # TODO: move to apply_function?
            "define_icasa_management_id" = {
