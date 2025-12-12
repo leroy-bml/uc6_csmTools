@@ -284,50 +284,66 @@
   
   output_name <- action$output_header
   conditions  <- action$conditions
-  separator   <- action$separator %||% "; " # Default to "; " if not provided
+  separator   <- action$separator %||% "; "
   
-  # Create a matrix of results, one column per condition.
+
   results_matrix <- sapply(conditions, function(cond) {
     
+    # Resolve condition column
     on_col_name <- .resolve_column_name(cond$on_column, names(df))
     if (is.null(on_col_name)) return(rep(NA_character_, nrow(df)))
     
     col_data <- df[[on_col_name]]
     
-    # Determine operator
+    # Determine operator/logic
     operator_keys <- c("if_equals", "if_not_equals", "if_higher_than", "if_higher_equals", "if_lower_than", "if_lower_equals")
     operator <- intersect(operator_keys, names(cond))
     
-    # Perform the comparison
     is_met_vector <- switch(
       operator,
-      "if_equals" = as.character(col_data) == as.character(cond[[operator]]),
-      "if_not_equals" = as.character(col_data) != as.character(cond[[operator]]),
-      "if_higher_than" = as.numeric(col_data) > as.numeric(cond[[operator]]),
-      "if_higher_equals" = as.numeric(col_data) >= as.numeric(cond[[operator]]),
-      "if_lower_than" = as.numeric(col_data) < as.numeric(cond[[operator]]),
+      "if_equals"      = as.character(col_data) == as.character(cond[[operator]]),
+      "if_not_equals"  = as.character(col_data) != as.character(cond[[operator]]),
+      "if_higher_than" = as.numeric(col_data) >  as.numeric(cond[[operator]]),
+      "if_higher_equals"= as.numeric(col_data) >= as.numeric(cond[[operator]]),
+      "if_lower_than"  = as.numeric(col_data) <  as.numeric(cond[[operator]]),
       "if_lower_equals" = as.numeric(col_data) <= as.numeric(cond[[operator]]),
-      rep(FALSE, nrow(df)) # Default if no valid operator
+      rep(FALSE, nrow(df))
     )
+    # Handle NAs in comparison (treat as constraint not met)
     is_met_vector[is.na(is_met_vector)] <- FALSE
     
-    # Where the condition is met, we use the 'then_value', otherwise NA
-    ifelse(is_met_vector, cond$then_value, NA_character_)
+    # Resolve 'then value'
+    raw_then <- cond$then_value
+    final_val_to_use <- raw_then   # Default to literal value
+    
+    # Check if the config value maps to a column name
+    if (!is.null(raw_then) && is.character(raw_then) && length(raw_then) == 1) {
+      
+      resolved_then_col <- .resolve_column_name(raw_then, names(df))
+      if (!is.null(resolved_then_col)) {
+        final_val_to_use <- df[[resolved_then_col]]
+      }
+    }
+    
+    # Create column
+    ifelse(is_met_vector, as.character(final_val_to_use), NA_character_)
   })
   
-  # Collapse the matrix of results into a single vector.
+  # collapse Matrix to Vector (handling multiple conditions)
   if (is.matrix(results_matrix)) {
     result_vector <- apply(results_matrix, 1, function(row_values) {
       paste(na.omit(row_values), collapse = separator)
-    })  # Multiple conditions
+    })
   } else {
-    result_vector <- results_matrix  # Single conditions
+    result_vector <- results_matrix
   }
-  result_vector[result_vector == ""] <- NA_character_
   
-  # Add new column to the working data frame.
+  # Clean up
+  result_vector[result_vector == ""] <- NA_character_.
+  # Fix numeric changed to character during the process
+  result_vector <- type.convert(result_vector, as.is = TRUE)
+  
   df[[output_name]] <- result_vector
-  
   return(df)
 }
 
