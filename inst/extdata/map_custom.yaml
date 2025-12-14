@@ -158,7 +158,6 @@ rules:
   #           if_equals: 'bbch'
   #           then_value: scaled_code
 
-
   - mapping_uid: '5'
     notes: "xxx"
     source:
@@ -244,4 +243,3 @@ rules:
   #     # Note 2025-09-25: in ICASA, soil temperature variables split by depth within SOIL LAYERS subsection? Makes no sense!
   #     # soil_temperature_by_layer: soil_temperature
   #     soil_water_by_layer: soil_water_content   # Review: not in ICASA as of 2025-09-25
-

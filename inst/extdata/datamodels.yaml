@@ -148,7 +148,7 @@ nasa-power:
 # Custom SensorThings API data models
 # ================================================================
 
-user_sta:
+user:
   master_key: none
   design_keys:
     datastream: "Datastream.id"
