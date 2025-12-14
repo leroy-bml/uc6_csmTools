@@ -47,6 +47,13 @@ standardize_data <- function(dataset, data_model = c("icasa", "dssat")) {
     comments_split,
     format_dssat_sections
   )
+  
+  # Return only first list object if single experiment
+  if (is.list(dataset_split_fmt) && length(dataset_split_fmt) == 1) {
+    out <- dataset_split_fmt[[1]]  # Single experiment
+  } else {
+    out <- dataset_split_fmt  # Multiple experiment
+  }
 
-  return(dataset_split_fmt)
+  return(out)
 }

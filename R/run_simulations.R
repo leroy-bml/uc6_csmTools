@@ -122,14 +122,17 @@ run_simulations <- function(filex_path, treatments, framework = "dssat", dssat_d
   write_dssbatch(batch_tbl)  # write batch file
   run_dssat(run_mode = "B")  # run simulations
   
-  # Read output
+  # Return all "readable" simulation outputs
   setwd(old_wd)  # reset wd
 
-  out_list <- setNames(
-    lapply(list.files(path = sim_dir, pattern = "\\.OUT$", full.names = TRUE),
-           read_output),
-    tools::file_path_sans_ext(basename(list.files(path = sim_dir, pattern = "\\.OUT$")))
+  output_files <- list.files(path = sim_dir, pattern = "\\.OUT$", full.names = TRUE)
+  output_files <- output_files[!grepl("INFO|RunList|WARNING", output_files)]
+  out <- lapply(output_files, read_output)
+  out <- setNames(
+    out,
+    tools::file_path_sans_ext(basename(output_files))
   )
+  # TODO: add non-readable files
   
-  return(out_list)
+  return(out)
 }

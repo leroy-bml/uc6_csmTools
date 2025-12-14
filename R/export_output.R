@@ -26,76 +26,6 @@ export_output <- function(dataset, output_path) {
   return(invisible(dataset))
 }
 
-# write_json_dataset <- function(dataset, file, pretty = TRUE, auto_unbox = TRUE, ...) {
-#   
-#   if (!is.list(dataset)) {
-#     stop("Input 'dataset' must be an R list.")
-#   }
-#   if (!is.character(file) || length(file) != 1) {
-#     stop("Input 'file' must be a single character string.")
-#   }
-#   
-#   # Recursive helper to process individual R objects for JSON serialization
-#   object_to_json <- function(obj) {
-#     obj_attrs <- attributes(obj)
-#     
-#     # Determine if the object should be wrapped
-#     should_wrap <- (is.data.frame(obj) || tibble::is_tibble(obj)) ||
-#       (length(obj_attrs) > 0 &&
-#          # Has non-standard R attributes, excluding "names", "row.names", "class"
-#          !all(names(obj_attrs) %in% c("names", "row.names", "class", "reference"))) || # Added "reference" for common cases
-#       # Named atomic vector
-#       (is.atomic(obj) && !is.null(names(obj)) && !inherits(obj, "json"))
-#     # `!inherits(obj, "json")` prevents re-wrapping objects already serialized by jsonlite
-#     
-#     if (should_wrap) {
-#       filtered_attrs_list <- list()
-#       
-#       # Special handling for `class` attribute
-#       if ("class" %in% names(obj_attrs)) {
-#         filtered_attrs_list[["_class_attribute"]] <- obj_attrs[["class"]]
-#       }
-#       # Special handling for `names` attribute of atomic vectors.
-#       if (is.atomic(obj) && !is.null(names(obj))) {
-#         filtered_attrs_list[["_names_attribute"]] <- names(obj)
-#       }
-#       
-#       # Iterate over other attributes for recursive processing and filtering
-#       attrs_to_exclude_from_direct_serialization <- c("names", "row.names", "class", "reference") # Added "reference"
-#       for (attr_name in setdiff(names(obj_attrs), attrs_to_exclude_from_direct_serialization)) {
-#         filtered_attrs_list[[attr_name]] <- object_to_json(obj_attrs[[attr_name]])
-#       }
-#       
-#       # Prepare data part: For dataframes/tibbles, convert to a simple list of columns.
-#       # For other objects, the object itself is the data.
-#       data_for_json <- obj
-#       if (is.data.frame(obj) || tibble::is_tibble(obj)) {
-#         # Convert data.frame/tibble to a list where each element is a column.
-#         # This prevents jsonlite from simplifying it directly into a complex JSON structure
-#         # that might lose attribute-like information.
-#         data_for_json <- as.list(obj) # Convert to list of columns
-#       }
-#       
-#       return(list(
-#         data = data_for_json,
-#         attributes = if (length(filtered_attrs_list) > 0) filtered_attrs_list else list()
-#       ))
-#     } else if (is.list(obj) && !inherits(obj, "json")) {
-#       # Generic R list (recursive)
-#       lapply(obj, object_to_json)
-#     } else {
-#       # Atomic objects, or objects already marked as 'json'
-#       # jsonlite::toJSON will handle these directly.
-#       obj
-#     }
-#   }
-#   
-#   # Apply the recursive processing to the entire dataset
-#   json_data <- lapply(dataset, object_to_json)
-#   
-#   # Write the processed list to a JSON file
-#   jsonlite::write_json(json_data, path = file, pretty = pretty, auto_unbox = auto_unbox, ...)
-# }
 
 #' Writes a list of dataframes (dataset) as a unique JSON file,
 #' preserving attributes and nested structures, recursively.
@@ -114,6 +44,78 @@ export_output <- function(dataset, output_path) {
 #' @export
 #'
 
+# write_json_dataset <- function(dataset, file, pretty = TRUE, auto_unbox = TRUE, ...) {
+#   
+#   if (!is.list(dataset)) {
+#     stop("Input 'dataset' must be an R list.")
+#   }
+#   
+#   # Recursive helper to process individual R objects for JSON serialization
+#   object_to_json <- function(obj) {
+#     obj_attrs <- attributes(obj)
+#     
+#     # 1. Check if the object should be wrapped (Has relevant attributes OR is a DF)
+#     should_wrap <- (is.data.frame(obj) || tibble::is_tibble(obj)) ||
+#       (length(obj_attrs) > 0 &&
+#          !all(names(obj_attrs) %in% c("names", "row.names", "class", "reference"))) ||
+#       (is.atomic(obj) && !is.null(names(obj)) && !inherits(obj, "json"))
+#     
+#     if (should_wrap) {
+#       
+#       # --- Handle attributes ---
+#       filtered_attrs_list <- list()
+#       
+#       # Handle class
+#       if ("class" %in% names(obj_attrs)) {
+#         filtered_attrs_list[["_class_attribute"]] <- obj_attrs[["class"]]
+#       }
+#       # Handle atomic names
+#       if (is.atomic(obj) && !is.null(names(obj))) {
+#         filtered_attrs_list[["_names_attribute"]] <- names(obj)
+#       }
+#       
+#       # Handle custom attributes (recursive)
+#       attrs_to_exclude <- c("names", "row.names", "class", "reference")
+#       for (attr_name in setdiff(names(obj_attrs), attrs_to_exclude)) {
+#         filtered_attrs_list[[attr_name]] <- object_to_json(obj_attrs[[attr_name]])
+#       }
+#       
+#       # --- Handle data ---
+#       if (is.data.frame(obj) || tibble::is_tibble(obj)) {
+#         # Convert DF to list of columns, then process each column recursively
+#         # This ensures column-level attributes are preserved
+#         data_for_json <- lapply(as.list(obj), object_to_json)
+#       } else if (is.list(obj)) {
+#         # It's a list with attributes. Process its children recursively.
+#         data_for_json <- lapply(obj, object_to_json)
+#       } else {
+#         # Atomic vector / other leaves
+#         data_for_json <- obj
+#       }
+#       
+#       return(list(
+#         data = data_for_json,
+#         attributes = if (length(filtered_attrs_list) > 0) filtered_attrs_list else list()
+#       ))
+#       
+#     } else if (is.list(obj) && !inherits(obj, "json")) {
+#       
+#       # --- Standard list (no attributes) ---
+#       lapply(obj, object_to_json)
+#       
+#     } else {
+#       # --- Leaf nodes ---
+#       obj
+#     }
+#   }
+#   
+#   # Start recursion
+#   json_data <- object_to_json(dataset)
+#   
+#   # Write to file
+#   jsonlite::write_json(json_data, path = file, pretty = pretty, auto_unbox = auto_unbox, ...)
+# }
+
 write_json_dataset <- function(dataset, file, pretty = TRUE, auto_unbox = TRUE, ...) {
   
   if (!is.list(dataset)) {
@@ -124,14 +126,15 @@ write_json_dataset <- function(dataset, file, pretty = TRUE, auto_unbox = TRUE, 
   object_to_json <- function(obj) {
     obj_attrs <- attributes(obj)
     
-    # 1. Check if the object should be wrapped (Has relevant attributes OR is a DF)
+    # Check if the object should be wrapped
     should_wrap <- (is.data.frame(obj) || tibble::is_tibble(obj)) ||
       (length(obj_attrs) > 0 &&
          !all(names(obj_attrs) %in% c("names", "row.names", "class", "reference"))) ||
       (is.atomic(obj) && !is.null(names(obj)) && !inherits(obj, "json"))
     
     if (should_wrap) {
-      # --- A. HANDLE ATTRIBUTES ---
+      
+      # --- Handle attributes ---
       filtered_attrs_list <- list()
       
       # Handle class
@@ -149,14 +152,10 @@ write_json_dataset <- function(dataset, file, pretty = TRUE, auto_unbox = TRUE, 
         filtered_attrs_list[[attr_name]] <- object_to_json(obj_attrs[[attr_name]])
       }
       
-      # --- B. HANDLE DATA (THE FIX) ---
-      # Even if we wrap this level, we must RECURSE into the data content
-      # so that children also get their attributes preserved.
-      
+      # --- Handle data ---
       if (is.data.frame(obj) || tibble::is_tibble(obj)) {
-        # Convert DF to list of columns, then process each column recursively
-        # This ensures column-level attributes are preserved
-        data_for_json <- lapply(as.list(obj), object_to_json)
+        # No recursion for data frames (no capture of column-level attributes)
+        data_for_json <- as.list(obj)
       } else if (is.list(obj)) {
         # It's a list with attributes. Process its children recursively.
         data_for_json <- lapply(obj, object_to_json)
@@ -171,12 +170,12 @@ write_json_dataset <- function(dataset, file, pretty = TRUE, auto_unbox = TRUE, 
       ))
       
     } else if (is.list(obj) && !inherits(obj, "json")) {
-      # --- C. STANDARD LIST (NO ATTRIBUTES) ---
-      # No wrapper needed for this level, but recurse deeper
+      
+      # --- Standard list (no attributes) ---
       lapply(obj, object_to_json)
       
     } else {
-      # --- D. LEAF NODES ---
+      # --- Leaf nodes ---
       obj
     }
   }
@@ -187,3 +186,4 @@ write_json_dataset <- function(dataset, file, pretty = TRUE, auto_unbox = TRUE, 
   # Write to file
   jsonlite::write_json(json_data, path = file, pretty = pretty, auto_unbox = auto_unbox, ...)
 }
+

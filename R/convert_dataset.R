@@ -83,9 +83,6 @@ convert_dataset <- function(dataset, input_model, output_model, output_path = NU
   dataset_std <- standardize_data(dataset = mapped_data_clean, data_model = output_model)
   
   # --- Return output ---
-  if (is.list(dataset_std) && length(dataset_std) == 1) {
-    dataset_std <- dataset_std[[1]]  # Single experiment
-  }
   out <- export_output(dataset_std, output_path)
   return(out)
 }

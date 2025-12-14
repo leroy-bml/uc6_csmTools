@@ -219,7 +219,7 @@ assemble_dataset <- function(components = list(), keep_all = FALSE, action = "me
   # Recurse if list
   if (is.list(node)) {
     out <- lapply(names(node), function(nm) {
-      repopulate_structure(pool, node[[nm]], node_name = nm)
+      .repopulate_structure(pool, node[[nm]], node_name = nm)
     })
     names(out) <- names(node)
     return(out)

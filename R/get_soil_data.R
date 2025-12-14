@@ -106,18 +106,16 @@ get_soil_profile <- function(lon, lat, src = "soil_grids", dir = NULL, output_pa
     "Soil profile generated using ISRIC SoilGrid1km (see Han et al. [2015] 10.1016/j.envsoft.2019.05.012)",
     paste("Data extracted from the Harvard Dataverse (10.7910/DVN/1PEEY0) on", Sys.Date())
   )
-  # profile_icasa[["PROFILE_METADATA"]]  <- profile_icasa[["PROFILE_METADATA"]] %>%
-  #   group_by(soil_profile_ID) %>%
-  #   mutate(soil_profile_methods = list(method_notes)) %>%
-  #   ungroup()
-  attr(profile_icasa, "comments") <- method_notes
+  attr(profile_icasa[["PROFILE_METADATA"]], "comments") <- method_notes
   
   # Write JSON if file name provided
   out <- export_output(profile_icasa, output_path)
   
   # Delete raw files if requested
-  if (!file.remove(soil_dir)) {
-    warning("Could not delete raw files (check output path or permissions).")
+  if (delete_raw_files) {
+    if (!file.remove(soil_dir)) {
+      warning("Could not delete raw files (check output path or permissions).")
+    }
   }
   
   return(out)
