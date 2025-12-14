@@ -20,12 +20,14 @@
 ##
 ## -----------------------------------------------------------------------------------
 
-# Parameters
-template_path <- "./inst/extdata/template_icasa_vba.xlsm"
-
 # Extract template data
-template_icasa <- extract_template(template_path, headers = "long", keep_null_events = FALSE)
-mngt_obs_icasa <- template_icasa$HWOC2501  # select focal experiment
+mngt_obs_icasa <- get_field_data(
+  path = "./inst/extdata/template_icasa_vba.xlsm",
+  exp_id = "HWOC2501",
+  headers = "long",
+  keep_null_events = FALSE,
+  output_path = "./archive/tmp_expdata_icasa.json"
+)
 
 # Retrieve cultivation season temporal coverage to identify weather requirements
 mngt_tables <-
@@ -71,17 +73,18 @@ wth_parameters = c("air_temperature", "solar_radiation", "volume_of_hydrological
 longitude = 10.645269
 latitude = 49.20868
 
+
 # Data extraction and mapping
-wth_field_allstations_raw <- extract_iot(
+wth_sensor_raw <- get_sensor_data(
   url = user_url,
   token = keycloak_token,
   var = wth_parameters,
-  lon = longitude,
-  lat = latitude, 
-  radius = 1000,
+  lon = 10.645269,
+  lat = 49.20868, 
+  radius = 10,
   from = start_date,
   to = end_date,
-  raw = TRUE
+  output_path = "./archive/tmp_weatherdata_sensor.json"
 )
 names(wth_field_allstations_raw)  # 3 weather stations found
 wth_field_raw <- wth_field_allstations_raw$`Weatherstation 002098A0`  # Select focal station
@@ -90,7 +93,7 @@ wth_field_raw <- wth_field_allstations_raw$`Weatherstation 002098A0`  # Select f
 # --- Map raw weather data to ICASA ---
 wth_field_icasa <- convert_dataset(
   dataset = wth_field_raw,
-  input_model = "user_sta",
+  input_model = "user",
   output_model = "icasa",
   unmatched_code = "na"
 )
@@ -111,22 +114,43 @@ c(min(wth_field_icasa$WEATHER_DAILY$weather_date),
 # >> Sensors were only installed in spring, no data from planting date!
 
 # --- Download complementary weather data ---
-wth_nasa_raw <- get_weather(
+wth_nasa_raw <- get_weather_data(
   lon = longitude,
   lat = latitude,
   pars = c("air_temperature", "precipitation", "solar_radiation"),
   res = "daily",
   from = start_date,
   to = end_date,
-  src = "nasa-power",
-  raw = TRUE
+  src = "nasa_power"
 )
+
+#
+wth_nasapower <- get_weather(
+  lon = longitude,
+  lat = latitude,
+  pars = c("air_temperature", "precipitation", "solar_radiation"),
+  res = "daily",
+  from = start_date,
+  to = end_date,
+  src = "nasa_power",
+  output_path = "./archive/tmp_weatherdata_nasapower.json"
+)
+str(wth_nasapower)
+
+attr(wth_nasapower$WEATHER_DAILY, "problems") <- NULL
+
+weather_data_for_json <- list(WEATHER_DAILY = wth_nasapower)
+export_output(weather_data_for_json, "./archive/tmp_weatherdata_icasa.json")
+
+export_output(wth_nasapower, "./archive/tmp_weatherdata_icasa.json")
+
 
 # --- Map complementary weather data to ICASA ---
 wth_nasa_icasa <- convert_dataset(
-  dataset = wth_nasa_raw,
+  dataset = "./archive/tmp_weatherdata_nasapower.json",
   input_model = "nasa-power",
-  output_model = "icasa"
+  output_model = "icasa",
+  output_path = "./archive/tmp_weatherdata_icasa.json"
 )
 
 # -- Assemble composite dataset ---
@@ -155,7 +179,46 @@ weather_icasa$WEATHER_DAILY <- build_composite_data(
 ## ----------------------------------------------------------------------------------
 
 #####----- Extract profile data from SoilGrids --------------------------------------
-soil_icasa <- get_soilGrids_profile(lon = longitude, lat = latitude)
+soil_icasa <- get_soil_profile(
+  lon = longitude,
+  lat = latitude,
+  dir = tempdir(),  # "./xxxx/temp"
+  output_path = "./archive/tmp_soildata_icasa.json"
+)
+
+# --- Renv version
+# soil_icasa <- get_soilGrids_profile(
+#   lon = longitude,
+#   lat = latitude,
+#   output_path = NULL
+# )
+
+
+###----- Soil profile data - external database --------------------------------------
+## ----------------------------------------------------------------------------------
+## This section demonstrates the sourcing of soil profile data from a a published
+## dataset (Global 10-km Soil Grids DSSAT profiles). The data is first downloaded
+## with the Dataverse API, and the closest profile to the set of input coordinates
+## extracted. As the dataset already provides ready-to-use DSSAT formats, no
+## mapping step is necesary here. 
+## Data reference: https://doi.org/10.7910/DVN/1PEEY0
+##
+## ----------------------------------------------------------------------------------
+
+gs_raw <- lookup_gs_dates(
+  data = "./archive/wheat_phenology_results.csv",
+  gs_scale = "zadok",
+  gs_codes = c(10, 65, 87),
+  date_select_rule = "median",
+  output_path = "./archive/tmp-phenology.json"
+)
+
+gs_icasa <- convert_dataset(
+  dataset = gs_raw,
+  input_model = "user",
+  output_model = "icasa",
+  output_path = "./archive/tmp-phenology-icasa.json"
+)
 
 
 ###----- Data integration and mapping to DSSAT --------------------------------------
@@ -164,14 +227,36 @@ soil_icasa <- get_soilGrids_profile(lon = longitude, lat = latitude)
 ##
 ## ----------------------------------------------------------------------------------
 
-# Merge all datasets
-dataset_icasa <- c(mngt_obs_icasa, weather_icasa, soil_icasa)
+# --- Renv version
+# dataset_icasa <- assemble_dataset(
+#   components = list(mngt_obs_icasa, weather_icasa, soil_icasa),
+#   output_path = NULL
+# )
+
+dataset_icasa <- assemble_dataset(
+  components = list(
+    "./archive/tmp_expdata_icasa.json",
+    "./archive/tmp_soildata_icasa.json",
+    "./archive/tmp_weatherdata_icasa.json"
+  ),
+  output_path = "./archive/tmp_icasa.json"
+)
 
 # Map to DSSAT
+
+# --- Renv version
+# dataset_dssat <- convert_dataset(
+#   dataset = dataset_icasa,
+#   input_model = "icasa",
+#   output_model = "dssat",
+#   output_path = NULL
+# )
+
 dataset_dssat <- convert_dataset(
-  dataset = dataset_icasa,
+  dataset = "./archive/tmp_icasa.json",
   input_model = "icasa",
-  output_model = "dssat"
+  output_model = "dssat",
+  output_path = "./archive/dataset_dssat.json"
 )
 
 
@@ -197,6 +282,7 @@ soil_dssat_std <- normalize_soil_profile(
   depth_seq = c(5,10,20,30,40,50,60,70,90,110,130,150,170,190,210),
   method = "linear"
 )
+#OPT1: take the whole DSSAT data and fetch the soil section
 dataset_dssat$SOIL <- soil_dssat_std$data
 dataset_dssat$SOIL$SRGF <- 1
 
@@ -216,7 +302,7 @@ dataset_dssat$MANAGEMENT$FIELDS$ID_SOIL <- "IB00000007"
 ###----- Compile crop modeling data -------------------------------------------------
 
 # Assemble full input dataset
-dataset_dssat_input <- compile_dssat_dataset(
+dataset_dssat_input <- build_simulation_files(
   dataset = dataset_dssat,
   sol_append = FALSE,
   write = TRUE, write_in_dssat_dir = TRUE,
