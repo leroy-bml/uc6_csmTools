@@ -1,0 +1,17 @@
+{
+  "RSEED": 7461,
+  "SMODEL": "WHAPS",
+
+  "WATER": "Y",
+  "NITRO": "Y",
+  "TILL": "Y",
+
+  "PHOTO": "C",
+  "MESEV": "S",
+
+  "FERTI": "R",
+  "HARVS": "M",
+
+  "GROUT": "Y",
+  "VBOSE": "Y"
+}

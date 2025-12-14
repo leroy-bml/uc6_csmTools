@@ -1,0 +1,20 @@
+# DSSAT Simulation Control Parameters
+RSEED: 7461
+SMODEL: "WHAPS"
+
+# Simulation options
+WATER: "Y"
+NITRO: "Y"
+TILL: "Y"
+
+# Simulation methods
+PHOTO: "C"
+MESEV: "S"
+
+# Management options
+FERTI: "R"
+HARVS: "M"
+
+# Output options
+GROUT: "Y"
+VBOSE: "Y"
