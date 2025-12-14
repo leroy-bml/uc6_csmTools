@@ -129,6 +129,50 @@ rules:
         formula: "x / 1000000"
 
 
+# ------ PHENOLOGY GDD ESTIMATES OUTPUT ------
+
+  # - mapping_uid: '4'
+  #   notes: "xxx"
+  #   source:
+  #     section: CEREAL_PHENOLOGY
+  #   target:
+  #     section: TIME_SERIES
+  #   actions:
+  #   # TODO: check how it behaves when table has multiple gs scales!
+  #     - type: add_column_conditional
+  #       output_header: growth_stage_Zadoks
+  #       conditions:
+  #         - on_column: scale
+  #           if_equals: 'zadok'
+  #           then_value: scaled_code
+  #     - type: add_column_conditional
+  #       output_header: growth_stage_Haun
+  #       conditions:
+  #         - on_column: scale
+  #           if_equals: 'haun'
+  #           then_value: scaled_code
+  #     - type: add_column_conditional
+  #       output_header: growth_stage_BBCH
+  #       conditions:
+  #         - on_column: scale
+  #           if_equals: 'bbch'
+  #           then_value: scaled_code
+
+
+  - mapping_uid: '5'
+    notes: "xxx"
+    source:
+      section: CEREAL_PHENOLOGY
+    target:
+      section: SUMMARY
+    actions:
+      - type: pivot_wider
+        input_map:
+          names_from: growth_stage   # The column containing "Flowering", "Maturity"
+          values_from: date          # The column containing the dates
+        keep_only_pivot_cols: true
+
+
 # =================================================================
 # SELECT AND RENAME FINAL COLUMNS
 # =================================================================
@@ -166,6 +210,22 @@ rules:
           # evapotranspiration_reference: evapotranspiration
           # vapor_pressure: vapour_pressure_deficit
           sensor_voltage: voltage
+
+      - type: map_headers
+        target_section: TIME_SERIES
+        rename_map:
+          zadok_scale: zadok_scale
+          date_of_measurement: date
+          growth_stage_Zadoks: growth_stage_Zadoks
+          growth_stage_Haun: growth_stage_Haun
+          growth_stage_BBCH: growth_stage_BBCH
+
+      - type: map_headers
+        target_section: SUMMARY
+        rename_map:
+          emergence_date: Emergence
+          anthesis_date: Flowering
+          physiologic_maturity_dat: Maturity
 
 
 ## --- SOIL SENSORS

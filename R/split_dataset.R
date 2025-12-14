@@ -14,7 +14,6 @@
 #' @param key The conceptual name of the key to split by (e.g., "experiment", "year"). This is resolved to a specific
 #'    column name via the config file.
 #' @param data_model The data model of the dataset.
-#' @param config_path The path to the `datamodels.yaml` file.
 #'
 #' @return A named list of lists, where each top-level element is named after a unique value of the split key
 #' 
@@ -23,14 +22,13 @@
 #' @export
 #'
 
-split_dataset <- function(dataset, key, data_model,
-                          config_path = "./inst/extdata/datamodels.yaml" # TODO: Replace eventually (fixed path)
-) { 
+split_dataset <- function(dataset, key, data_model) { 
   
   key_handlers <- c("experiment", "year", "plot", "treatment")
   unmatched_key <- match.arg(key, key_handlers)
   
   # Load split key from config
+  config_path <- system.file("extdata", "datamodels.yaml", package = "csmTools")
   config <- yaml::read_yaml(config_path)
   model_config <- config[[data_model]]
   split_key <- model_config$design_keys[[key]]

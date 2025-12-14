@@ -1,4 +1,4 @@
-# BonaRes-LTE to ICASA data map (v1.2.0; restructured with explicit lookups, prefixes removed)
+# BonaRes-LTE to ICASA data map (v2.0.0)
 
 # =================================================================
 # DEFINITIONS & ANCHORS
@@ -77,15 +77,11 @@ rules:
       section: METADATA
     target:
       section: GENERAL
-    select_final_columns:
-      name_of_experiment: Experiment_title
-      experiment_narrative:
-        header: Abstract
-        synonyms: [Summary]
-      ex_funding_source: Funding
-      distrib_restrictions: Legal_constrainsts
-      revision_date_first: Date_published
-      revision_date_latest: Date_revised
+    actions:
+      - type: format_column
+        formats:
+          Date_published: "%Y-%m-%d"
+          Date_revised: "%Y-%m-%d"
 
   - mapping_uid: '2'
     notes: "Generates PERSONS table from contact information in the METADATA table."
@@ -94,19 +90,14 @@ rules:
     target:
       section: PERSONS
     actions:
-      - type: split_and_map_text   # TODO: rename (split_column) and generalize
+      - type: split_column
         input_map:
           x: Contact_persons
         output_map:
-          - {output_header: researcher_first_name, component: first}
-          - {output_header: researcher_last_name, component: last}
-          - {output_header: researcher_name_mi, component: middle}
+          - {output_header: First_name, component: first}
+          - {output_header: Last_name, component: last}
+          - {output_header: Middle_name, component: middle}
         delimiter: " "
-    select_final_columns:
-      e_mail_address: Contact_email
-      researcher_first_name: researcher_first_name
-      researcher_last_name: researcher_last_name
-      researcher_name_mi: researcher_name_mi
 
   - mapping_uid: '3'
     notes: "Selects and renames columns from METADATA for the INSTITUTIONS section."
@@ -123,8 +114,6 @@ rules:
       section: METADATA
     target:
       section: DOCUMENTS
-    select_final_columns:
-      digital_object_id: Experiment_doi
 
 
 ## --- SECTION: TREATMENTS ---
@@ -143,9 +132,9 @@ rules:
           source_key: [Pruefglied_ID, Parzelle_ID]
           lookup_key: [Pruefglied_ID, Parzelle_ID]
         select_columns:
-          replicate_number: Wiederholung
-          plot_geocoord_x: Mittelpunkt_x_GK
-          plot_geocoord_y: Mittelpunkt_y_GK
+          Wiederholung: Wiederholung
+          Mittelpunkt_x_GK: Mittelpunkt_x_GK
+          Mittelpunkt_y_GK: Mittelpunkt_y_GK
           plot_geocoord_system: { type: static, value: 'GK' }
       # Step 3: Perform the two-step join to get Factor IDs and then their descriptions into temporary columns.
       - type: lookup_and_add
@@ -177,17 +166,17 @@ rules:
       - type: concatenate_columns
         output_header: treatment_name
         input_map:
-          f1: temp_name1
-          f2: temp_name2
-          f3: temp_name3
+          v1: temp_name1
+          v2: temp_name2
+          v3: temp_name3
         separator: " + "
         on_missing: proceed
       - type: concatenate_columns
         output_header: treatment_comments
         input_map:
-          d1: temp_desc1
-          d2: temp_desc2
-          d3: temp_desc3
+          v1: temp_desc1
+          v2: temp_desc2
+          v3: temp_desc3
         separator: "; "
         on_missing: proceed
       # Look up all management and resource level IDs.
@@ -197,26 +186,26 @@ rules:
           source_key: [Versuchsjahr, Parzelle_ID]
           lookup_key: [Versuchsjahr, Parzelle_ID]
         select_columns:
-          planting_level: Aussaat_ID
+          Aussaat_ID: Aussaat_ID
       - type: lookup_and_add
         lookup_data_source: { section: SORTE }
         on_key: { source_key: Kultur_ID, lookup_key: Kultur_ID }
         select_columns:
-          genotype_level: Sorte_ID
+          Sorte_ID: Sorte_ID
       ## Split DUENGUNG IDs into fertilizers and organic_materials
       - type: lookup_and_add
         lookup_data_source: { section: DUENGUNG }
         filter: 
           on_presence_of_columns:
             - { header: Masse_mineralisch, synonyms: [Menge_Duengemittel] }
-            - { header: Stickstoff,        synonyms: [Stickstoff_min, 'N'] }
-            - { header: Phosphor,          synonyms: [P] }
-            - { header: Kalium,            synonyms: [K] }
+            - { header: Stickstoff, synonyms: [Stickstoff_min, 'N'] }
+            - { header: Phosphor, synonyms: [P] }
+            - { header: Kalium, synonyms: [K] }
         on_key:
           source_key: [Versuchsjahr, Parzelle_ID]
           lookup_key: [Versuchsjahr, Parzelle_ID]
         select_columns:
-          fertilizer_level: Duengung_ID
+          fertilizer_id: Duengung_ID
       - type: lookup_and_add
         lookup_data_source: { section: DUENGUNG }
         filter:
@@ -225,64 +214,45 @@ rules:
           source_key: [Versuchsjahr, Parzelle_ID]
           lookup_key: [Versuchsjahr, Parzelle_ID]
         select_columns:
-          org_materials_applic_lev: Duengung_ID
+          organic_material_id: Duengung_ID
       - type: lookup_and_add
         lookup_data_source: { section: BEREGNUNG }
         on_key:
           source_key: [Versuchsjahr, Parzelle_ID]
           lookup_key: [Versuchsjahr, Parzelle_ID]
         select_columns:
-          irrigation_level: Beregnung_ID
+          Beregnung_ID: Beregnung_ID
       - type: lookup_and_add
         lookup_data_source: { section: PFLANZENSCHUTZ }
         on_key:
           source_key: [Versuchsjahr, Parzelle_ID]
           lookup_key: [Versuchsjahr, Parzelle_ID]
         select_columns:
-          chemical_applic_level: Pflanzenschutz_ID
+          Pflanzenschutz_ID: Pflanzenschutz_ID
       - type: lookup_and_add
         lookup_data_source: { section: BODENBEARBEITUNG }
         on_key:
           source_key: [Versuchsjahr, Parzelle_ID]
           lookup_key: [Versuchsjahr, Parzelle_ID]
         select_columns:
-          tillage_level: Bodenbearbeitung_ID
+          Bodenbearbeitung_ID: Bodenbearbeitung_ID
       - type: lookup_and_add
         lookup_data_source: { section: ERNTE }
         on_key:
           source_key: [Versuchsjahr, Parzelle_ID]
           lookup_key: [Versuchsjahr, Parzelle_ID]
         select_columns:
-          harvest_operations_level: Ernte_ID
-      # Look up the crop_id using the prioritized coalesce map.
+          Ernte_ID: Ernte_ID
+      # Look up the crop_code using the prioritized coalesce map.
       - type: lookup_and_add
         lookup_data_source: { section: KULTUR }
         on_key: { source_key: Kultur_ID, lookup_key: Kultur_ID }
         select_columns:
-          crop_id:
+          crop_code:
             type: coalesce_map
             maps:
               - { from: Kultur, map: *crop_name_map_de }
               - { from: Icc_Code, map: *crop_name_map_icc }
-    select_final_columns:
-      experiment_year: Versuchsjahr
-      treatment_number: Pruefglied_ID
-      treatment_name: treatment_name
-      plot_id: Parzelle_ID
-      plot_geocoord_x: plot_geocoord_x
-      plot_geocoord_y: plot_geocoord_y
-      plot_geocoord_system: plot_geocoord_system
-      replicate_number: replicate_number
-      crop_id: crop_id
-      genotype_level: genotype_level
-      planting_level: planting_level
-      irrigation_level: irrigation_level
-      fertilization_level: fertilization_level
-      org_materials_applic_lev: org_materials_applic_lev
-      chemical_applic_level: chemical_applic_level
-      tillage_level: tillage_level
-      harvest_operations_level: harvest_operations_level
-      treatment_comments: treatment_comments
 
 
 ## --- SECTION: FIELDS ---
@@ -300,27 +270,21 @@ rules:
         on_key: { source_key: Parzelle_ID, lookup_key: Parzelle_ID }
         select_columns:
           # Use intermediate names as inputs for downstream aggregation logic
-          plot_latitude: Mittelpunkt_y_GK
-          plot_longitude: Mittelpunkt_x_GK
-          plot_elevation_min: Hoehenlage_Min
-          plot_elevation_max: Hoehenlage_Max
+          Mittelpunkt_y_GK: Mittelpunkt_y_GK
+          Mittelpunkt_x_GK: Mittelpunkt_x_GK
+          Hoehenlage_Min: Hoehenlage_Min
+          Hoehenlage_Max: Hoehenlage_Max
           coordinate_system: { type: static, value: 'GK' }
       # Generate field elevation    
       - type: rowwise_transform
         output_header: plot_elevation
         input_map:
-          elev_min: plot_elevation_min
-          elev_max: plot_elevation_max
+          elev_min: Hoehenlage_Min
+          elev_max: Hoehenlage_Max
         formula: "(elev_min + elev_max) / 2"
-    select_final_columns:
-      experiment_year: Versuchsjahr
-      treatment_number: Pruefglied_ID   # REVIEW: check if needed
-      plot_id: Parzelle_ID
-      plot_latitude: plot_latitude
-      plot_longitude: plot_longitude
-      plot_elevation: plot_elevation
-      coordinate_system: coordinate_system   # TODO: transform action to use other coordinate system based on header type
-       
+
+# TODO: ADD ORDER 2 RULES
+
           
 ## --- SECTION: GENOTYPES ---
 
@@ -338,7 +302,7 @@ rules:
           source_key: [Versuchsjahr, Parzelle_ID]
           lookup_key: [Versuchsjahr, Parzelle_ID]
         select_columns:
-          treatment_number: Pruefglied_ID
+          Pruefglied_ID: Pruefglied_ID
       # Append crop name through chain join and map crop codes
       - type: lookup_and_add
         lookup_data_source: { section: SAAT_PFLANZGUT }
@@ -349,24 +313,18 @@ rules:
         lookup_data_source: { section: SORTE }
         on_key: { source_key: Sorte_ID, lookup_key: Sorte_ID }
         select_columns:
-          genotype_level: Sorte_ID
-          genotype_name: Sorte
+          Sorte_ID: Sorte_ID
+          Sorte: Sorte
           Kultur_ID: Kultur_ID
       - type: lookup_and_add
         lookup_data_source: { section: KULTUR }
         on_key: { source_key: Kultur_ID, lookup_key: Kultur_ID }
         select_columns:
-          crop_id:
+          crop_code:
             type: coalesce_map
             maps:
               - { from: Icc_Code, map: *crop_name_map_icc }
               - { from: Kultur, map: *crop_name_map_de }
-    select_final_columns:
-      experiment_year: Versuchsjahr
-      treatment_number: treatment_number
-      genotype_level: genotype_level
-      genotype_name: genotype_name
-      crop_id: crop_id
  
 
 ## --- SECTION: INITIAL_CONDITIONS ---
@@ -385,7 +343,7 @@ rules:
           source_key: [Versuchsjahr, Kultur_ID]
           lookup_key: [Versuchsjahr, Kultur_ID]
         select_columns:
-          treatment_number: Pruefglied_ID
+          Pruefglied_ID: Pruefglied_ID
       # STEP 1: Rename original columns to prevent self-join name collision
       - type: rename_column
         input_name: Kultur_ID
@@ -423,7 +381,7 @@ rules:
       - type: rowwise_transform
         output_header: temp_final_same_year_crop
         input_map:
-          flag: temp_current_flag  #<-- Use the renamed flag column
+          flag: temp_current_flag
           crop: temp_same_year_cover_crop
         formula: "ifelse(flag == 0, crop, NA)"
       # STEP 5: Coalesce results to get the definitive previous_crop ID
@@ -437,16 +395,11 @@ rules:
         lookup_data_source: { section: KULTUR }
         on_key: { source_key: previous_crop_id, lookup_key: Kultur_ID }
         select_columns:
-          residue_nature_prev_crop:
+          previous_crop_code:
             type: coalesce_map
             maps:
               - { from: Icc_Code, map: *crop_name_map_icc }
               - { from: Kultur, map: *crop_name_map_de }
-    select_final_columns:
-      experiment_year: Versuchsjahr
-      treatment_number: treatment_number
-      initial_conditions_level: Fruchtfolge_ID
-      residue_nature_prev_crop: residue_nature_prev_crop
 
 
 ## --- SECTION: PLANTINGS ---
@@ -465,7 +418,7 @@ rules:
           source_key: [Versuchsjahr, Parzelle_ID]
           lookup_key: [Versuchsjahr, Parzelle_ID]
         select_columns:
-          treatment_number: Pruefglied_ID
+          Pruefglied_ID: Pruefglied_ID
       # Look up and organize comments from the event and the planting stock
       - type: lookup_and_add
         lookup_data_source: { section: SAAT_PFLANZGUT }
@@ -484,10 +437,10 @@ rules:
         select_columns:
           stock_comment_text: Bemerkungen
       - type: concatenate_columns
-        output_header: planting_notes
+        output_header: planting_comments
         input_map:
-          event_comment: event_comment_text
-          stock_comment: stock_comment_text
+          v1: event_comment_text
+          v2: stock_comment_text
         separator: "; "
         on_missing: proceed
       # Look up and recode crop name via chained join
@@ -500,7 +453,7 @@ rules:
         lookup_data_source: { section: KULTUR }
         on_key: { source_key: Kultur_ID, lookup_key: Kultur_ID }
         select_columns:
-          crop_id:
+          crop_code:
             type: coalesce_map
             maps:
               - { from: Icc_Code, map: *crop_name_map_icc }
@@ -510,29 +463,22 @@ rules:
         lookup_data_source: { section: TECHNIK }
         on_key: { source_key: Technik_ID, lookup_key: Technik_ID }
         select_columns:
-          technology: Technik
-          type: Art
-          description: Beschreibung
+          temp_technik: Technik
+          temp_art: Art
+          temp_beschreibung: Beschreibung
       - type: concatenate_columns
         output_header: planting_method
         input_map:
-          x: technology
-          y: type
-          z: description
+          v1: technology
+          v2: type
+          v3: description
         separator: "; "
         on_missing: proceed
-    select_final_columns:
-      experiment_year: Versuchsjahr
-      treatment_number: treatment_number
-      planting_level: Aussaat_ID
-      crop_id: crop_id
-      planting_date: Termin
-      plant_pop_at_planting: Saatstaerke_Anzahl_m2
-      planting_material_weight: Saatstaerke_kg_ha
-      row_spacing: Reihenabstand
-      plant_spacing: Pflanzenabstand
-      planting_method: planting_method
-      planting_notes: planting_notes
+      # Change date format
+      - type: format_column
+        target_section: PLANTINGS
+        formats:
+          planting_date: "%Y-%m-%d"
 
 
 ## --- SECTION: IRRIGATIONS ---
@@ -551,20 +497,17 @@ rules:
           source_key: [Versuchsjahr, Pruefglied_ID, Parzelle_ID, Kultur_ID]
           lookup_key: [Versuchsjahr, Pruefglied_ID, Parzelle_ID, Kultur_ID]
         select_columns:
-          irrig_applied: Bewaesserung
+          Bewaesserung: Bewaesserung
       # Look up the comment text for the irrigation event.
       - type: lookup_and_add
         lookup_data_source: { section: BEMERKUNGEN }
         on_key: { source_key: Bemerkungen_ID, lookup_key: Bemerkungen_ID }
         select_columns:
-          irrig_applic_comment: Bemerkungen
-    select_final_columns:
-      experiment_year: Versuchsjahr
-      irrigation_level: Beregnung_ID
-      irrig_applied: irrig_applied
-      irrigation_date: Termin
-      irrig_amount_depth: Menge
-      irrig_applic_comment: irrig_applic_comment
+          Bemerkungen: Bemerkungen
+      # Change date format
+      - type: format_column
+        formats:
+          Termin: "%Y-%m-%d"
 
 
 ## --- SECTIONS FERTILIZERS ---
@@ -590,7 +533,7 @@ rules:
           source_key: [Versuchsjahr, Parzelle_ID]
           lookup_key: [Versuchsjahr, Parzelle_ID]
         select_columns:
-          treatment_number: Pruefglied_ID
+          Pruefglied_ID: Pruefglied_ID
       # Look up the fertilizer material name and the material's comment ID.
       - type: lookup_and_add
         lookup_data_source: { section: DUENGEMITTEL }
@@ -614,10 +557,10 @@ rules:
         select_columns:
           temp_material_comment_text: Bemerkungen
       - type: concatenate_columns
-        output_header: fertiliz_applic_comment
+        output_header: fertilizer_applic_comments
         input_map:
-          event_comment: temp_event_comment_text
-          material_comment: temp_material_comment_text
+          v1: temp_event_comment_text
+          v2: temp_material_comment_text
         separator: "; "
         on_missing: proceed
       # Look up and build the application method description.
@@ -631,9 +574,9 @@ rules:
       - type: concatenate_columns
         output_header: fertilizer_applic_method
         input_map:
-          tech: temp_technik
-          art: temp_art
-          desc: temp_beschreibung
+          v1: temp_technik
+          v2: temp_art
+          v3: temp_beschreibung
         separator: "; "
         on_missing: proceed
       # Calculate all elemental nutrient rates using the "transform then coalesce" pattern.
@@ -643,7 +586,7 @@ rules:
           x: { header: Diphosphorpentoxid, synonyms: [Phosphorpentoxid, P2O5] }
         formula: "x * 0.436"
       - type: coalesce_columns
-        output_header: phosphorus_applied_fert
+        output_header: fertilizer_P_applied
         input_map:
           elemental: { header: Phosphor, synonyms: [P] }
           from_oxide: temp_P_from_oxide
@@ -663,7 +606,7 @@ rules:
           x: { header: Magnesiumoxid, synonyms: [Magnesia, MgO] }
         formula: "x * 0.603"
       - type: coalesce_columns
-        output_header: Mg_in_applied_fertilizer
+        output_header: fertilizer_Mg_applied
         input_map:
           elemental: { header: Magnesium, synonyms: [Mg] }
           from_oxide: temp_Mg_from_oxide
@@ -673,31 +616,14 @@ rules:
           x: { header: Calciumoxid, synonyms: [Gebrannter_Kalk, Branntkalk, CaO] }
         formula: "x * 0.715"
       - type: coalesce_columns
-        output_header: Ca_in_applied_fertilizer
+        output_header: fertilizer_Ca_applied
         input_map:
           elemental: { header: Kalzium, synonyms: [Calcium, Ca] }
           from_oxide: temp_Ca_from_oxide
-    # Define the final, clean output for the FERTILIZERS table.
-    select_final_columns:
-      # New ICASA Name: Original BonaRes Name (or name created by an action)
-      experiment_year: Versuchsjahr
-      treatment_number: treatment_number
-      fertilizer_level: Duengung_ID
-      fertilization_date: Termin
-      fertilizer_material: fertilizer_material
-      fertilizer_total_amount: { header: Masse_mineralisch, synonyms: [Menge_Duengemittel] }
-      N_in_applied_fertilizer: { header: Stickstoff, synonyms: [Stickstoff_min, 'N'] }
-      phosphorus_applied_fert: phosphorus_applied_fert
-      fertilizer_K_applied: fertilizer_K_applied
-      Mg_in_applied_fertilizer: Mg_in_applied_fertilizer
-      Ca_in_applied_fertilizer: Ca_in_applied_fertilizer
-      S_in_applied_fertilizer: { header: Schwefel, synonyms: [S] }
-      B_in_applied_fertilizer: { header: Bor, synonyms: [B] }
-      Zn_in_applied_fertilizer: { header: Zink, synonyms: [Zn] }
-      Mn_in_applied_fertilizer: { header: Mangan, synonyms: [Mn] }
-      Fe_in_applied_fertilizer: { header: Eisen, synonyms: [Fe] }
-      fertilizer_applic_method: fertilizer_applic_method  
-      fertiliz_applic_comment: fertiliz_applic_comment
+      # Change date format
+      - type: format_column
+        formats:
+          Termin: "%Y-%m-%d"
         
       
 ## --- SECTIONS ORGANIC_MATERIALS ---
@@ -736,10 +662,10 @@ rules:
         select_columns:
           temp_material_comment_text: Bemerkungen
       - type: concatenate_columns
-        output_header: org_matter_comment
+        output_header: organic_material_comments
         input_map:
-          event_comment: temp_event_comment_text
-          material_comment: temp_material_comment_text
+          v1: temp_event_comment_text
+          v2: temp_material_comment_text
         separator: "; "
         on_missing: proceed
       # Look up and build the application method description.
@@ -751,11 +677,11 @@ rules:
           temp_art: Art
           temp_beschreibung: Beschreibung
       - type: concatenate_columns
-        output_header: org_material_applic_meth
+        output_header: organic_material_applic_method
         input_map:
-          tech: temp_technik
-          art: temp_art
-          desc: temp_beschreibung
+          v1: temp_technik
+          v2: temp_art
+          v3: temp_beschreibung
         separator: "; "
         on_missing: proceed
       # Coalesce the nutrient concentration columns
@@ -778,25 +704,17 @@ rules:
           in_fm: Kalium_In_Frischmasse
       # Convert application weight units.
       - type: rowwise_transform
-        output_header: org_material_applic_fresh_wt
+        output_header: organic_material_applic_fw
         input_map: { x: Frischmasse }
         formula: "x * 1000"
       - type: rowwise_transform
-        output_header: org_material_applic_amnt
+        output_header: organic_material_applic_dw
         input_map: { x: Trockenmasse }
         formula: "x * 100"
-    select_final_columns:
-      experiment_year: Versuchsjahr
-      org_materials_applic_lev: Duengung_ID
-      org_material_applic_date: Termin
-      organic_material: organic_material
-      org_material_applic_fresh_wt: org_material_applic_fresh_wt
-      org_material_applic_amnt: org_material_applic_amnt
-      organic_material_N_conc: organic_material_N_conc
-      organic_material_P_conc: organic_material_P_conc
-      organic_material_K_conc: organic_material_K_conc
-      org_material_applic_meth: org_material_applic_meth
-      org_matter_comment: org_matter_comment
+      # Change date format
+      - type: format_column
+        formats:
+          Termin: "%Y-%m-%d"
       
 
 ## --- SECTION: CHEMICALS ---
@@ -828,18 +746,18 @@ rules:
         select_columns:
           temp_material_comment_text: Bemerkungen
       - type: concatenate_columns
-        output_header: chemical_applic_comment
+        output_header: chemical_applic_comments
         input_map:
-          event_comment: temp_event_comment_text
-          material_comment: temp_material_comment_text
+          v1: temp_event_comment_text
+          v2: temp_material_comment_text
         separator: "; "
         on_missing: proceed
       # Concatenate the material name and active substance.
       - type: concatenate_columns
         output_header: chemical_applic_material
         input_map:
-          name: temp_chemical_name
-          substance: temp_active_substance_name
+          v1: temp_chemical_name
+          v2: temp_active_substance_name
         separator: " | "
         on_missing: proceed
       - type: map_values
@@ -865,19 +783,15 @@ rules:
       - type: concatenate_columns
         output_header: chemical_applic_method
         input_map:
-          tech: temp_technik
-          art: temp_art
-          desc: temp_beschreibung
+          v1: temp_technik
+          v2: temp_art
+          v3: temp_beschreibung
         separator: "; "
         on_missing: proceed
-    select_final_columns:
-      experiment_year: Versuchsjahr
-      chemical_applic_level: Pflanzenschutz_ID
-      chemical_applic_date: Termin
-      chemical_applic_material: chemical_applic_material
-      chemical_applic_amount: chemical_applic_amount
-      chemical_applic_method: chemical_applic_method
-      chemical_applic_comment: chemical_applic_comment
+      # Change date format
+      - type: format_column
+        formats:
+          Termin: "%Y-%m-%d"
 
 
 ## --- SECTION: TILLAGE ---
@@ -894,7 +808,7 @@ rules:
         lookup_data_source: { section: BODENBEARBEITUNG_MASSNAHME }
         on_key: { source_key: Bodenbearbeitung_Massnahme_ID, lookup_key: Bodenbearbeitung_Massnahme_ID }
         select_columns:
-          tillage_operation_name: Massnahme
+          Massnahme: Massnahme
           temp_operation_comment_id: Bemerkungen_ID
       # Look up and concatenate event and operation comments.
       - type: lookup_and_add
@@ -908,10 +822,10 @@ rules:
         select_columns:
           temp_operation_comment_text: Bemerkungen
       - type: concatenate_columns
-        output_header: till_op_comment
+        output_header: tillage_comments
         input_map:
-          event_comment: temp_event_comment_text
-          op_comment: temp_operation_comment_text
+          v1: temp_event_comment_text
+          v2: temp_operation_comment_text
         separator: "; "
         on_missing: proceed
       # Look up and concatenate the implement details.
@@ -925,19 +839,15 @@ rules:
       - type: concatenate_columns
         output_header: tillage_implement
         input_map:
-          tech: temp_technik
-          art: temp_art
-          desc: temp_beschreibung
+          v1: temp_technik
+          v2: temp_art
+          v3: temp_beschreibung
         separator: "; "
         on_missing: proceed
-    select_final_columns:
-      experiment_year: Versuchsjahr
-      tillage_level: Bodenbearbeitung_ID
-      tillage_date: Termin
-      tillage_operation_name: tillage_operation_name
-      tillage_implement: tillage_implement
-      tillage_operations_depth: Tiefe
-      till_op_comment: till_op_comment
+      # Change date format
+      - type: format_column
+        formats:
+          Termin: "%Y-%m-%d"
 
 
 ## --- SECTION: HARVESTS ---
@@ -965,7 +875,7 @@ rules:
         lookup_data_source: { section: KULTUR }
         on_key: { source_key: Kultur_ID, lookup_key: Kultur_ID }
         select_columns:
-          crop_id:
+          crop_code:
             type: coalesce_map
             maps:
               - { from: Icc_Code, map: *crop_name_map_icc }
@@ -1001,7 +911,7 @@ rules:
         lookup_data_source: { section: BEMERKUNGEN }
         on_key: { source_key: Bemerkungen_ID, lookup_key: Bemerkungen_ID }
         select_columns:
-          harvest_op_comments: Bemerkungen
+          Bemerkungen: Bemerkungen
       # Look up and join machinery data
       - type: lookup_and_add
         lookup_data_source: { section: TECHNIK }
@@ -1013,9 +923,9 @@ rules:
       - type: concatenate_columns
         output_header: harvest_method
         input_map:
-          tech: temp_technik
-          art: temp_art
-          desc: temp_beschreibung
+          v1: temp_technik
+          v2: temp_art
+          v3: temp_beschreibung
         separator: "; "
         on_missing: proceed
       - type: map_values
@@ -1023,15 +933,10 @@ rules:
         output_header: harvest_method
         map: *harvest_method_map
         default_value: *harvest_method_default
-    # ADD CODE MAPPING FOR harvest_methods
-    select_final_columns:
-      experiment_year: Versuchsjahr
-      harvest_operations_level: Ernte_ID
-      crop_id: crop_id
-      crop_intended_use: crop_intended_use
-      harvest_operations_date: Termin
-      harvest_method: harvest_method
-      harvest_op_comments: harvest_op_comments
+      # Change date format
+      - type: format_column
+        formats:
+          Termin: "%Y-%m-%d"
 
 
 ## --- SECTIONS: WEATHER ---
@@ -1051,7 +956,7 @@ rules:
         formula: "x * 0.0864"
       # Action 2: Convert wind speed from m/s to km/d.
       - type: rowwise_transform
-        output_header: wind_speed_daily
+        output_header: wind_speed
         input_map:
           x: Wind
         formula: "x * 86.4"
@@ -1060,19 +965,11 @@ rules:
         lookup_data_source: { section: BEMERKUNGEN }
         on_key: { source_key: Bemerkungen_ID, lookup_key: Bemerkungen_ID }
         select_columns:
-          weather_daily_comments: Bemerkungen
-    select_final_columns:
-      weather_date: Termin
-      solar_radiation: solar_radiation
-      maximum_temperature: T_Max_2m
-      minimum_temperature: T_Min_2m
-      temp_average_daily: T_Mit_2m
-      precipitation: Niederschlag_Summe
-      daylength_sunrise_sunset: Sonnenstunden
-      realtive_humidity_avg: Luftfeuchte # Note: Typo in original ICASA name
-      vapor_pressure: Partialdruck
-      wind_speed_daily: wind_speed_daily
-      weather_daily_comments: weather_daily_comments
+          Bemerkungen: Bemerkungen
+      # Change date format
+      - type: format_column
+        formats:
+          Termin: "%Y-%m-%d"
 
   # Note 2025-09-12: the following rule will not work in some edge cases (e.g., different sensor heights in different years)
   - mapping_uid: '16'
@@ -1084,7 +981,7 @@ rules:
     actions:
       # If any 2m temperature column is present.
       - type: add_column
-        output_header: temperature_sensor_ht
+        output_header: temperature_sensor_height
         value: 2
         condition_on_presence_of:
           - T_Max_2m
@@ -1093,12 +990,10 @@ rules:
       # If the 5cm temperature column is present.
       # TODO: check if should be mapped elsewhere (soil surface temperature?)
       - type: add_column
-        output_header: temperature_sensor_ht
+        output_header: temperature_sensor_height
         value: 0.05
         condition_on_presence_of:
           - T_Min_5cm           
-    select_final_columns:
-      temperature_sensor_ht: temperature_sensor_ht
 
 
 ## --- SECTIONS: SOIL ---
@@ -1115,11 +1010,11 @@ rules:
         lookup_data_source: { section: PROBENAHME_BODEN }
         on_key: { source_key: Probenahme_Boden_ID, lookup_key: Probenahme_Boden_ID }
         select_columns:
-          experiment_year: Versuchsjahr
-          plot_id: Parzelle_ID
-          date_of_measurement: Termin
-          me_soil_layer_top_depth: Obergrenze
-          me_soil_layer_bot_depth: Untergrenze
+          Versuchsjahr: Versuchsjahr
+          Parzelle_ID: Parzelle_ID
+          Termin: Termin
+          Obergrenze: Obergrenze
+          Untergrenze: Untergrenze
           temp_sampling_comment_id: Bemerkungen_ID
       # Look up and concatenate lab and sampling comments.
       - type: lookup_and_add
@@ -1133,10 +1028,10 @@ rules:
         select_columns:
           temp_sampling_comment_text: Bemerkungen
       - type: concatenate_columns
-        output_header: obs_time_series_comment
+        output_header: obs_soil_comments
         input_map:
-          sampling_comment: temp_sampling_comment_text
-          lab_comment: temp_lab_comment_text
+          v1: temp_sampling_comment_text
+          v2: temp_lab_comment_text
         separator: "; "
         on_missing: proceed
       # Perform a chained join to find the treatment_number.
@@ -1144,16 +1039,11 @@ rules:
         lookup_data_source: { section: PARZELLE }
         on_key: { source_key: plot_id, lookup_key: Parzelle_ID }
         select_columns:
-          treatment_number: Pruefglied_ID
-    select_final_columns:
-      experiment_year: experiment_year
-      plot_id: plot_id
-      treatment_number: treatment_number
-      date_of_measurement: date_of_measurement
-      me_soil_layer_top_depth: me_soil_layer_top_depth
-      me_soil_layer_bot_depth: me_soil_layer_bot_depth
-      obs_time_series_comment: obs_time_series_comment     
-      # REVIEW: Add all other soil measurement columns from the BODENLABORWERTE source table
+          Pruefglied_ID: Pruefglied_ID
+      # Change date format
+      - type: format_column
+        formats:
+          Termin: "%Y-%m-%d"
 
 
 ## --- SECTION: SUMMARY ---
@@ -1170,49 +1060,43 @@ rules:
         lookup_data_source: { section: BEMERKUNGEN }
         on_key: { source_key: Bemerkungen_ID, lookup_key: Bemerkungen_ID }
         select_columns:
-          obs_summary_comment: Bemerkungen
+          Bemerkungen: Bemerkungen
       # Chain lookups to get harvest, plot, and treatment context.
       - type: lookup_and_add
         lookup_data_source: { section: ERNTE }
         on_key: { source_key: Ernte_ID, lookup_key: Ernte_ID }
         select_columns:
-          plot_id: Parzelle_ID
-          harvest_date: Termin
-          experiment_year: Versuchsjahr # Bring in the year
+          Parzelle_ID: Parzelle_ID
+          Termin: Termin
+          Versuchsjahr: Versuchsjahr # Bring in the year
       - type: lookup_and_add
         lookup_data_source: { section: PARZELLE }
         on_key: { source_key: plot_id, lookup_key: Parzelle_ID }
         select_columns:
-          treatment_number: Pruefglied_ID
+          Pruefglied_ID: Pruefglied_ID
       # Convert yield measurement units
       ## Convert main product dry matter yield from dt/ha to kg/ha
       - type: rowwise_transform
-        output_header: harvest_yld_matur_dry_wt
+        output_header: harvest_yield_dw
         input_map:
           x: { header: Hp_Trockenmasse, synonyms: [hp_trockenmasse] }
         formula: "x * 100"
       ## Convert by-product dry matter yield from dt/ha to kg/ha
       - type: rowwise_transform
-        output_header: byprod_removed_at_harv
+        output_header: byprod_yield_dw
         input_map:
           x: { header: Np_Trockenmasse, synonyms: [np_trockenmasse] }
         formula: "x * 100"
       ## Convert main product fresh matter yield from t/ha to kg/ha
       - type: rowwise_transform
-        output_header: harv_yield_matur_f_wt
+        output_header: harvest_yield_fw
         input_map:
           x: { header: Hp_Frischmasse, synonyms: [hp_frischmasse] }
         formula: "x * 1000"
-    select_final_columns:
-      experiment_year: experiment_year
-      treatment_number: treatment_number
-      plot_id: plot_id
-      harvest_date: harvest_date
-      harv_yield_matur_f_wt: harv_yield_matur_f_wt
-      harvest_yld_matur_dry_wt: harvest_yld_matur_dry_wt
-      dry_matter_content: Hp_Trockensubstanzgehalt
-      byprod_removed_at_harv: byprod_removed_at_harv
-      obs_summary_comment: obs_summary_comment
+      # Change date format
+      - type: format_column
+        formats:
+          Termin: "%Y-%m-%d"
 
 
 ## --- SECTION: TIME_SERIES ---
@@ -1229,9 +1113,9 @@ rules:
         lookup_data_source: { section: PROBENAHME_PFLANZEN }
         on_key: { source_key: Probenahme_Pflanzen_ID, lookup_key: Probenahme_Pflanzen_ID }
         select_columns:
-          experiment_year: Versuchsjahr
-          plot_id: Parzelle_ID
-          date_of_measurement: Termin
+          Versuchsjahr: Versuchsjahr
+          Parzelle_ID: Parzelle_ID
+          Termin: Termin
           temp_sampling_comment_id: Bemerkungen_ID
       - type: lookup_and_add
         lookup_data_source: { section: BEMERKUNGEN }
@@ -1244,10 +1128,10 @@ rules:
         select_columns:
           temp_sampling_comment_text: Bemerkungen
       - type: concatenate_columns
-        output_header: obs_time_series_comment
+        output_header: obs_time_series_comments
         input_map:
-          lab_comment: temp_lab_comment_text
-          sampling_comment: temp_sampling_comment_text
+          v1: temp_lab_comment_text
+          v2: temp_sampling_comment_text
         separator: "; "
         on_missing: proceed
       # Look up and join treatment IDs
@@ -1255,11 +1139,11 @@ rules:
         lookup_data_source: { section: PARZELLE }
         on_key: { source_key: plot_id, lookup_key: Parzelle_ID }
         select_columns:
-          treatment_number: Pruefglied_ID
+          Pruefglied_ID: Pruefglied_ID
       # Convert measured variables
       ## Convert main product dry matter yield from dt/ha to kg/ha
       - type: rowwise_transform
-        output_header: harvest_yield_at_day_dw
+        output_header: harvest_yield_dw
         input_map:
           x: Hp_Trockenmasse
         formula: "x * 100"
@@ -1277,107 +1161,291 @@ rules:
         formula: "(TGW / 1000) * 1000"   # Note: explicit for transparency (transformation + conversion)
       ## Calculate grain N content (kg/ha) from N concentration (%) and dry matter yield (dt/ha)
       - type: rowwise_transform
-        output_header: grain_N
+        output_header: grain_N_yield
         input_map:
           yield: Hp_Trockenmasse
           n_conc: { header: Stickstoff, synonyms: ['N', Nitrogen] }
         formula: "(yield * 100) * (n_conc / 100)"
       ## Calculate grain P content (kg/ha) from P concentration (%) and dry matter yield (dt/ha)
       - type: rowwise_transform
-        output_header: grain_P
+        output_header: grain_P_yield
         input_map:
           yield: Hp_Trockenmasse
           p_conc: { header: Phosphor, synonyms: ['P', Phosphorus] }
         formula: "(yield * 100) * (p_conc / 100)"
       ## Calculate grain K content (kg/ha) from K concentration (%) and dry matter yield (dt/ha)
       - type: rowwise_transform
-        output_header: grain_K
+        output_header: grain_K_yield
         input_map:
           yield: Hp_Trockenmasse
           k_conc: { header: Kalium, synonyms: ['K', Potassium] }
         formula: "(yield * 100) * (k_conc / 100)"
-        # This map defines the complete and clean output for the TIME_SERIES table.
-    select_final_columns:
-      experiment_year: experiment_year
-      plot_id: plot_id
-      treatment_number: treatment_number
-      date_of_measurement: date_of_measurement
-      harvest_yield_at_day_dw: harvest_yield_at_day_dw
-      yield_moisture_content: yield_moisture_content
-      grain_unit_dry_weight: grain_unit_dry_weight
-      grain_N: grain_N
-      grain_N_conc: Stickstoff
-      grain_P: grain_P
-      grain_P_conc: Phosphor
-      grain_K: grain_K
-      grain_K_conc: Kalium
-      grain_protein_concentration: Protein
-      grain_oil_conc: Oel
-      obs_time_series_comment: obs_time_series_comment
+      # Change date format
+      - type: format_column
+        formats:
+          Termin: "%Y-%m-%d"
 
 
-# -----------------------------------------------------------------
-# PHASE 2: Schema Application
-# -----------------------------------------------------------------
+# =================================================================
+# SELECT AND RENAMING
+# =================================================================
 
-# TODO: Apply all date formats
   - mapping_uid: '999'
-    type: apply_formats
-    notes: 'Applies standard YYYY-MM-DD date format across all date variables' 
+    notes: "Final schema application for all output tables."
     actions:
-      - type: apply_formats
+
+      - type: map_headers
         target_section: GENERAL
-        formats:
-          revision_date_first: "%Y-%m-%d"
-          revision_date_latest: "%Y-%m-%d"
-      - type: apply_formats
+        rename_map:
+          experiment_id: Experiment_name
+          name_of_experiment: Experiment_title
+          experiment_narrative:                             
+            header: Abstract
+            synonyms: [Summary]
+          ex_funding_source: Funding
+          revision_date_first: Date_published
+          revision_date_latest: Date_revised
+          distrib_restrictions: Legal_constrainsts
+
+      - type: map_headers
+        target_section: PERSONS
+        rename_map:
+          experiment_id: Experiment_name
+          e_mail_address: Contact_email
+
+      - type: map_headers
+        target_section: INSTITUTIONS
+        rename_map:
+          experiment_id: Experiment_name
+          institute_name: Institutions
+
+      - type: map_headers
+        target_section: DOCUMENTS
+        rename_map:
+          experiment_id: Experiment_name
+          digital_object_id: Experiment_doi
+
+      - type: map_headers
+        target_section: FIELDS
+        rename_map:
+          experiment_id: Experiment_name
+          experiment_year: Versuchsjahr
+          field_latitude: field_latitude
+          field_longitude: field_longitude
+          field_elevation: field_elevation
+          coordinate_system: coordinate_system
+
+      - type: map_headers
+        target_section: TREATMENTS
+        rename_map:
+          experiment_id: Experiment_name
+          experiment_year: Versuchsjahr
+          treatment_number: Pruefglied_ID
+          treatment_name: treatment_name
+          plot_id: Parzelle_ID
+          plot_geocoord_x: Mittelpunkt_x_GK
+          plot_geocoord_y: Mittelpunkt_y_GK
+          plot_geocoord_system: plot_geocoord_system
+          replicate_number: Wiederholung
+          crop_id: crop_code
+          genotype_level: Sorte_ID
+          field_level: Feld_ID  # TODO: ADD JOIN ##!
+          planting_level: Aussaat_ID
+          irrigation_level: Beregnung_ID
+          fertilization_level: fertilizer_id
+          org_materials_applic_lev: organic_material_id
+          chemical_applic_level: Pflanzenschutz_ID
+          tillage_level: Bodenbearbeitung_ID
+          harvest_operations_level: Ernte_ID
+          treatment_comments: treatment_comments
+
+      - type: map_headers
+        target_section: GENOTYPES
+        rename_map:
+          experiment_id: Experiment_name
+          experiment_year: Versuchsjahr
+          genotype_level: Sorte_ID
+          crop_id: crop_code
+          genotype_name: Sorte
+
+      - type: map_headers
+        target_section: INITIAL_CONDITIONS
+        rename_map:
+          experiment_id: Experiment_name
+          experiment_year: Versuchsjahr
+          initial_conditions_level: Fruchtfolge_ID
+          residue_nature_prev_crop: previous_crop_code
+
+      - type: map_headers
         target_section: PLANTINGS
-        formats:
-          planting_date: "%Y-%m-%d"
-      - type: apply_formats
+        rename_map:
+          experiment_id: Experiment_name
+          experiment_year: Versuchsjahr
+          crop_id: crop_code
+          planting_date: Termin
+          plant_pop_at_planting: Saatstaerke_Anzahl_m2
+          planting_material_weight: Saatstaerke_kg_ha
+          row_spacing: Reihenabstand
+          plant_spacing: Pflanzenabstand
+          planting_method: planting_method
+          planting_notes: planting_comments
+
+      - type: map_headers
         target_section: IRRIGATIONS
-        formats:
-          irrigation_date: "%Y-%m-%d"
-      - type: apply_formats
+        rename_map:
+          experiment_id: Experiment_name
+          experiment_year: Versuchsjahr
+          irrigation_level: Beregnung_ID
+          irrig_applied: Bewaesserung
+          irrigation_date: Termin
+          irrig_amount_depth: Menge
+          irrig_applic_comment: Bemerkungen
+
+      - type: map_headers
         target_section: FERTILIZERS
-        formats:
-          fertilization_date: "%Y-%m-%d"
-      - type: apply_formats
+        rename_map:
+          experiment_id: Experiment_name
+          experiment_year: Versuchsjahr
+          fertilizer_level: Duengung_ID
+          fertilization_date: Termin
+          fertilizer_material: fertilizer_material
+          fertilizer_total_amount: { header: Masse_mineralisch, synonyms: [Menge_Duengemittel] }
+          N_in_applied_fertilizer: { header: Stickstoff, synonyms: [Stickstoff_min, 'N'] }
+          phosphorus_applied_fert: fertilizer_P_applied
+          fertilizer_K_applied: fertilizer_K_applied
+          Mg_in_applied_fertilizer: fertilizer_Mg_applied
+          Ca_in_applied_fertilizer: fertilizer_Ca_applied
+          S_in_applied_fertilizer: { header: Schwefel, synonyms: [S] }
+          B_in_applied_fertilizer: { header: Bor, synonyms: [B] }
+          Zn_in_applied_fertilizer: { header: Zink, synonyms: [Zn] }
+          Mn_in_applied_fertilizer: { header: Mangan, synonyms: [Mn] }
+          Fe_in_applied_fertilizer: { header: Eisen, synonyms: [Fe] }
+          fertilizer_applic_method: fertilizer_applic_method  
+          fertiliz_applic_comment: fertilizer_applic_comments
+
+      - type: map_headers
         target_section: ORGANIC_MATERIALS
-        formats:
-          org_material_applic_date: "%Y-%m-%d"
-      - type: apply_formats
+        rename_map:
+          experiment_id: Experiment_name
+          experiment_year: Versuchsjahr
+          org_materials_applic_lev: Duengung_ID
+          org_material_applic_date: Termin
+          organic_material: organic_material
+          org_material_applic_fresh_wt: organic_material_applic_fw
+          org_material_applic_amnt: organic_material_applic_dw
+          organic_material_N_conc: organic_material_N_conc
+          organic_material_P_conc: organic_material_P_conc
+          organic_material_K_conc: organic_material_K_conc
+          org_material_applic_meth: organic_material_applic_method
+          org_matter_comment: organic_material_comments
+
+      - type: map_headers
         target_section: CHEMICALS
-        formats:
-          chemical_applic_date: "%Y-%m-%d"
-      - type: apply_formats
+        rename_map:
+          experiment_id: Experiment_name
+          experiment_year: Versuchsjahr
+          chemical_applic_level: Pflanzenschutz_ID
+          chemical_applic_date: Termin
+          chemical_applic_material: chemical_applic_material
+          chemical_applic_amount: chemical_applic_amount
+          chemical_applic_method: chemical_applic_method
+          chemical_applic_comment: chemical_applic_comments
+
+      - type: map_headers
         target_section: TILLAGE
-        formats:
-          tillage_date: "%Y-%m-%d"
-      - type: apply_formats
+        rename_map:
+          experiment_id: Experiment_name
+          experiment_year: Versuchsjahr
+          tillage_level: Bodenbearbeitung_ID
+          tillage_date: Termin
+          tillage_operation_name: Massnahme
+          tillage_implement: tillage_implement
+          tillage_operations_depth: Tiefe
+          till_op_comment: tillage_comments
+
+      - type: map_headers
         target_section: HARVESTS
-        formats:
-          harvest_operations_date: "%Y-%m-%d"
-      - type: apply_formats
+        rename_map:
+          experiment_id: Experiment_name
+          experiment_year: Versuchsjahr
+          harvest_operations_level: Ernte_ID
+          crop_id: crop_code
+          crop_intended_use: crop_intended_use
+          harvest_operations_date: Termin
+          harvest_method: harvest_method
+          harvest_op_comments: Bemerkungen
+
+      - type: map_headers
         target_section: WEATHER_DAILY
-        formats:
-          weather_date: "%Y-%m-%d"
-      # - type: apply_formats
-      #   target_section: SOIL_PROFILE_LAYERS
-      #   formats:
-      #     date_of_measurement: "%Y-%m-%d"
-      - type: apply_formats
+        rename_map:
+          experiment_id: Experiment_name
+          weather_date: Termin
+          solar_radiation: solar_radiation
+          maximum_temperature: T_Max_2m
+          minimum_temperature: T_Min_2m
+          temp_average_daily: T_Mit_2m
+          precipitation: Niederschlag_Summe
+          daylength_sunrise_sunset: Sonnenstunden
+          realtive_humidity_avg: Luftfeuchte # Note: Typo in original ICASA name
+          vapor_pressure: Partialdruck
+          wind_speed_daily: wind_speed
+          weather_daily_comments: Bemerkungen
+
+      - type: map_headers
+        target_section: WEATHER_METADATA
+        rename_map:
+          temperature_sensor_ht: temperature_sensor_height
+
+      - type: map_headers
+        target_section: SOIL_PROFILE_LAYERS
+        rename_map:
+          experiment_id: Experiment_name
+          experiment_year: Versuchsjahr
+          treatment_number: Pruefglied_ID
+          date_of_measurement: Termin
+          me_soil_layer_top_depth: Obergrenze
+          me_soil_layer_bot_depth: Untergrenze
+          obs_time_series_comment: obs_soil_comments
+          # REVIEW: Add all other soil measurement columns from the BODENLABORWERTE source table
+
+      - type: map_headers
         target_section: SUMMARY
-        formats:
-          harvest_date: "%Y-%m-%d"
-      - type: apply_formats
+        rename_map:
+          experiment_id: Experiment_name
+          experiment_year: Versuchsjahr
+          treatment_number: Pruefglied_ID
+          plot_id: Parzelle_ID
+          harvest_date: Termin
+          harv_yield_matur_f_wt: harvest_yield_fw
+          harvest_yld_matur_dry_wt: harvest_yield_dw
+          dry_matter_content: Hp_Trockensubstanzgehalt
+          byprod_removed_at_harv: byprod_yield_dw
+          obs_summary_comment: Bemerkungen
+
+      - type: map_headers
         target_section: TIME_SERIES
-        formats:
-          date_of_measurement: "%Y-%m-%d"
+        rename_map:
+          experiment_id: Experiment_name
+          experiment_year: Versuchsjahr
+          plot_id: Parzelle_ID
+          treatment_number: Pruefglied_ID
+          date_of_measurement: Termin
+          harvest_yield_at_day_dw: harvest_yield_dw
+          yield_moisture_content: yield_moisture_content
+          grain_unit_dry_weight: grain_unit_dry_weight
+          grain_N: grain_N_yield
+          grain_N_conc: Stickstoff
+          grain_P: grain_P_yield
+          grain_P_conc: Phosphor
+          grain_K: grain_K_yield
+          grain_K_conc: Kalium
+          grain_protein_concentration: Protein
+          grain_oil_conc: Oel
+          obs_time_series_comment: obs_time_series_comments
 
 
 # -----------------------------------------------------------------
-# PHASE 3: AGGREGATION RULES
+# TMPTMPTMPTTMP!!
 # -----------------------------------------------------------------
 
   - mapping_uid: '2000'
@@ -1385,7 +1453,7 @@ rules:
     notes: "Aggregates plot-level coordinates to field-level coordinates"
     target_section: FIELDS
     actions:
-      - type: aggregate_by_group
+      - type: summarise
         group_by: [experiment_year]
         summarise:
           - fun: mean
@@ -1409,8 +1477,9 @@ rules:
     notes: "Counts unique field combinations to create field_level identifier"
     target_section: FIELDS
     actions:
-      - type: aggregate_by_group
+      - type: summarise
         group_by: [experiment_year, field_latitude, field_longitude, field_elevation, coordinate_system]
         summarise:
           - fun: count_rows
             output_name: field_level
+            # TODO: PROPAGATE TO ALL TABLES!!

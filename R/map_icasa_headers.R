@@ -9,7 +9,6 @@
 #'
 #' @param dataset The ICASA dataset as a named list of data frames.
 #' @param header_type The target header style, either `"short"` or `"long"`.
-#' @param config_path The path to the `datamodels.yaml` file.
 #'
 #' @return The dataset with renamed headers.
 #' 
@@ -19,10 +18,11 @@
 #' @export
 #'
 
-map_icasa_headers <- function(dataset, header_type = "short", config_path = "./inst/extdata/datamodels.yaml") {
+map_icasa_headers <- function(dataset, header_type = "short") {
   
   # --- 1. Load ICASA Dictionary Configuration ---
-  config <- read_yaml(config_path)
+  config_path <- system.file("extdata", "datamodels.yaml", package = "csmTools")
+  config <- yaml::read_yaml(config_path)
   dict_source_config <- config$icasa$dict_source
   
   if (is.null(dict_source_config)) {

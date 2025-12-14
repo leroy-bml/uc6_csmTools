@@ -83,9 +83,10 @@ icasa:
     
   # --- Properties for when this model is an OUTPUT ---
   mappings:
-    "bonares-lte_de": "./inst/extdata/map_bonares_icasa_v1-2.yaml"
-    "nasa-power": "./inst/extdata/map_nasapower_icasa_v1-0-0.yaml"
-    "user_sta": "./inst/extdata/map_sta_custom_icasa_v1-0-0.yaml"
+    "dssat": "map_dssat_icasa.yaml"
+    "bonares-lte_de": "map_bonares_icasa.yaml"
+    "nasa-power": "map_nasapower_icasa.yaml"
+    "user": "map_custom.yaml"
 
 
 # ================================================================
@@ -125,7 +126,7 @@ dssat:
     
   # --- Properties for when this model is an OUTPUT ---
   mappings:
-    "icasa": "./inst/extdata/map_icasa_dssat_v2-0-0.yaml"
+    "icasa": "map_icasa_dssat.yaml"
     
 
 # ================================================================
@@ -152,8 +153,9 @@ user_sta:
   design_keys:
     datastream: "Datastream.id"
   data_tables:
-    - METADATA
+    - METADATA  # rename
     - DATASTREAM
+    - CEREAL_PHENOLOGY
   dict_source: null
     
   # --- Properties for when this model is an OUTPUT ---
