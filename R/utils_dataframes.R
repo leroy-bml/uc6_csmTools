@@ -19,6 +19,41 @@ substr_rows <- function(df1, df2) {
 }
 
 
+#' Find list-columns containing nested vectors in individual cells
+#'
+#' @param df A data frame.
+#'
+#' @return A character vectors containing the names of nested list-columns
+#' 
+#' @noRd
+#' 
+
+identify_nested_cols <- function(df) {
+  
+  col_names <- names(df)
+  
+  nested_cols <- character(0)
+  for (col in col_names) {
+    if (!is.list(df[[col]])) next
+    
+    # Check if any cell contains an atomic vector (length > 1)
+    has_nested_vector <- FALSE
+    for (cell in df[[col]]) {
+      if (is.atomic(cell) && length(cell) > 1) {
+        has_nested_vector <- TRUE
+        break
+      }
+    }
+    if (has_nested_vector) {
+      nested_cols <- c(nested_cols, col)
+    }
+  }
+  
+  return(nested_cols)
+}
+
+
+
 #' Collapse specified columns into list-columns by group
 #'
 #' Groups a data frame by all columns *except* those specified in `cols`, then nests `cols` into
