@@ -8,3 +8,8 @@ Dockerfile
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^dev$
+inst/extdata/test_data
+archive
+docs
+ms
+dev
