@@ -24,7 +24,7 @@ standardize_data <- function(dataset, data_model = c("icasa", "dssat")) {
 #'
 
 # TODO TEST: whole routine should be robust to missing SOIL/WEATHER DATA
-.standardize_dssat_data <- function(dataset, build = TRUE) {
+.standardize_dssat_data <- function(dataset) {
 
   # Apply DSSAT standard codes
   dataset_nms <- apply_naming_rules(dataset)
@@ -45,8 +45,7 @@ standardize_data <- function(dataset, data_model = c("icasa", "dssat")) {
   dataset_split_fmt <- purrr::map2(
     dataset_split,
     comments_split,
-    format_dssat_sections,
-    build = build
+    format_dssat_sections
   )
 
   return(dataset_split_fmt)
