@@ -4,29 +4,26 @@
 
 extract_dssat_notes <- function(data) {
   
+  # Extract general comments
+  general <- attr(data, "comments")
+  
   # Get names of first 2 columns for grouping
   group_cols <- names(data)[1:2]
   
-  # --- ROBUSTNESS CHECK ---
-  # Check if any notes columns actually exist in this dataframe
+  # Check for comment/note columns
   notes_cols_exist <- any(grepl("_NOTES|_COMMENTS", names(data)))
   
   if (!notes_cols_exist) {
-    # If no notes columns exist, return an empty tibble
-    # with the *exact* final column structure.
-    
-    # Get an empty slice of the group_cols to preserve their types
+    # Return an empty tibble with the final column structure.
     empty_df <- data[0, group_cols, drop = FALSE] 
-    
-    # Add the columns that pivot_longer would have created
     empty_df$Notes_Column  <- character(0)
     empty_df$Notes_Content <- character(0)
     
     return(empty_df)
   }
 
-  # If we get here, notes columns DO exist. Proceed as normal.
-  data %>%
+  # Format comment map per section
+  comment_map <- data %>%
     dplyr::group_by(dplyr::across(tidyr::all_of(group_cols))) %>%
     dplyr::summarise(
       dplyr::across(
@@ -61,4 +58,9 @@ extract_dssat_notes <- function(data) {
     ) %>%
     dplyr::select(-Content_List) %>%
     dplyr::filter(!is.na(Content) & Content != "")
+  
+  # Append general comments to output
+  attr(comment_map, "general") <- general
+  
+  return(comment_map)
 }
