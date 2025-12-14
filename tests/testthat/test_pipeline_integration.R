@@ -1,4 +1,4 @@
-file <- system.file("extdata/lte_seehausen/2_sim/PlantGro.OUT", package = "csmTools")
+file <- system.file("examples/sciwin/PlantGro.OUT", package = "csmTools")
 
 # we do expect the pipeline to run before the tests
 # reason: the pipeline runs ~20min and writes multiple files
