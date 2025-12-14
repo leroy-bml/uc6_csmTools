@@ -1,42 +1,76 @@
-#' Run DSSAT Simulations from a Dataset and Return Output
+#' Run DSSAT simulations
 #'
-#' Prepares input files, writes batch files, runs DSSAT simulations, and reads output for a given dataset.
+#' Executes DSSAT simulations for specified treatments and returns output data.
+#' Automatically handles DSSAT executable location, batch file creation, and output collection.
 #'
-#' @param dataset A list containing DSSAT input tables, including at least \code{X} (management), \code{A} (observed summary), \code{T} (observed time series), \code{WTH} (weather), \code{SOL} (soil), and \code{CUL} (cultivar).
-#' @param framework Character. Simulation framework to use (default: \code{"dssat"}).
-#' @param dssat_dir Character or NULL. Path to the DSSAT installation directory. If NULL, uses environment variable or default.
-#' @param sim_dir Character or NULL. Directory for simulation input/output files. If NULL, uses DSSAT directory or default.
-#' @param args List. Additional simulation parameters (e.g., \code{TRTNO}, \code{RP}, \code{SQ}, \code{OP}, \code{CO}).
+#' @param filex_path (character) Path to the DSSAT experiment file (file X).
+#' @param treatments (character) Vector of treatment numbers to simulate, as defined in file X.
+#' @param framework (character) Simulation framework to use. Currently only supports "dssat".
+#' @param dssat_dir (character) Path to DSSAT installation directory. If `NULL` (default), attempts to:
+#'   1. Use the `DSSAT_CSM` environment variable, or
+#'   2. Default to `"C:/DSSAT48"` on Windows or `~/dssat/` on Unix.
+#' @param sim_dir (character) Directory for simulation files and outputs. If `NULL` (default), defaults to:
+#'   1. `dssat_dir` if specified, or
+#'   2. `"C:/DSSAT48"` on Windows or `~/dssat/` on Unix.
+#' @param args (list) Named list of additional simulation parameters to override defaults.
+#'   Supported parameters: `RP`, `SQ`, `OP`, `CO` (each should be a vector matching `treatments` length).
 #'
 #' @details
-#' The function sets up the DSSAT environment, writes all required input files to the appropriate directories, prepares a batch file, and runs DSSAT in batch mode. It then reads the main output file (\code{PlantGro.OUT}) and returns it along with observed data. The function handles both Windows and Unix systems and uses several helper functions for file I/O and simulation control.
-#'
-#' @return A list containing:
-#' \describe{
-#'   \item{\code{plant_growth}}{A data frame of simulated plant growth output.}
-#'   \item{\code{OBSERVED_Summary}}{Observed summary data (if provided).}
-#'   \item{\code{OBSERVED_TimeSeries}}{Observed time series data (if provided).}
+#' The function performs the following steps:
+#' \enumerate{
+#'   \item Locates the DSSAT executable and sets up directory paths
+#'   \item Reads the experiment (.WHX) and treatment (.WHA) files
+#'   \item Creates a batch file with specified treatments and parameters
+#'   \item Executes the simulations in batch mode
+#'   \item Collects and returns all output files (.OUT) as a named list
 #' }
+#'
+#' Environment variables:
+#' \describe{
+#'   \item{DSSAT_CSM}{Path to DSSAT executable (optional)}
+#' }
+#'
+#' @return A named list of simulation outputs, where:
+#'   \describe{
+#'     \item{Names}{Treatment identifiers (without .OUT extension)}
+#'     \item{Values}{Data frames containing simulation output for each treatment}
+#'   }
 #'
 #' @examples
 #' \dontrun{
-#' result <- run_simulations(dataset)
-#' head(result$plant_growth)
+#' # Basic usage with default DSSAT location
+#' results <- run_simulations(
+#'   filex_path = "path/to/Experiment.WHX",
+#'   treatments = c("T1", "T2", "T3")
+#' )
+#'
+#' # With custom parameters
+#' results <- run_simulations(
+#'   filex_path = "path/to/Experiment.WHX",
+#'   treatments = c("T1", "T2"),
+#'   dssat_dir = "D:/DSSAT48",
+#'   sim_dir = "D:/simulations/run1",
+#'   args = list(RP = c(1, 2), SQ = c(0, 1))
+#' )
+#'
+#' # Using environment variable
+#' Sys.setenv(DSSAT_CSM = "path/to/DSCSM048.EXE")
+#' results <- run_simulations("Experiment.WHX", c("T1", "T2"))
 #' }
 #'
 #' @importFrom utils modifyList
+#' @importFrom tools file_path_sans_ext
 #' @importFrom DSSAT read_filex write_dssbatch run_dssat read_output
-#' 
+#'
 #' @export
 #' 
+#' 
 
-run_simulations <- function(filex_path, treatments,
-                            framework = "dssat", dssat_dir = NULL, sim_dir = NULL, args = list()) {
+
+run_simulations <- function(filex_path, treatments, framework = "dssat", dssat_dir = NULL, sim_dir = NULL, args = list()) {
   
-  # Read file X and file A
-  filea_path <- gsub(".WHX", ".WHA", filex_path)  # HACK
+  # Read file X
   filex <- DSSAT::read_filex(filex_path)
-  filea <- DSSAT::read_filea(filea_path)
   
   # Specify the location of the DSSAT CSM executable (can be passed as environment variable) and the location of input/output files
   if (is.null(dssat_dir)) {
@@ -90,23 +124,12 @@ run_simulations <- function(filex_path, treatments,
   
   # Read output
   setwd(old_wd)  # reset wd
-  #out_files <- list.files(path = sim_dir, pattern = "\\.OUT$", full.names = TRUE)
-  
-  #output <- list()
-  #for (nm in out_files){
-  #  print(nm)
-  #  output[[nm]] <- read_output(file_name = nm)
-  #}
-  #names(output) <- out_files
-  output <- read_output(file_name = file.path(sim_dir, "PlantGro.OUT"))
-  
-  out <- list(plant_growth = as.data.frame(output))
-  if (exists("filea") && !is.null(filea)) {
-    out$SUMMARY <- filea
-  }
-  if (exists("filet") && !is.null(filet)) {
-    out$TIME_SERIES <- filet
-  }
 
-  return(out)
+  out_list <- setNames(
+    lapply(list.files(path = sim_dir, pattern = "\\.OUT$", full.names = TRUE),
+           read_output),
+    tools::file_path_sans_ext(basename(list.files(path = sim_dir, pattern = "\\.OUT$")))
+  )
+  
+  return(out_list)
 }
