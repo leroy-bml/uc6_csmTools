@@ -4,7 +4,7 @@
 #' @export
 #'
 
-format_dssat_sections <- function(dataset, comments, build = TRUE) {
+format_dssat_sections <- function(dataset, comments) {
   
   # --- Management tables ---
   mngt_list <- split_dssat_components(
@@ -61,12 +61,6 @@ format_dssat_sections <- function(dataset, comments, build = TRUE) {
   dataset_out <- lapply(dataset_out, prepend_comment, new_comment = signature)
   # Special case: nested weather dfs
   dataset_out$WEATHER <- lapply(dataset_out$WEATHER, prepend_comment, new_comment = signature)
-  
-  
-  if (build) {
-    # Build as input for DSSAT parser
-    dataset_out <- build_dssat_dataset(dataset_out)
-  }
   
   return(dataset_out)
 }
