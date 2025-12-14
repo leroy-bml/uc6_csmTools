@@ -134,3 +134,25 @@ reduce_by_join <- function(df_list) {
     purrr::compact() |>
     purrr::reduce(.join_by_intersect)
 }
+
+
+#'
+#'
+#'
+#' @noRd
+#' 
+
+flatten_to_depth <- function(x) {
+  
+  if (is.data.frame(x)) return(list(x))
+  
+  if (is.list(x)) {
+    children <- lapply(x, flatten_to_depth)
+    # Remove NULLs and combine
+    children <- children[!sapply(children, is.null)]
+    if (length(children) == 0) return(NULL)
+    
+    return(do.call(c, children))
+  }
+  return(NULL)
+}
