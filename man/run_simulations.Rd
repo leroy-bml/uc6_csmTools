@@ -2,7 +2,7 @@
 % Please edit documentation in R/run_simulations.R
 \name{run_simulations}
 \alias{run_simulations}
-\title{Run DSSAT Simulations from a Dataset and Return Output}
+\title{Run DSSAT simulations}
 \usage{
 run_simulations(
   filex_path,
@@ -14,34 +14,73 @@ run_simulations(
 )
 }
 \arguments{
-\item{framework}{Character. Simulation framework to use (default: \code{"dssat"}).}
+\item{filex_path}{(character) Path to the DSSAT experiment file (file X).}
 
-\item{dssat_dir}{Character or NULL. Path to the DSSAT installation directory. If NULL, uses environment variable or default.}
+\item{treatments}{(character) Vector of treatment numbers to simulate, as defined in file X.}
 
-\item{sim_dir}{Character or NULL. Directory for simulation input/output files. If NULL, uses DSSAT directory or default.}
+\item{framework}{(character) Simulation framework to use. Currently only supports "dssat".}
 
-\item{args}{List. Additional simulation parameters (e.g., \code{TRTNO}, \code{RP}, \code{SQ}, \code{OP}, \code{CO}).}
+\item{dssat_dir}{(character) Path to DSSAT installation directory. If \code{NULL} (default), attempts to:
+\enumerate{
+\item Use the \code{DSSAT_CSM} environment variable, or
+\item Default to \code{"C:/DSSAT48"} on Windows or \verb{~/dssat/} on Unix.
+}}
 
-\item{dataset}{A list containing DSSAT input tables, including at least \code{X} (management), \code{A} (observed summary), \code{T} (observed time series), \code{WTH} (weather), \code{SOL} (soil), and \code{CUL} (cultivar).}
+\item{sim_dir}{(character) Directory for simulation files and outputs. If \code{NULL} (default), defaults to:
+\enumerate{
+\item \code{dssat_dir} if specified, or
+\item \code{"C:/DSSAT48"} on Windows or \verb{~/dssat/} on Unix.
+}}
+
+\item{args}{(list) Named list of additional simulation parameters to override defaults.
+Supported parameters: \code{RP}, \code{SQ}, \code{OP}, \code{CO} (each should be a vector matching \code{treatments} length).}
 }
 \value{
-A list containing:
+A named list of simulation outputs, where:
 \describe{
-\item{\code{plant_growth}}{A data frame of simulated plant growth output.}
-\item{\code{OBSERVED_Summary}}{Observed summary data (if provided).}
-\item{\code{OBSERVED_TimeSeries}}{Observed time series data (if provided).}
+\item{Names}{Treatment identifiers (without .OUT extension)}
+\item{Values}{Data frames containing simulation output for each treatment}
 }
 }
 \description{
-Prepares input files, writes batch files, runs DSSAT simulations, and reads output for a given dataset.
+Executes DSSAT simulations for specified treatments and returns output data.
+Automatically handles DSSAT executable location, batch file creation, and output collection.
 }
 \details{
-The function sets up the DSSAT environment, writes all required input files to the appropriate directories, prepares a batch file, and runs DSSAT in batch mode. It then reads the main output file (\code{PlantGro.OUT}) and returns it along with observed data. The function handles both Windows and Unix systems and uses several helper functions for file I/O and simulation control.
+The function performs the following steps:
+\enumerate{
+\item Locates the DSSAT executable and sets up directory paths
+\item Reads the experiment (.WHX) and treatment (.WHA) files
+\item Creates a batch file with specified treatments and parameters
+\item Executes the simulations in batch mode
+\item Collects and returns all output files (.OUT) as a named list
+}
+
+Environment variables:
+\describe{
+\item{DSSAT_CSM}{Path to DSSAT executable (optional)}
+}
 }
 \examples{
 \dontrun{
-result <- run_simulations(dataset)
-head(result$plant_growth)
+# Basic usage with default DSSAT location
+results <- run_simulations(
+  filex_path = "path/to/Experiment.WHX",
+  treatments = c("T1", "T2", "T3")
+)
+
+# With custom parameters
+results <- run_simulations(
+  filex_path = "path/to/Experiment.WHX",
+  treatments = c("T1", "T2"),
+  dssat_dir = "D:/DSSAT48",
+  sim_dir = "D:/simulations/run1",
+  args = list(RP = c(1, 2), SQ = c(0, 1))
+)
+
+# Using environment variable
+Sys.setenv(DSSAT_CSM = "path/to/DSCSM048.EXE")
+results <- run_simulations("Experiment.WHX", c("T1", "T2"))
 }
 
 }

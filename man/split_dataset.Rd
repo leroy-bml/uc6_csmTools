@@ -4,12 +4,7 @@
 \alias{split_dataset}
 \title{Split a Dataset by a Key Column}
 \usage{
-split_dataset(
-  dataset,
-  key,
-  data_model,
-  config_path = "./inst/extdata/datamodels.yaml"
-)
+split_dataset(dataset, key, data_model)
 }
 \arguments{
 \item{dataset}{The dataset to split, as a list of data frames.}
@@ -18,8 +13,6 @@ split_dataset(
 column name via the config file.}
 
 \item{data_model}{The data model of the dataset.}
-
-\item{config_path}{The path to the \code{datamodels.yaml} file.}
 }
 \value{
 A named list of lists, where each top-level element is named after a unique value of the split key

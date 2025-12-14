@@ -2,12 +2,13 @@
 % Please edit documentation in R/calculate_initial_layers.R
 \name{calculate_initial_layers}
 \alias{calculate_initial_layers}
-\title{Wrapper to calculate initial soil conditions for DSSAT simulations}
+\title{Calculate initial soil conditions for DSSAT simulations}
 \usage{
 calculate_initial_layers(
   soil_profile,
   percent_available_water = NULL,
-  total_n_kgha = NULL
+  total_n_kgha = NULL,
+  output_path = NULL
 )
 }
 \arguments{
@@ -16,13 +17,18 @@ calculate_initial_layers(
 \item{percent_available_water}{A numeric value (0-100); available water for entire profile (\%).}
 
 \item{total_n_kgha}{A numeric value; total nitrogen fo entire profile (kg/ha).}
+
+\item{output_path}{(character) Optional file path to save the output.}
 }
 \value{
-A data.frame representing the DSSAT initial condition layers section ('SH2O', 'SNO3', 'SNH4')
-for each soil layer defined in the input soil profile.
+A data.frame representing the DSSAT initial condition layers section ('SH2O', 'SNO3', 'SNH4') for each soil layer
+defined in the input soil profile.
 }
 \description{
 Calculates initial soil conditions for water and/or nitrogen based on single input values.
+}
+\note{
+Implementation of the initial layer module in DSSAT Xbuild.
 }
 \examples{
 # Define a sample soil profile
@@ -41,5 +47,6 @@ calculate_initial_conditions(soil_df, percent_available_water = 50)
 
 # Calculate only nitrogen
 calculate_initial_conditions(soil_df, total_n_kgha = 40)
+
 
 }

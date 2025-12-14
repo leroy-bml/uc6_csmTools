@@ -2,32 +2,46 @@
 % Please edit documentation in R/convert_dataset.R
 \name{convert_dataset}
 \alias{convert_dataset}
-\title{Convert a Dataset Between Data Models}
+\title{Convert dataset between data models}
 \usage{
 convert_dataset(
   dataset,
   input_model,
   output_model,
-  unmatched_code = "na",
-  config_path = "./inst/extdata/datamodels.yaml"
+  output_path = NULL,
+  unmatched_code = "na"
 )
 }
 \arguments{
-\item{dataset}{The input dataset as a named list of data frames.}
+\item{dataset}{(list) A list of data frames.}
 
-\item{input_model}{The character name of the source data model (e.g., "bonares-lte_de").}
+\item{input_model}{(character) Name of the source data model (e.g., "bonares-lte_de").}
 
-\item{output_model}{The character name of the target data model (e.g., "icasa").}
+\item{output_model}{(character) Name of the target data model (e.g., "icasa").}
 
-\item{unmatched_code}{A string defining how \code{map_values} handles unmapped codes:
-\code{"na"}, \code{"pass_through"}, or \code{"default_value"}.}
+\item{output_path}{(character) Optional file path to save the output.}
 
-\item{config_path}{The file path to the \code{datamodels.yaml} configuration file.}
+\item{unmatched_code}{(character) How to handle unmatched levels during mapping of categorical variables:
+\itemize{
+\item \code{"na"} (default; sets to NA)
+\item \code{"pass_through"} (keeps original value)
+\item \code{"default_value"} (uses default predefined in yaml map)
+}}
 }
 \value{
-The final, converted, and post-processed dataset.
+A list of data frames in the target data model format.
 }
 \description{
-Top-level wrapper function to convert a dataset from a source to a target data model,
-handling configuration, mapping, and post-processing steps.
+Transforms a dataset from one data model to another (e.g., BonaRes LTE to ICASA) using mapping rules predefined in a yaml file.
+}
+\examples{
+# Convert a dataset from BonaRes to ICASA format and write the result in a json file
+converted_data <- convert_dataset(
+  dataset = my_bonares_data,
+  input_model = "bonares-lte_de",
+  output_model = "icasa",
+  unmatched_code = "pass_through",
+  output_path = "path/to/output.json"
+)
+
 }

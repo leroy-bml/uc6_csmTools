@@ -2,42 +2,50 @@
 % Please edit documentation in R/normalize_soil_profile.R
 \name{normalize_soil_profile}
 \alias{normalize_soil_profile}
-\title{Interpolate Soil Profile Data to a given depth sequence}
+\title{Normalize soil profile depths}
 \usage{
 normalize_soil_profile(
   data,
   depth_seq = c(5, 10, 20, 30, 40, 50, 60, 70, 90, 110, 130, 150, 170, 190, 210),
-  method = "linear"
+  method = "linear",
+  diagnostics = TRUE,
+  output_path = NULL
 )
 }
 \arguments{
-\item{data}{A data frame containing soil profile data, with a depth column named \code{"SLB"} and subsequent columns for profile variables.}
+\item{data}{(list/dataframe) Input soil profile data in DSSAT format or as a list with SOIL element.}
 
-\item{depth_seq}{Numeric vector. The standard depths (in cm) to which the profile should be interpolated. Default: typical DSSAT depths.}
+\item{depth_seq}{(numeric) Target depth sequence for normalization (in cm).
+Default: \code{c(5,10,20,30,40,50,60,70,90,110,130,150,170,190,210)}.}
 
-\item{method}{Character. Interpolation method to use (passed to \code{approx}). Default is \code{"linear"}.}
+\item{method}{(character) Interpolation method. Options: \code{"linear"} (default) or \code{"constant"}.}
+
+\item{diagnostics}{(logical) Whether to generate diagnostic plots. Default: \code{TRUE}.}
+
+\item{output_path}{(character) Optional file path to save the output.}
 }
 \value{
-A list with two elements:
-\describe{
-\item{\code{data}}{A data frame with interpolated profile data at standard depths.}
-\item{\code{plot}}{A ggplot object showing the interpolation results for each variable.}
-}
+A list containing the normalized soil profile data frame (element named "SOIL").
 }
 \description{
-Interpolates numeric soil profile variables to a standard set of depths,
-producing a harmonized profile and a diagnostic plot.
+Standardizes DSSAT soil profile data to a predefined sequence of depths using interpolation.
+Handles numeric soil properties while preserving metadata and categorical variables.
 }
-\details{
-The function identifies the depth column (\code{SLB}), separates header, profile, and categorical columns, and interpolates numeric profile variables to the specified standard depths using linear interpolation (or another method supported by \code{approx}). It combines the interpolated and original data, duplicates header values for interpolated layers, and returns a harmonized data frame. A diagnostic plot is also produced, showing input and interpolated values for each variable.
-
-The function uses the \strong{dplyr}, \strong{tidyr}, and \strong{ggplot2} packages for data manipulation and plotting.
+\note{
+\itemize{
+\item Only numeric columns are interpolated; categorical variables are preserved.
+\item If a depth in \code{depth_seq} already exists in the input, the original value is retained.
+\item Diagnostic plots are saved as PNG files when \code{output_path} is provided.
+}
 }
 \examples{
-\dontrun{
-result <- approx_profile(soil_data)
-print(result$plot)
-head(result$data)
-}
+# Normalize a soil profile to standard depths and save to file
+normalized_soil <- normalize_soil_profile(
+  data = my_soil_data,
+  depth_seq = c(0, 10, 30, 60, 100, 200),
+  method = "linear",
+  diagnostics = TRUE,
+  output_path = "path/to/normalized_soil.csv"
+)
 
 }

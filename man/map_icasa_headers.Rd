@@ -4,18 +4,12 @@
 \alias{map_icasa_headers}
 \title{Format ICASA Column Headers}
 \usage{
-map_icasa_headers(
-  dataset,
-  header_type = "short",
-  config_path = "./inst/extdata/datamodels.yaml"
-)
+map_icasa_headers(dataset, header_type = "short")
 }
 \arguments{
 \item{dataset}{The ICASA dataset as a named list of data frames.}
 
 \item{header_type}{The target header style, either \code{"short"} or \code{"long"}.}
-
-\item{config_path}{The path to the \code{datamodels.yaml} file.}
 }
 \value{
 The dataset with renamed headers.
