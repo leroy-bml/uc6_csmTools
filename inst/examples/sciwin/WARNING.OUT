@@ -1,0 +1,175 @@
+*WARNING DETAIL FILE
+
+******************************************************************************
+
+*DSSAT Cropping System Model Ver. 4.8.2.000 -release  DEC 14, 2025 20:34:40
+
+*RUN   1        : No N                      WHAPS048 HWOC2501    1
+ MODEL          : WHAPS048 - Wheat
+ EXPERIMENT     : HWOC2501 WH
+ DATA PATH      : C:/DSSAT48/Wheat/
+ TREATMENT  1   : No N                      WHAPS048
+  
+
+ IPSOIL  YEAR DOY =    0   0
+ Saturated hydraulic conductivity equal to zero for one or more soil layers.   
+ Data will be treated as missing.                                              
+
+ TILLAGE  YEAR DOY = 2024 296
+ User-specified tillage depth greater than that specified by tillage implement.
+ Tillage operation date: 2024 296                                              
+ TI012: Cultivator, row                                                        
+ User-specified depth = 17.0 cm                                                
+ Implement depth of      2.5 cm will be used.                                  
+
+ TILLAGE  YEAR DOY = 2024 296
+ User-specified tillage depth greater than that specified by tillage implement.
+ Tillage operation date: 2024 297                                              
+ TI012: Cultivator, row                                                        
+ User-specified depth = 12.0 cm                                                
+ Implement depth of      2.5 cm will be used.                                  
+
+ SOLORG  YEAR DOY = 2024 296
+ The initialized C:N ratio of the soil organic                                 
+ matter (humus) in layer   3 is unlikely:      9.5                             
+ A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
+ Please check your SOIL.SOL file.                                              
+
+ SOLORG  YEAR DOY = 2024 296
+ The initialized C:N ratio of the soil organic                                 
+ matter (humus) in layer   4 is unlikely:      9.7                             
+ A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
+ Please check your SOIL.SOL file.                                              
+
+ SOLORG  YEAR DOY = 2024 296
+ The initialized C:N ratio of the soil organic                                 
+ matter (humus) in layer   5 is unlikely:      9.7                             
+ A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
+ Please check your SOIL.SOL file.                                              
+
+ SOLORG  YEAR DOY = 2024 296
+ The initialized C:N ratio of the soil organic                                 
+ matter (humus) in layer   7 is unlikely:      8.7                             
+ A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
+ Please check your SOIL.SOL file.                                              
+
+ IPWTH   YEAR DOY = 2025   1
+ Error opening weather file.                                                   
+   LL912501.WTH                                                                
+ Simulation will end.                                                          
+
+******************************************************************************
+
+*DSSAT Cropping System Model Ver. 4.8.2.000 -release  DEC 14, 2025 20:34:40
+
+*RUN   2        : 147 kg[N]/ha - broadcast  WHAPS048 HWOC2501    3
+ MODEL          : WHAPS048 - Wheat
+ EXPERIMENT     : HWOC2501 WH
+ DATA PATH      : C:/DSSAT48/Wheat/
+ TREATMENT  3   : 147 kg[N]/ha - broadcast  WHAPS048
+  
+
+ IPSOIL  YEAR DOY =    0   0
+ Saturated hydraulic conductivity equal to zero for one or more soil layers.   
+ Data will be treated as missing.                                              
+
+ TILLAGE  YEAR DOY = 2024 296
+ User-specified tillage depth greater than that specified by tillage implement.
+ Tillage operation date: 2024 296                                              
+ TI012: Cultivator, row                                                        
+ User-specified depth = 17.0 cm                                                
+ Implement depth of      2.5 cm will be used.                                  
+
+ TILLAGE  YEAR DOY = 2024 296
+ User-specified tillage depth greater than that specified by tillage implement.
+ Tillage operation date: 2024 297                                              
+ TI012: Cultivator, row                                                        
+ User-specified depth = 12.0 cm                                                
+ Implement depth of      2.5 cm will be used.                                  
+
+ SOLORG  YEAR DOY = 2024 296
+ The initialized C:N ratio of the soil organic                                 
+ matter (humus) in layer   3 is unlikely:      9.5                             
+ A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
+ Please check your SOIL.SOL file.                                              
+
+ SOLORG  YEAR DOY = 2024 296
+ The initialized C:N ratio of the soil organic                                 
+ matter (humus) in layer   4 is unlikely:      9.7                             
+ A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
+ Please check your SOIL.SOL file.                                              
+
+ SOLORG  YEAR DOY = 2024 296
+ The initialized C:N ratio of the soil organic                                 
+ matter (humus) in layer   5 is unlikely:      9.7                             
+ A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
+ Please check your SOIL.SOL file.                                              
+
+ SOLORG  YEAR DOY = 2024 296
+ The initialized C:N ratio of the soil organic                                 
+ matter (humus) in layer   7 is unlikely:      8.7                             
+ A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
+ Please check your SOIL.SOL file.                                              
+
+ IPWTH   YEAR DOY = 2025   1
+ Error opening weather file.                                                   
+   LL912501.WTH                                                                
+ Simulation will end.                                                          
+
+******************************************************************************
+
+*DSSAT Cropping System Model Ver. 4.8.2.000 -release  DEC 14, 2025 20:34:40
+
+*RUN   3        : 180 kg[N]/ha - broadcast  WHAPS048 HWOC2501    7
+ MODEL          : WHAPS048 - Wheat
+ EXPERIMENT     : HWOC2501 WH
+ DATA PATH      : C:/DSSAT48/Wheat/
+ TREATMENT  7   : 180 kg[N]/ha - broadcast  WHAPS048
+  
+
+ IPSOIL  YEAR DOY =    0   0
+ Saturated hydraulic conductivity equal to zero for one or more soil layers.   
+ Data will be treated as missing.                                              
+
+ TILLAGE  YEAR DOY = 2024 296
+ User-specified tillage depth greater than that specified by tillage implement.
+ Tillage operation date: 2024 296                                              
+ TI012: Cultivator, row                                                        
+ User-specified depth = 17.0 cm                                                
+ Implement depth of      2.5 cm will be used.                                  
+
+ TILLAGE  YEAR DOY = 2024 296
+ User-specified tillage depth greater than that specified by tillage implement.
+ Tillage operation date: 2024 297                                              
+ TI012: Cultivator, row                                                        
+ User-specified depth = 12.0 cm                                                
+ Implement depth of      2.5 cm will be used.                                  
+
+ SOLORG  YEAR DOY = 2024 296
+ The initialized C:N ratio of the soil organic                                 
+ matter (humus) in layer   3 is unlikely:      9.5                             
+ A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
+ Please check your SOIL.SOL file.                                              
+
+ SOLORG  YEAR DOY = 2024 296
+ The initialized C:N ratio of the soil organic                                 
+ matter (humus) in layer   4 is unlikely:      9.7                             
+ A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
+ Please check your SOIL.SOL file.                                              
+
+ SOLORG  YEAR DOY = 2024 296
+ The initialized C:N ratio of the soil organic                                 
+ matter (humus) in layer   5 is unlikely:      9.7                             
+ A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
+ Please check your SOIL.SOL file.                                              
+
+ SOLORG  YEAR DOY = 2024 296
+ The initialized C:N ratio of the soil organic                                 
+ matter (humus) in layer   7 is unlikely:      8.7                             
+ A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
+ Please check your SOIL.SOL file.                                              
+
+ IPWTH   YEAR DOY = 2025   1
+ Error opening weather file.                                                   
+   LL912501.WTH                                                                
+ Simulation will end.                                                          

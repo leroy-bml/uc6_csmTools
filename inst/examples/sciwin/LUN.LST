@@ -1,0 +1,26 @@
+*DSSAT Cropping System Model Ver. 4.8.2.000   -release    DEC 14, 2025; 20:34:40
+
+ Unit  Filename
+  501  OPCLR
+   21  FILEIO
+   14  BATCH 
+  502  LUNMFW
+  118  OUTINFO
+  503  SIMCDE
+   25  DSPRO
+   22  DTACDE
+  122  WARNING.OUT
+  504  RUNLST
+   11  FILEW
+   95  OUTO
+   10  FILEC
+   39  OUTG
+  505  OUTS
+   91  SEVAL
+  506  FILECO2
+   52  OUTWTH
+  507  FILEF
+   16  FILETL
+   13  FILESS
+   47  OUTT
+    8  FILEA

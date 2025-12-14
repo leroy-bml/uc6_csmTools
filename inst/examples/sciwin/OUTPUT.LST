@@ -1,0 +1,12 @@
+*Output file list
+
+@FILENAME          DESCRIPTION
+PlantGro.OUT       Daily plant growth output file                    
+SoilTemp.OUT       Daily soil temperature output file                
+Weather.OUT        Daily weather output file                         
+Evaluate.OUT       Evaluation output file (simulated vs. measured)   
+OVERVIEW.OUT       Seasonal overview output file                     
+Summary.OUT        Seasonal summary output file                      
+INFO.OUT           Information output file                           
+WARNING.OUT        Warning messages                                  
+LUN.LST            List of output files generated                    

@@ -22,11 +22,11 @@
 
 # Extract template data
 mngt_obs_icasa <- get_field_data(
-  path = "./inst/extdata/template_icasa_vba.xlsm",
+  path = "./inst/examples/sciwin/template_icasa_vba.xlsm",
   exp_id = "HWOC2501",
   headers = "long",
   keep_null_events = FALSE,
-  output_path = "./inst/examples/sciwin/tmp_expdata_icasa.json"
+  output_path = "./inst/examples/sciwin/ochsenwasen_field_icasa.json"
 )
 
 
@@ -60,16 +60,16 @@ wth_sensor_raw <- get_sensor_data(
   radius = 10,
   from = "2024-01-01",
   to = "2025-08-09",
-  output_path = "./inst/examples/sciwin/tmp_weatherdata_sensor.json"
+  output_path = "./inst/examples/sciwin/ochsenwasen_weather_sensor.json"
 )
 
 # --- Map raw weather data to ICASA ---
 wth_sensor_icasa <- convert_dataset(
-  dataset = "./inst/examples/sciwin/tmp_weatherdata_sensor.json",
+  dataset = "./inst/examples/sciwin/ochsenwasen_weather_sensor.json",
   input_model = "user",
   output_model = "icasa",
   unmatched_code = "na",
-  output_path = "./inst/examples/sciwin/tmp_weatherdata_sensor_icasa.json"
+  output_path = "./inst/examples/sciwin/ochsenwasen_weather_sensor_icasa.json"
 )
 
 
@@ -83,30 +83,34 @@ wth_sensor_icasa <- convert_dataset(
 
 # --- Download complementary weather data ---
 wth_model_nasapower <- get_weather_data(
-  lon = longitude,
-  lat = latitude,
+  lon = 10.645269,
+  lat = 49.20868,
   pars = c("air_temperature", "precipitation", "solar_radiation"),
   res = "daily",
-  from = start_date,
-  to = end_date,
+  from = "2024-01-01",
+  to = "2025-08-09",
   src = "nasa_power",
-  output_path = "./inst/examples/sciwin/tmp_weatherdata_nasapower.json"
+  output_path = "./inst/examples/sciwin/ochsenwasen_weather_nasapower.json"
 )
 
 # --- Map complementary weather data to ICASA ---
 wth_model_icasa <- convert_dataset(
-  dataset = "./inst/examples/sciwin/tmp_weatherdata_nasapower.json",
+  dataset = "./inst/examples/sciwin/ochsenwasen_weather_nasapower.json",
   input_model = "nasa-power",
   output_model = "icasa",
-  output_path = "./inst/examples/sciwin/tmp_weatherdata_nasapower_icasa.json"
+  output_path = "./inst/examples/sciwin/ochsenwasen_weather_nasapower_icasa.json"
 )
 
 # -- Assemble composite dataset ---
-tmp <- assemble_dataset(
-  components = list(wth_sensor_icasa, wth_model_icasa),
-  what = "properties",
+wth_icasa <- assemble_dataset(
+  components = list(
+    "./inst/examples/sciwin/ochsenwasen_weather_sensor_icasa.json",
+    "./inst/examples/sciwin/ochsenwasen_weather_nasapower_icasa.json"
+  ),
+  keep_all = FALSE,
+  action = "merge_properties",
   join_type = "full",
-  output_path = "./inst/examples/sciwin/tmp_weatherdata_icasa.json"
+  output_path = "./inst/examples/sciwin/ochsenwasen_weather_icasa.json"
 )
 
 
@@ -123,68 +127,67 @@ tmp <- assemble_dataset(
 
 #####----- Extract profile data from SoilGrids --------------------------------------
 soil_icasa <- get_soil_profile(
-  lon = longitude,
-  lat = latitude,
+  lon = 10.645269,
+  lat = 49.20868,
   src = "soil_grids",
   dir = NULL,
-  output_path = "./inst/examples/sciwin/tmp_soildata_icasa.json"
+  delete_raw_files = FALSE,
+  output_path = "./inst/examples/sciwin/ochsenwasen_soil_icasa.json"
 )
 
 
-###----- Soil profile data - external database --------------------------------------
+###----- Phenology data - GDD model and drone orthophotos ---------------------------
 ## ----------------------------------------------------------------------------------
-## This section demonstrates the sourcing of soil profile data from a a published
-## dataset (Global 10-km Soil Grids DSSAT profiles). The data is first downloaded
-## with the Dataverse API, and the closest profile to the set of input coordinates
-## extracted. As the dataset already provides ready-to-use DSSAT formats, no
-## mapping step is necesary here. 
-## Data reference: https://doi.org/10.7910/DVN/1PEEY0
-##
+## This section links to the UAV image processing workflow (raster2sensor + phenology
+## estimation). The function takes the process output and pick one date for the focal
+## growth stages by scaling the estimated growth stage date sequences to the selected
+## growth stage scale.
 ## ----------------------------------------------------------------------------------
 
 gs_raw <- lookup_gs_dates(
   data = "./inst/examples/sciwin/wheat_phenology_results.csv",
-  gs_scale = "zadok",
-  gs_codes = c(65, 87),  # Zadok's codes for anthesis and maturity stages
+  gs_scale = "zadoks",
+  gs_codes = c(65, 87),  # Zadoks codes for anthesis and maturity stages
   date_select_rule = "median",
-  output_path = "./inst/examples/sciwin/tmp-phenology.json"
+  output_path = "./inst/examples/sciwin/ochsenwasen_phenology.json"
 )
 
 gs_icasa <- convert_dataset(
-  dataset = gs_raw,
+  dataset = "./inst/examples/sciwin/ochsenwasen_phenology.json",
   input_model = "user",
   output_model = "icasa",
-  output_path = "./inst/examples/sciwin/tmp-phenology-icasa.json"
+  output_path = "./inst/examples/sciwin/ochsenwasen_phenology_icasa.json"
 )
 
 
 ###----- Data integration and mapping to DSSAT --------------------------------------
 ## ----------------------------------------------------------------------------------
-## xxxxxx
-##
+## Combine all ICASA datasets, either by merging or aggregating same-named data frames
+## or appending new dataframes to a single dataset object. The object is then mapped
+## to DSSAT
 ## ----------------------------------------------------------------------------------
 
 # Integrate all data sources
 dataset_icasa <- assemble_dataset(
   components = list(
-    "./inst/examples/sciwin/tmp_expdata_icasa.json",
-    "./inst/examples/sciwin/tmp-phenology-icasa.json",
-    "./inst/examples/sciwin/tmp_soildata_icasa.json",
-    "./inst/examples/sciwin/tmp_weatherdata_sensor_icasa.json",
-    "./inst/examples/sciwin/tmp_weatherdata_nasapower_icasa.json"
+    "./inst/examples/sciwin/ochsenwasen_field_icasa.json",
+    "./inst/examples/sciwin/ochsenwasen_phenology_icasa.json",
+    "./inst/examples/sciwin/ochsenwasen_soil_icasa.json",
+    "./inst/examples/sciwin/ochsenwasen_weather_sensor_icasa.json",
+    "./inst/examples/sciwin/ochsenwasen_weather_nasapower_icasa.json"
   ),
   keep_all = TRUE,
   action = "merge_properties",
   join_type = "full",
-  output_path = "./inst/examples/sciwin/tmp_icasa.json"
+  output_path = "./inst/examples/sciwin/ochsenwasen_icasa.json"
 )
 
 # Map from ICASA to DSSAT (write-ready)
 dataset_dssat <- convert_dataset(
-  dataset = "./inst/examples/sciwin/tmp_icasa.json",
+  dataset = "./inst/examples/sciwin/ochsenwasen_icasa.json",
   input_model = "icasa",
   output_model = "dssat",
-  output_path = "./inst/examples/sciwin/dataset_dssat.json"
+  output_path = "./inst/examples/sciwin/ochsenwasen_dssat.json"
 )
 #TODO: check why dssat mappping is 'unboxed'
 
@@ -206,43 +209,43 @@ dataset_dssat <- convert_dataset(
 
 # --- Normalize soil profile ---
 soil_dssat_std <- normalize_soil_profile(
-  data = "./inst/examples/sciwin/dataset_dssat.json",
+  data = "./inst/examples/sciwin/ochsenwasen_dssat.json",
   depth_seq = c(5,10,20,30,40,50,60,70,90,110,130,150,170,190,210),
   method = "linear",
-  output_path = "./inst/examples/sciwin/tmp_soil_dssat_normalized.json"
+  output_path = "./inst/examples/sciwin/ochsenwasen_soil_dssat_normalized.json"
 )
 
 # Update dataset with normalized soil profile ('replace')
 dataset_dssat <- assemble_dataset(
   components = list(
-    "./inst/examples/sciwin/dataset_dssat.json",
-    "./inst/examples/sciwin/tmp_soil_dssat_normalized.json"
+    "./inst/examples/sciwin/ochsenwasen_dssat.json",
+    "./inst/examples/sciwin/ochsenwasen_soil_dssat_normalized.json"
   ),
   keep_all = FALSE,
   action = "replace_table",
   # structure_arg = 1,
-  output_path = "./inst/examples/sciwin/dataset_dssat.json"
+  output_path = "./inst/examples/sciwin/ochsenwasen_dssat.json"
 )
 
 
 # --- Generate initial layers ---
 init_layers <- calculate_initial_layers(
-  soil_profile = "./inst/examples/sciwin/tmp_soil_dssat_normalized.json",
+  soil_profile = "./inst/examples/sciwin/ochsenwasen_soil_dssat_normalized.json",
   percent_available_water = 100,
   total_n_kgha = 50,  # Value provided in field book, but only for 0-60 cm
-  output_path = "./inst/examples/sciwin/tmp_init_layers.json"
+  output_path = "./inst/examples/sciwin/ochsenwasen_init_layers.json"
 )
 
 # Update initial conditions with simulated layers ('merge')
 dataset_dssat <- assemble_dataset(
   components = list(
-    "./inst/examples/sciwin/dataset_dssat.json",
-    "./inst/examples/sciwin/tmp_init_layers.json"
+    "./inst/examples/sciwin/ochsenwasen_dssat.json",
+    "./inst/examples/sciwin/ochsenwasen_init_layers.json"
   ),
   keep_all = FALSE,
   action = "merge_properties",
   join_type = "full",
-  output_path = "./inst/examples/sciwin/dataset_dssat.json"
+  output_path = "./inst/examples/sciwin/ochsenwasen_dssat.json"
 )
 
 
@@ -250,7 +253,7 @@ dataset_dssat <- assemble_dataset(
 
 # Assemble full input dataset
 dataset_dssat_input <- build_simulation_files(
-  dataset = "./inst/examples/sciwin/dataset_dssat.json",
+  dataset = "./inst/examples/sciwin/ochsenwasen_dssat.json",
   sol_append = FALSE,
   write = TRUE,
   # If set to TRUE, files are written in the DSSAT locations (needed for simulation)
@@ -262,15 +265,13 @@ dataset_dssat_input <- build_simulation_files(
 
 ###----- Run DSSAT simulation ------------------------------------------------------
 
-run_simulations(
+simulations <- run_simulations(
   filex_path = "C:/DSSAT48/Wheat/HWOC2501.WHX",  # the crop management file in the DSSAT location
   treatments = c(1, 3, 7),  # treatment index
   framework = "dssat",
   dssat_dir = NULL,
   sim_dir = "./inst/examples/sciwin"
 )
-
-View(sims$plant_growth)
 
 
 ###----- Plot output ---------------------------------------------------------------
@@ -324,5 +325,13 @@ plot_growth <- sims %>%
   theme(legend.text = element_text(size = 8), legend.title = element_text(size = 8),
         axis.title.x = ggplot2::element_blank(), axis.title.y = element_text(size = 10),
         axis.text = element_text(size = 9, colour = "black"))
+
+ggsave(
+  filename = "./inst/examples/simulation_results.png",
+  plot_growth,
+  width = 15, height = 12, units = "cm",
+  dpi = 600,
+  bg = "white"
+)
 
 

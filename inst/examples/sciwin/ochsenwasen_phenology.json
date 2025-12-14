@@ -1,0 +1,16 @@
+{
+  "CEREAL_PHENOLOGY": {
+    "data": {
+      "scale": ["zadoks", "zadoks"],
+      "growth_stage": ["Flowering", "Maturity"],
+      "scaled_code": [65, 87],
+      "doy": [156, 191],
+      "Date": ["2025-06-05", "2025-07-10"],
+      "date": ["2025-06-05", "2025-07-10"],
+      "year": [2025, 2025]
+    },
+    "attributes": {
+      "_class_attribute": ["tbl_df", "tbl", "data.frame"]
+    }
+  }
+}

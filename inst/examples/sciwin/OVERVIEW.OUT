@@ -1,0 +1,388 @@
+*SIMULATION OVERVIEW FILE
+
+*DSSAT Cropping System Model Ver. 4.8.2.000 -release  DEC 14, 2025 20:34:40
+
+*RUN   1        : No N                      WHAPS048 HWOC2501    1
+ MODEL          : WHAPS048 - Wheat
+ EXPERIMENT     : HWOC2501 WH
+ DATA PATH      : C:/DSSAT48/Wheat/
+ TREATMENT  1   : No N                      WHAPS048
+
+
+ CROP           : Wheat            CULTIVAR : SU Mangold       ECOTYPE :DFAULT
+ STARTING DATE  : OCT 22 2024
+ PLANTING DATE  : OCT 23 2024      PLANTS/m2 :   380.0    ROW SPACING :  12.cm
+ WEATHER        : LL91   2024
+ SOIL           : IB00000007     TEXTURE : SL    - DEFAULT - DEEP SANDY LOAM
+ SOIL INIT COND : DEPTH:210cm EXTR. H2O:229.2mm  NO3: 49.5kg/ha  NH4:  5.4kg/ha
+ WATER BALANCE  : RAINFED
+ IRRIGATION     : NOT IRRIGATED
+ NITROGEN BAL.  : SOIL-N & N-UPTAKE SIMULATION; NO N-FIXATION
+ N-FERTILIZER   :        0 kg/ha IN     0 APPLICATIONS
+ RESIDUE/MANURE : INITIAL :  2000 kg/ha ;       0 kg/ha IN     0 APPLICATIONS
+ ENVIRONM. OPT. : DAYL=    0.00  SRAD=    0.00  TMAX=    0.00  TMIN=    0.00
+                  RAIN=    0.00  CO2 =    0.00  DEW =    0.00  WIND=    0.00
+ SIMULATION OPT : WATER   :Y  NITROGEN:Y  N-FIX:N  PHOSPH :N  PESTS  :N
+                  PHOTO   :C  ET      :R  INFIL:S  HYDROL :R  SOM    :G
+                  CO2 420ppm  NSWIT   :1  EVAP :S  SOIL   :2  STEMP  :D
+ MANAGEMENT OPT : PLANTING:R  IRRIG   :N  FERT :R  RESIDUE:N  HARVEST:M
+                  WEATHER :M  TILLAGE :Y
+
+*SUMMARY OF SOIL AND GENETIC INPUT PARAMETERS
+
+   SOIL LOWER UPPER   SAT  EXTR  INIT   ROOT   BULK     pH    NO3    NH4    ORG
+  DEPTH LIMIT LIMIT    SW    SW    SW   DIST   DENS                          C
+   cm   cm3/cm3    cm3/cm3    cm3/cm3         g/cm3         ugN/g  ugN/g     %
+-------------------------------------------------------------------------------
+  0-  5 0.052 0.176 0.359 0.124 0.221   1.00   1.61   6.50   1.46   0.16   0.70
+  5- 15 0.052 0.176 0.359 0.124 0.231   1.00   1.61   6.50   1.46   0.16   0.70
+ 15- 30 0.052 0.176 0.359 0.124 0.242   0.64   1.61   6.50   1.46   0.16   0.66
+ 30- 45 0.073 0.192 0.360 0.119 0.251   0.47   1.61   6.50   1.46   0.16   0.58
+ 45- 60 0.073 0.192 0.360 0.119 0.257   0.35   1.61   6.50   1.46   0.16   0.58
+ 60- 90 0.128 0.232 0.361 0.104 0.257   0.22   1.61   6.50   1.46   0.16   0.43
+ 90-120 0.143 0.243 0.359 0.100 0.255   0.12   1.62   6.50   1.46   0.16   0.26
+120-150 0.138 0.243 0.360 0.105 0.251   0.07   1.62   6.50   1.46   0.16   0.12
+150-180 0.138 0.244 0.361 0.106 0.246   0.04   1.62   6.50   1.46   0.16   0.04
+180-210 0.138 0.244 0.361 0.106 0.243   0.02   1.62   6.50   1.46   0.16   0.01
+
+TOT-210  24.3  47.2  75.6  22.9  52.2  <--cm   -  kg/ha-->   49.5    5.4 102525
+SOIL ALBEDO    : 0.13      EVAPORATION LIMIT : 6.00         MIN. FACTOR  : 1.00
+RUNOFF CURVE # :68.00      DRAINAGE RATE     : 0.50         FERT. FACTOR : 1.00
+
+ Wheat            CULTIVAR: LL0001-SU Mangold         ECOTYPE: DFAULT
+
+
+*SIMULATED CROP AND SOIL STATUS AT MAIN DEVELOPMENT STAGES
+
+ RUN NO.     1     No N                    
+
+        CROP GROWTH     BIOMASS         LEAF   CROP N     STRESS      STRESS                                           
+   DATE  AGE STAGE        kg/ha    LAI   NUM  kg/ha  %   H2O  Nitr Phos1 Phos2  RSTG                                   
+ ------  --- ----------   -----  -----  ----  ---  ---  ----  ----  ----  ----  ----                                   
+ 22 OCT    0 Fallow           0   0.00   0.0    0  0.0  0.00  0.00  0.00  0.00     7
+ 23 OCT    0 Sowing           0   0.00   0.0    0  0.0  0.00  0.00  0.00  0.00     8
+ 25 OCT    2 Germinate        0   0.00   0.0    0  0.0  0.00  0.00  0.00  0.00     9
+ 28 OCT    5 Emergence       15   0.02   0.0    1  6.4  0.00  0.01  0.00  0.00     1
+  1 JAN   70 Harvest        108   0.09   0.0    6  6.0  0.00  0.00  0.00  0.00     1
+
+
+*MAIN GROWTH AND DEVELOPMENT VARIABLES
+
+@     VARIABLE                                         SIMULATED     MEASURED
+      --------                                         ---------     --------
+      Anthesis day (dap)                                     -99          224
+      Physiological maturity day (dap)                       -99          255
+      Yield at harvest maturity (kg [dm]/ha)                   0          -99
+      Number at maturity (no/m2)                               0          -99
+      Unit wt at maturity (g [dm]/unit)                      0.0          -99
+      Number at maturity (no/unit)                           0.0          -99
+      Tops weight at maturity (kg [dm]/ha)                   108          -99
+      By-product produced (stalk) at maturity (kg[dm]/ha       0          -99
+      Leaf area index, maximum                              0.09          -99
+      Harvest index at maturity                            0.000          -99
+      Grain N at maturity (kg/ha)                              0          -99
+      Tops N at maturity (kg/ha)                               6          -99
+      Stem N at maturity (kg/ha)                               0          -99
+      Grain N at maturity (%)                                0.0          -99
+      Tops weight at anthesis (kg [dm]/ha)                     0          -99
+      Tops N at anthesis (kg/ha)                               0          -99
+      Leaf number per stem at maturity                      0.00          -99
+      Emergence day (dap)                                      5            6
+
+
+*ENVIRONMENTAL AND STRESS FACTORS
+
+ |-----Development Phase------|--------------------------------------Environment--------------------------------------|-----------------Stress-----------------|
+                              |---------------Average--------------|-----Cumulative-----|--------Count of days--------|          (0=Min, 1=Max Stress)         |
+                         Time  Temp  Temp  Temp Solar Photop                Evapo    Pot TMIN TMIN TMAX TMAX TMAX RAIN|----Water----|---Nitrogen--|-Phosphorus-|
+                         Span   Max   Min  Mean   Rad  [day]    CO2   Rain  Trans     ET   <    <    >    >    >    >   Photo         Photo         Photo
+                         days     C     C     C MJ/m2     hr    ppm     mm     mm    mm   0 C  2 C 30 C 32 C 34 C  0mm  synth Growth  synth Growth  synth Growth
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Emergence-End Juvenile    66   5.9   0.1   3.0   3.1   8.49  420.5   93.5   28.2   28.8   36   46    0    0    0   54  0.000  0.002  0.002  0.005  0.000  0.000
+   
+ Planting to Harvest       70   6.5   0.7   3.6   3.3   8.60  420.5   95.4   33.0   33.6   35   45    0    0    0   59  0.000  0.002  0.002  0.005  0.000  0.000
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+*Resource Productivity
+ Growing season length:  70 days 
+
+ Precipitation during growing season        95.4 mm[rain]
+   Dry Matter Productivity                  0.11 kg[DM]/m3[rain]          =    1.1 kg[DM]/ha per mm[rain]
+   Yield Productivity                       0.00 kg[grain yield]/m3[rain] =    0.0 kg[yield]/ha per mm[rain]
+
+ Evapotranspiration during growing season   33.0 mm[ET]
+   Dry Matter Productivity                  0.33 kg[DM]/m3[ET]            =    3.3 kg[DM]/ha per mm[ET]
+   Yield Productivity                       0.00 kg[grain yield]/m3[ET]   =    0.0 kg[yield]/ha per mm[ET]
+
+ Transpiration during growing season         0.3 mm[EP]
+   Dry Matter Productivity                 36.01 kg[DM]/m3[EP]            =  360.1 kg[DM]/ha per mm[EP]
+   Yield Productivity                       0.00 kg[grain yield]/m3[EP]   =    0.0 kg[yield]/ha per mm[EP]
+
+ N uptake during growing season                6 kg[N uptake]/ha
+   Dry Matter Productivity                  17.9 kg[DM]/kg[N uptake]
+   Yield Productivity                        0.0 kg[yield]/kg[N uptake]
+
+--------------------------------------------------------------------------------------------------------------
+
+                     Wheat YIELD :        0 kg/ha    [Dry weight] 
+
+**************************************************************************************************************
+
+*DSSAT Cropping System Model Ver. 4.8.2.000 -release  DEC 14, 2025 20:34:40
+
+*RUN   2        : 147 kg[N]/ha - broadcast  WHAPS048 HWOC2501    3
+ MODEL          : WHAPS048 - Wheat
+ EXPERIMENT     : HWOC2501 WH
+ DATA PATH      : C:/DSSAT48/Wheat/
+ TREATMENT  3   : 147 kg[N]/ha - broadcast  WHAPS048
+
+
+ CROP           : Wheat            CULTIVAR : SU Mangold       ECOTYPE :DFAULT
+ STARTING DATE  : OCT 22 2024
+ PLANTING DATE  : OCT 23 2024      PLANTS/m2 :   380.0    ROW SPACING :  12.cm
+ WEATHER        : LL91   2024
+ SOIL           : IB00000007     TEXTURE : SL    - DEFAULT - DEEP SANDY LOAM
+ SOIL INIT COND : DEPTH:210cm EXTR. H2O:229.2mm  NO3: 49.5kg/ha  NH4:  5.4kg/ha
+ WATER BALANCE  : RAINFED
+ IRRIGATION     : NOT IRRIGATED
+ NITROGEN BAL.  : SOIL-N & N-UPTAKE SIMULATION; NO N-FIXATION
+ N-FERTILIZER   :      147 kg/ha IN     3 APPLICATIONS
+ RESIDUE/MANURE : INITIAL :  2000 kg/ha ;       0 kg/ha IN     0 APPLICATIONS
+ ENVIRONM. OPT. : DAYL=    0.00  SRAD=    0.00  TMAX=    0.00  TMIN=    0.00
+                  RAIN=    0.00  CO2 =    0.00  DEW =    0.00  WIND=    0.00
+ SIMULATION OPT : WATER   :Y  NITROGEN:Y  N-FIX:N  PHOSPH :N  PESTS  :N
+                  PHOTO   :C  ET      :R  INFIL:S  HYDROL :R  SOM    :G
+                  CO2 420ppm  NSWIT   :1  EVAP :S  SOIL   :2  STEMP  :D
+ MANAGEMENT OPT : PLANTING:R  IRRIG   :N  FERT :R  RESIDUE:N  HARVEST:M
+                  WEATHER :M  TILLAGE :Y
+
+*SUMMARY OF SOIL AND GENETIC INPUT PARAMETERS
+
+   SOIL LOWER UPPER   SAT  EXTR  INIT   ROOT   BULK     pH    NO3    NH4    ORG
+  DEPTH LIMIT LIMIT    SW    SW    SW   DIST   DENS                          C
+   cm   cm3/cm3    cm3/cm3    cm3/cm3         g/cm3         ugN/g  ugN/g     %
+-------------------------------------------------------------------------------
+  0-  5 0.052 0.176 0.359 0.124 0.221   1.00   1.61   6.50   1.46   0.16   0.70
+  5- 15 0.052 0.176 0.359 0.124 0.231   1.00   1.61   6.50   1.46   0.16   0.70
+ 15- 30 0.052 0.176 0.359 0.124 0.242   0.64   1.61   6.50   1.46   0.16   0.66
+ 30- 45 0.073 0.192 0.360 0.119 0.251   0.47   1.61   6.50   1.46   0.16   0.58
+ 45- 60 0.073 0.192 0.360 0.119 0.257   0.35   1.61   6.50   1.46   0.16   0.58
+ 60- 90 0.128 0.232 0.361 0.104 0.257   0.22   1.61   6.50   1.46   0.16   0.43
+ 90-120 0.143 0.243 0.359 0.100 0.255   0.12   1.62   6.50   1.46   0.16   0.26
+120-150 0.138 0.243 0.360 0.105 0.251   0.07   1.62   6.50   1.46   0.16   0.12
+150-180 0.138 0.244 0.361 0.106 0.246   0.04   1.62   6.50   1.46   0.16   0.04
+180-210 0.138 0.244 0.361 0.106 0.243   0.02   1.62   6.50   1.46   0.16   0.01
+
+TOT-210  24.3  47.2  75.6  22.9  52.2  <--cm   -  kg/ha-->   49.5    5.4 102525
+SOIL ALBEDO    : 0.13      EVAPORATION LIMIT : 6.00         MIN. FACTOR  : 1.00
+RUNOFF CURVE # :68.00      DRAINAGE RATE     : 0.50         FERT. FACTOR : 1.00
+
+ Wheat            CULTIVAR: LL0001-SU Mangold         ECOTYPE: DFAULT
+
+
+*SIMULATED CROP AND SOIL STATUS AT MAIN DEVELOPMENT STAGES
+
+ RUN NO.     2     147 kg[N]/ha - broadcast
+
+        CROP GROWTH     BIOMASS         LEAF   CROP N     STRESS      STRESS                                           
+   DATE  AGE STAGE        kg/ha    LAI   NUM  kg/ha  %   H2O  Nitr Phos1 Phos2  RSTG                                   
+ ------  --- ----------   -----  -----  ----  ---  ---  ----  ----  ----  ----  ----                                   
+ 22 OCT    0 Fallow           0   0.00   0.0    0  0.0  0.00  0.00  0.00  0.00     7
+ 23 OCT    0 Sowing           0   0.00   0.0    0  0.0  0.00  0.00  0.00  0.00     8
+ 25 OCT    2 Germinate        0   0.00   0.0    0  0.0  0.00  0.00  0.00  0.00     9
+ 28 OCT    5 Emergence       15   0.02   0.0    1  6.4  0.00  0.01  0.00  0.00     1
+  1 JAN   70 Harvest        108   0.09   0.0    6  6.0  0.00  0.00  0.00  0.00     1
+
+
+*MAIN GROWTH AND DEVELOPMENT VARIABLES
+
+@     VARIABLE                                         SIMULATED     MEASURED
+      --------                                         ---------     --------
+      Anthesis day (dap)                                     -99          224
+      Physiological maturity day (dap)                       -99          255
+      Yield at harvest maturity (kg [dm]/ha)                   0          -99
+      Number at maturity (no/m2)                               0          -99
+      Unit wt at maturity (g [dm]/unit)                      0.0          -99
+      Number at maturity (no/unit)                           0.0          -99
+      Tops weight at maturity (kg [dm]/ha)                   108          -99
+      By-product produced (stalk) at maturity (kg[dm]/ha       0          -99
+      Leaf area index, maximum                              0.09          -99
+      Harvest index at maturity                            0.000          -99
+      Grain N at maturity (kg/ha)                              0          -99
+      Tops N at maturity (kg/ha)                               6          -99
+      Stem N at maturity (kg/ha)                               0          -99
+      Grain N at maturity (%)                                0.0          -99
+      Tops weight at anthesis (kg [dm]/ha)                     0          -99
+      Tops N at anthesis (kg/ha)                               0          -99
+      Leaf number per stem at maturity                      0.00          -99
+      Emergence day (dap)                                      5            6
+
+
+*ENVIRONMENTAL AND STRESS FACTORS
+
+ |-----Development Phase------|--------------------------------------Environment--------------------------------------|-----------------Stress-----------------|
+                              |---------------Average--------------|-----Cumulative-----|--------Count of days--------|          (0=Min, 1=Max Stress)         |
+                         Time  Temp  Temp  Temp Solar Photop                Evapo    Pot TMIN TMIN TMAX TMAX TMAX RAIN|----Water----|---Nitrogen--|-Phosphorus-|
+                         Span   Max   Min  Mean   Rad  [day]    CO2   Rain  Trans     ET   <    <    >    >    >    >   Photo         Photo         Photo
+                         days     C     C     C MJ/m2     hr    ppm     mm     mm    mm   0 C  2 C 30 C 32 C 34 C  0mm  synth Growth  synth Growth  synth Growth
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Emergence-End Juvenile    66   5.9   0.1   3.0   3.1   8.49  420.5   93.5   28.2   28.8   36   46    0    0    0   54  0.000  0.002  0.002  0.005  0.000  0.000
+   
+ Planting to Harvest       70   6.5   0.7   3.6   3.3   8.60  420.5   95.4   32.9   33.6   35   45    0    0    0   59  0.000  0.002  0.002  0.005  0.000  0.000
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+*Resource Productivity
+ Growing season length:  70 days 
+
+ Precipitation during growing season        95.4 mm[rain]
+   Dry Matter Productivity                  0.11 kg[DM]/m3[rain]          =    1.1 kg[DM]/ha per mm[rain]
+   Yield Productivity                       0.00 kg[grain yield]/m3[rain] =    0.0 kg[yield]/ha per mm[rain]
+
+ Evapotranspiration during growing season   32.9 mm[ET]
+   Dry Matter Productivity                  0.33 kg[DM]/m3[ET]            =    3.3 kg[DM]/ha per mm[ET]
+   Yield Productivity                       0.00 kg[grain yield]/m3[ET]   =    0.0 kg[yield]/ha per mm[ET]
+
+ Transpiration during growing season         0.3 mm[EP]
+   Dry Matter Productivity                 36.01 kg[DM]/m3[EP]            =  360.1 kg[DM]/ha per mm[EP]
+   Yield Productivity                       0.00 kg[grain yield]/m3[EP]   =    0.0 kg[yield]/ha per mm[EP]
+
+ N uptake during growing season                6 kg[N uptake]/ha
+   Dry Matter Productivity                  17.9 kg[DM]/kg[N uptake]
+   Yield Productivity                        0.0 kg[yield]/kg[N uptake]
+
+--------------------------------------------------------------------------------------------------------------
+
+                     Wheat YIELD :        0 kg/ha    [Dry weight] 
+
+**************************************************************************************************************
+
+*DSSAT Cropping System Model Ver. 4.8.2.000 -release  DEC 14, 2025 20:34:40
+
+*RUN   3        : 180 kg[N]/ha - broadcast  WHAPS048 HWOC2501    7
+ MODEL          : WHAPS048 - Wheat
+ EXPERIMENT     : HWOC2501 WH
+ DATA PATH      : C:/DSSAT48/Wheat/
+ TREATMENT  7   : 180 kg[N]/ha - broadcast  WHAPS048
+
+
+ CROP           : Wheat            CULTIVAR : SU Mangold       ECOTYPE :DFAULT
+ STARTING DATE  : OCT 22 2024
+ PLANTING DATE  : OCT 23 2024      PLANTS/m2 :   380.0    ROW SPACING :  12.cm
+ WEATHER        : LL91   2024
+ SOIL           : IB00000007     TEXTURE : SL    - DEFAULT - DEEP SANDY LOAM
+ SOIL INIT COND : DEPTH:210cm EXTR. H2O:229.2mm  NO3: 49.5kg/ha  NH4:  5.4kg/ha
+ WATER BALANCE  : RAINFED
+ IRRIGATION     : NOT IRRIGATED
+ NITROGEN BAL.  : SOIL-N & N-UPTAKE SIMULATION; NO N-FIXATION
+ N-FERTILIZER   :      180 kg/ha IN     3 APPLICATIONS
+ RESIDUE/MANURE : INITIAL :  2000 kg/ha ;       0 kg/ha IN     0 APPLICATIONS
+ ENVIRONM. OPT. : DAYL=    0.00  SRAD=    0.00  TMAX=    0.00  TMIN=    0.00
+                  RAIN=    0.00  CO2 =    0.00  DEW =    0.00  WIND=    0.00
+ SIMULATION OPT : WATER   :Y  NITROGEN:Y  N-FIX:N  PHOSPH :N  PESTS  :N
+                  PHOTO   :C  ET      :R  INFIL:S  HYDROL :R  SOM    :G
+                  CO2 420ppm  NSWIT   :1  EVAP :S  SOIL   :2  STEMP  :D
+ MANAGEMENT OPT : PLANTING:R  IRRIG   :N  FERT :R  RESIDUE:N  HARVEST:M
+                  WEATHER :M  TILLAGE :Y
+
+*SUMMARY OF SOIL AND GENETIC INPUT PARAMETERS
+
+   SOIL LOWER UPPER   SAT  EXTR  INIT   ROOT   BULK     pH    NO3    NH4    ORG
+  DEPTH LIMIT LIMIT    SW    SW    SW   DIST   DENS                          C
+   cm   cm3/cm3    cm3/cm3    cm3/cm3         g/cm3         ugN/g  ugN/g     %
+-------------------------------------------------------------------------------
+  0-  5 0.052 0.176 0.359 0.124 0.221   1.00   1.61   6.50   1.46   0.16   0.70
+  5- 15 0.052 0.176 0.359 0.124 0.231   1.00   1.61   6.50   1.46   0.16   0.70
+ 15- 30 0.052 0.176 0.359 0.124 0.242   0.64   1.61   6.50   1.46   0.16   0.66
+ 30- 45 0.073 0.192 0.360 0.119 0.251   0.47   1.61   6.50   1.46   0.16   0.58
+ 45- 60 0.073 0.192 0.360 0.119 0.257   0.35   1.61   6.50   1.46   0.16   0.58
+ 60- 90 0.128 0.232 0.361 0.104 0.257   0.22   1.61   6.50   1.46   0.16   0.43
+ 90-120 0.143 0.243 0.359 0.100 0.255   0.12   1.62   6.50   1.46   0.16   0.26
+120-150 0.138 0.243 0.360 0.105 0.251   0.07   1.62   6.50   1.46   0.16   0.12
+150-180 0.138 0.244 0.361 0.106 0.246   0.04   1.62   6.50   1.46   0.16   0.04
+180-210 0.138 0.244 0.361 0.106 0.243   0.02   1.62   6.50   1.46   0.16   0.01
+
+TOT-210  24.3  47.2  75.6  22.9  52.2  <--cm   -  kg/ha-->   49.5    5.4 102525
+SOIL ALBEDO    : 0.13      EVAPORATION LIMIT : 6.00         MIN. FACTOR  : 1.00
+RUNOFF CURVE # :68.00      DRAINAGE RATE     : 0.50         FERT. FACTOR : 1.00
+
+ Wheat            CULTIVAR: LL0001-SU Mangold         ECOTYPE: DFAULT
+
+
+*SIMULATED CROP AND SOIL STATUS AT MAIN DEVELOPMENT STAGES
+
+ RUN NO.     3     180 kg[N]/ha - broadcast
+
+        CROP GROWTH     BIOMASS         LEAF   CROP N     STRESS      STRESS                                           
+   DATE  AGE STAGE        kg/ha    LAI   NUM  kg/ha  %   H2O  Nitr Phos1 Phos2  RSTG                                   
+ ------  --- ----------   -----  -----  ----  ---  ---  ----  ----  ----  ----  ----                                   
+ 22 OCT    0 Fallow           0   0.00   0.0    0  0.0  0.00  0.00  0.00  0.00     7
+ 23 OCT    0 Sowing           0   0.00   0.0    0  0.0  0.00  0.00  0.00  0.00     8
+ 25 OCT    2 Germinate        0   0.00   0.0    0  0.0  0.00  0.00  0.00  0.00     9
+ 28 OCT    5 Emergence       15   0.02   0.0    1  6.4  0.00  0.01  0.00  0.00     1
+  1 JAN   70 Harvest        108   0.09   0.0    6  6.0  0.00  0.00  0.00  0.00     1
+
+
+*MAIN GROWTH AND DEVELOPMENT VARIABLES
+
+@     VARIABLE                                         SIMULATED     MEASURED
+      --------                                         ---------     --------
+      Anthesis day (dap)                                     -99          224
+      Physiological maturity day (dap)                       -99          255
+      Yield at harvest maturity (kg [dm]/ha)                   0          -99
+      Number at maturity (no/m2)                               0          -99
+      Unit wt at maturity (g [dm]/unit)                      0.0          -99
+      Number at maturity (no/unit)                           0.0          -99
+      Tops weight at maturity (kg [dm]/ha)                   108          -99
+      By-product produced (stalk) at maturity (kg[dm]/ha       0          -99
+      Leaf area index, maximum                              0.09          -99
+      Harvest index at maturity                            0.000          -99
+      Grain N at maturity (kg/ha)                              0          -99
+      Tops N at maturity (kg/ha)                               6          -99
+      Stem N at maturity (kg/ha)                               0          -99
+      Grain N at maturity (%)                                0.0          -99
+      Tops weight at anthesis (kg [dm]/ha)                     0          -99
+      Tops N at anthesis (kg/ha)                               0          -99
+      Leaf number per stem at maturity                      0.00          -99
+      Emergence day (dap)                                      5            6
+
+
+*ENVIRONMENTAL AND STRESS FACTORS
+
+ |-----Development Phase------|--------------------------------------Environment--------------------------------------|-----------------Stress-----------------|
+                              |---------------Average--------------|-----Cumulative-----|--------Count of days--------|          (0=Min, 1=Max Stress)         |
+                         Time  Temp  Temp  Temp Solar Photop                Evapo    Pot TMIN TMIN TMAX TMAX TMAX RAIN|----Water----|---Nitrogen--|-Phosphorus-|
+                         Span   Max   Min  Mean   Rad  [day]    CO2   Rain  Trans     ET   <    <    >    >    >    >   Photo         Photo         Photo
+                         days     C     C     C MJ/m2     hr    ppm     mm     mm    mm   0 C  2 C 30 C 32 C 34 C  0mm  synth Growth  synth Growth  synth Growth
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Emergence-End Juvenile    66   5.9   0.1   3.0   3.1   8.49  420.5   93.5   28.2   28.8   36   46    0    0    0   54  0.000  0.002  0.002  0.005  0.000  0.000
+   
+ Planting to Harvest       70   6.5   0.7   3.6   3.3   8.60  420.5   95.4   32.9   33.6   35   45    0    0    0   59  0.000  0.002  0.002  0.005  0.000  0.000
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+*Resource Productivity
+ Growing season length:  70 days 
+
+ Precipitation during growing season        95.4 mm[rain]
+   Dry Matter Productivity                  0.11 kg[DM]/m3[rain]          =    1.1 kg[DM]/ha per mm[rain]
+   Yield Productivity                       0.00 kg[grain yield]/m3[rain] =    0.0 kg[yield]/ha per mm[rain]
+
+ Evapotranspiration during growing season   32.9 mm[ET]
+   Dry Matter Productivity                  0.33 kg[DM]/m3[ET]            =    3.3 kg[DM]/ha per mm[ET]
+   Yield Productivity                       0.00 kg[grain yield]/m3[ET]   =    0.0 kg[yield]/ha per mm[ET]
+
+ Transpiration during growing season         0.3 mm[EP]
+   Dry Matter Productivity                 36.01 kg[DM]/m3[EP]            =  360.1 kg[DM]/ha per mm[EP]
+   Yield Productivity                       0.00 kg[grain yield]/m3[EP]   =    0.0 kg[yield]/ha per mm[EP]
+
+ N uptake during growing season                6 kg[N uptake]/ha
+   Dry Matter Productivity                  17.9 kg[DM]/kg[N uptake]
+   Yield Productivity                        0.0 kg[yield]/kg[N uptake]
+
+--------------------------------------------------------------------------------------------------------------
+
+                     Wheat YIELD :        0 kg/ha    [Dry weight] 
+
+**************************************************************************************************************

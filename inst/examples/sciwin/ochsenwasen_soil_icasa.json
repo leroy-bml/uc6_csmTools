@@ -1,0 +1,62 @@
+{
+  "PROFILE_METADATA": {
+    "data": {
+      "soil_profile_ID": "DE02114767",
+      "soil_site": null,
+      "soil_location_country": "DE",
+      "latitude_soil_profile": 49.208,
+      "longitude_soil_profile": 10.625,
+      "soil_depth": 200,
+      "soil_source": "DEU",
+      "soil_classification": "HC_GEN0011",
+      "soil_texture": "Loam"
+    },
+    "attributes": {
+      "_class_attribute": ["tbl_df", "tbl", "data.frame"],
+      "comments": ["Soil profile generated using ISRIC SoilGrid1km (see Han et al. [2015] 10.1016/j.envsoft.2019.05.012)", "Data extracted from the Harvard Dataverse (10.7910/DVN/1PEEY0) on 2025-12-14"]
+    }
+  },
+  "SOIL_PROFILE": {
+    "data": {
+      "soil_profile_ID": "DE02114767",
+      "soil_albedo": 0.1,
+      "soil_evaporation_limit": 6,
+      "drainage_rate_per_day": 0.5,
+      "runoff_curve_no_SCS": 75,
+      "soil_surface_color": "BK",
+      "mineralization_factor": 1,
+      "pH_buffer_determin_meth": "SA001",
+      "potassium_determ_method": "SA001",
+      "phosphorus_determ_method": "SA001",
+      "soil_fertility_on_photo": 1
+    },
+    "attributes": {
+      "_class_attribute": ["tbl_df", "tbl", "data.frame"]
+    }
+  },
+  "SOIL_PROFILE_LAYERS": {
+    "data": {
+      "soil_profile_ID": ["DE02114767", "DE02114767", "DE02114767", "DE02114767", "DE02114767", "DE02114767"],
+      "soil_layer_base_depth": [5, 15, 30, 60, 100, 200],
+      "master_horizon": ["A", "A", "AB", "BA", "B", "BC"],
+      "soil_clay_fraction": [16.35, 17.95, 20.32, 22.5, 22.47, 20.65],
+      "soil_silt_fraction": [37.61, 36.85, 35.74, 34.47, 33.78, 33.43],
+      "soil_coarse_fraction": ["NA", "NA", "NA", "NA", "NA", "NA"],
+      "soil_organic_C_perc_layr": [3.65, 3.08, 2.36, 1.51, 0.88, 0.5],
+      "soil_pH_in_buffer": ["NA", "NA", "NA", "NA", "NA", "NA"],
+      "soil_pH_in_water": [6.21, 6.28, 6.38, 6.49, 6.63, 6.81],
+      "soil_bulk_density_moist": [1.32, 1.34, 1.37, 1.42, 1.48, 1.53],
+      "soil_water_lower_limit": [0.1, 0.109, 0.123, 0.136, 0.136, 0.125],
+      "soil_wat_drned_upper_lim": [0.221, 0.231, 0.245, 0.258, 0.257, 0.243],
+      "soil_water_saturated": [0.389, 0.391, 0.395, 0.399, 0.398, 0.394],
+      "sat_hydraul_conductivity": [1.44, 1.24, 1, 0.82, 0.84, 1.02],
+      "cation_exchange_capacity": [17, 14.9, 14.5, 15.1, 15.2, 15.2],
+      "soil_organic_N_conc": [0.12, 0.09, 0.07, 0.06, 0.05, 0.05],
+      "soil_adsorption_coef": ["NA", "NA", "NA", "NA", "NA", "NA"],
+      "root_growth_factor_soil": [1, 0.85, 0.7, 0.5, 0.38, 0.05]
+    },
+    "attributes": {
+      "_class_attribute": ["tbl_df", "tbl", "data.frame"]
+    }
+  }
+}

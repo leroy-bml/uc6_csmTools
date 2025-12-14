@@ -1,0 +1,11 @@
+{
+  "SUMMARY": {
+    "data": {
+      "anthesis_date": "2025-06-05",
+      "physiologic_maturity_dat": "2025-07-10"
+    },
+    "attributes": {
+      "_class_attribute": ["tbl_df", "tbl", "data.frame"]
+    }
+  }
+}
