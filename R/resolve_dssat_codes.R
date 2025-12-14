@@ -81,9 +81,9 @@ resolve_dssat_codes <- function(dataset) {
         # Generate one new ID per group and apply it to all rows in that group
         generate_dssat_id(
           type = "field",
-          institution = first(INSTITUTION),
-          site = first(SITE),
-          sequence_no = cur_group_id()
+          institution = dplyr::first(INSTITUTION),
+          site = dplyr::first(SITE),
+          sequence_no = dplyr::cur_group_id()
         )
       } else {
         dplyr::first(ID_FIELD)
@@ -98,8 +98,8 @@ resolve_dssat_codes <- function(dataset) {
         # Generate one new ID per group and apply it to all rows in that group
         generate_dssat_id(
           type = "cultivar",
-          institution = first(INSTITUTION),
-          sequence_no = cur_group_id()
+          institution = dplyr::first(INSTITUTION),
+          sequence_no = dplyr::cur_group_id()
         )
       } else {
         dplyr::first(INGENO)
@@ -115,10 +115,10 @@ resolve_dssat_codes <- function(dataset) {
         # Generate one new ID per group and apply it to all rows in that group
         generate_dssat_id(
           type = "experiment",
-          institution = first(INSTITUTION),
-          site = first(SITE),
-          year = first(EXP_YEAR),
-          sequence_no = cur_group_id()
+          institution = dplyr::first(INSTITUTION),
+          site = dplyr::first(SITE),
+          year = dplyr::first(EXP_YEAR),
+          sequence_no = dplyr::cur_group_id()
         )
       } else {
         dplyr::first(EXP_ID)
@@ -161,10 +161,10 @@ resolve_dssat_codes <- function(dataset) {
         # Generate one new ID per group and apply it to all rows in that group
         generate_dssat_id(
           type = "soil",
-          institution = first(INST_NAME),
-          site = first(SITE),
-          year = first(YEAR),
-          sequence_no = cur_group_id()
+          institution = dplyr::first(INST_NAME),
+          site = dplyr::first(SITE),
+          year = dplyr::first(YEAR),
+          sequence_no = dplyr::cur_group_id()
         )
       } else {
         dplyr::first(PEDON)
@@ -199,14 +199,14 @@ resolve_dssat_codes <- function(dataset) {
     dplyr::mutate(INSI = if ("INSI" %in% names(.)) INSI else "NA") %>%
     dplyr::group_by(INSI, YEAR) %>%
     dplyr::mutate(
-      INSI_new = if (!is_valid_dssat_id(first(INSI), "soil", "dssat")) {
+      INSI_new = if (!is_valid_dssat_id(dplyr::first(INSI), "soil", "dssat")) {
         # Generate one new ID per group and apply it to all rows in that group
         generate_dssat_id(
           type = "weather_station",
-          institution = first(INSI),  #TODO IMPUTATION!
-          site = first(WST_NAME),
-          year = first(YEAR),
-          sequence_no = cur_group_id()
+          institution = dplyr::first(INSI),  #TODO IMPUTATION!
+          site = dplyr::first(WST_NAME),
+          year = dplyr::first(YEAR),
+          sequence_no = dplyr::cur_group_id()
         )
       } else {
         dplyr::first(INSI)
@@ -214,7 +214,7 @@ resolve_dssat_codes <- function(dataset) {
     ) %>%
     dplyr::mutate(
       file_name = paste0(
-        INSI_new, YEAR, sprintf("%02d", cur_group_id()), ".WTH"
+        INSI_new, YEAR, sprintf("%02d", dplyr::cur_group_id()), ".WTH"
       )
     ) %>%
     dplyr::ungroup()

@@ -1,31 +1,48 @@
-#' Convert a Dataset Between Data Models
+#' Convert dataset between data models
 #'
-#' @description
-#' Top-level wrapper function to convert a dataset from a source to a target data model,
-#' handling configuration, mapping, and post-processing steps.
+#' Transforms a dataset from one data model to another (e.g., BonaRes LTE to ICASA) using mapping rules predefined in a yaml file.
 #'
-#' @param dataset The input dataset as a named list of data frames.
-#' @param input_model The character name of the source data model (e.g., "bonares-lte_de").
-#' @param output_model The character name of the target data model (e.g., "icasa").
-#' @param unmatched_code A string defining how `map_values` handles unmapped codes: 
-#'   `"na"`, `"pass_through"`, or `"default_value"`.
-#' @param config_path The file path to the `datamodels.yaml` configuration file.
+#' @param dataset (list) A list of data frames.
+#' @param input_model (character) Name of the source data model (e.g., "bonares-lte_de").
+#' @param output_model (character) Name of the target data model (e.g., "icasa").
+#' @param output_path (character) Optional file path to save the output.
+#' @param unmatched_code (character) How to handle unmatched levels during mapping of categorical variables:
+#'  \itemize{
+#'   \item `"na"` (default; sets to NA)
+#'   \item `"pass_through"` (keeps original value)
+#'   \item `"default_value"` (uses default predefined in yaml map)
+#'   }
 #'
-#' @return The final, converted, and post-processed dataset.
-#' 
+#' @return A list of data frames in the target data model format.
+#'
+#'
+#' @examples
+#' # Convert a dataset from BonaRes to ICASA format and write the result in a json file
+#' converted_data <- convert_dataset(
+#'   dataset = my_bonares_data,
+#'   input_model = "bonares-lte_de",
+#'   output_model = "icasa",
+#'   unmatched_code = "pass_through",
+#'   output_path = "path/to/output.json"
+#' )
+#'
 #' @export
-#'
+#' 
 
-convert_dataset <- function(dataset, input_model, output_model,
-                            unmatched_code = "na", 
-                            config_path = "./inst/extdata/datamodels.yaml") {
+convert_dataset <- function(dataset, input_model, output_model, output_path = NULL, unmatched_code = "na") {
+  
+  # =================================================================
+  # 1- Input resolution
+  # =================================================================
+
+  dataset <- resolve_input(dataset)
   
   # =================================================================
   # 1- Mapping configuration
   # =================================================================
   
   # Retrieve data model configuration
-  config <- .config_input(dataset, config_path, input_model, output_model)
+  config <- .config_input(dataset, input_model, output_model)
   data_config <- config$data
   data_map <- config$map
   rules <- data_map$rules
@@ -50,7 +67,7 @@ convert_dataset <- function(dataset, input_model, output_model,
     rules = rules,
     unmatched_code = unmatched_code
   )
-  
+
   # =================================================================
   # 3- Output standardization
   # =================================================================
@@ -63,14 +80,14 @@ convert_dataset <- function(dataset, input_model, output_model,
   mapped_data_clean <- lapply(mapped_data, function(df) unique(df))
 
   # --- Apply post-processing logic, if applicable ---
-  out <- standardize_data(dataset = mapped_data_clean, data_model = output_model)
+  dataset_std <- standardize_data(dataset = mapped_data_clean, data_model = output_model)
   
-  # OUT
-  if (is.list(out) && length(out) == 1) {
-    return(out[[1]])  # Single experiment
-  } else {
-    return(out)  # Multiple experiment
+  # --- Return output ---
+  if (is.list(dataset_std) && length(dataset_std) == 1) {
+    dataset_std <- dataset_std[[1]]  # Single experiment
   }
+  out <- export_output(dataset_std, output_path)
+  return(out)
 }
 
 
@@ -79,15 +96,17 @@ convert_dataset <- function(dataset, input_model, output_model,
 #' @noRd
 #'
 
-.config_input <- function(dataset, config_path, input_model, output_model) {
+.config_input <- function(dataset, input_model, output_model) {
   
   # Fetch configuration for the focal data model
+  config_path <- system.file("extdata", "datamodels.yaml", package = "csmTools")
   config <- yaml::read_yaml(config_path)
   output_model_config <- config[[output_model]]
   input_model_config  <- config[[input_model]]
   
   # Load the map file for the focal data mapping
-  map_path <- output_model_config$mappings[[input_model]]
+  map_name <- output_model_config$mappings[[input_model]]
+  map_path <- system.file("extdata", map_name, package = "csmTools")
   map <- yaml::read_yaml(map_path)
   
   # Pre-process master keys

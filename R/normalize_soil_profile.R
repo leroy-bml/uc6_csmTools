@@ -1,60 +1,58 @@
-#' Interpolate Soil Profile Data to a given depth sequence
+#' Normalize soil profile depths
 #'
-#' Interpolates numeric soil profile variables to a standard set of depths,
-#' producing a harmonized profile and a diagnostic plot.
+#' Standardizes DSSAT soil profile data to a predefined sequence of depths using interpolation.
+#' Handles numeric soil properties while preserving metadata and categorical variables.
 #'
-#' @param data A data frame containing soil profile data, with a depth column named \code{"SLB"} and subsequent columns for profile variables.
-#' @param depth_seq Numeric vector. The standard depths (in cm) to which the profile should be interpolated. Default: typical DSSAT depths.
-#' @param method Character. Interpolation method to use (passed to \code{approx}). Default is \code{"linear"}.
+#' @param data (list/dataframe) Input soil profile data in DSSAT format or as a list with SOIL element.
+#' @param depth_seq (numeric) Target depth sequence for normalization (in cm).
+#'   Default: `c(5,10,20,30,40,50,60,70,90,110,130,150,170,190,210)`.
+#' @param method (character) Interpolation method. Options: `"linear"` (default) or `"constant"`.
+#' @param diagnostics (logical) Whether to generate diagnostic plots. Default: `TRUE`.
+#' @param output_path (character) Optional file path to save the output.
 #'
-#' @details
-#' The function identifies the depth column (\code{SLB}), separates header, profile, and categorical columns, and interpolates numeric profile variables to the specified standard depths using linear interpolation (or another method supported by \code{approx}). It combines the interpolated and original data, duplicates header values for interpolated layers, and returns a harmonized data frame. A diagnostic plot is also produced, showing input and interpolated values for each variable.
-#'
-#' The function uses the \strong{dplyr}, \strong{tidyr}, and \strong{ggplot2} packages for data manipulation and plotting.
-#'
-#' @return A list with two elements:
-#' \describe{
-#'   \item{\code{data}}{A data frame with interpolated profile data at standard depths.}
-#'   \item{\code{plot}}{A ggplot object showing the interpolation results for each variable.}
-#' }
+#' @return A list containing the normalized soil profile data frame (element named "SOIL").
 #'
 #' @examples
-#' \dontrun{
-#' result <- approx_profile(soil_data)
-#' print(result$plot)
-#' head(result$data)
-#' }
-#' 
-#' @importFrom magrittr %>%
-#' @importFrom tidyselect everything
-#' @importFrom dplyr mutate relocate right_join filter arrange select across
-#' @importFrom tidyr gather replace_na
-#' @importFrom ggplot2 ggplot geom_point geom_path facet_wrap theme_minimal aes
-#' @importFrom DSSAT as_DSSAT_tbl
-#' 
+#' # Normalize a soil profile to standard depths and save to file
+#' normalized_soil <- normalize_soil_profile(
+#'   data = my_soil_data,
+#'   depth_seq = c(0, 10, 30, 60, 100, 200),
+#'   method = "linear",
+#'   diagnostics = TRUE,
+#'   output_path = "path/to/normalized_soil.csv"
+#' )
+#'
+#' @note
+#' - Only numeric columns are interpolated; categorical variables are preserved.
+#' - If a depth in `depth_seq` already exists in the input, the original value is retained.
+#' - Diagnostic plots are saved as PNG files when `output_path` is provided.
+#'
+#' @importFrom tidyr everything replace_na gather
+#' @importFrom dplyr mutate relocate arrange right_join across filter select
+#' @importFrom ggplot2 ggplot aes geom_point geom_path facet_wrap theme_bw ggsave
+#'
 #' @export
-
-# soiltest <- read_sol("C:/DSSAT48/SoilGrids/dataverse_files/SoilGrids-for-DSSAT-10km v1.0 (by country)/GE.SOL", id_soil = "GE02408882")
-# soiltest <- soiltest %>% unnest(all_of(colnames(soiltest)))
-# seq_nwheat <- c(5,10,20,30,40,50,60,70,90,110,130,150,170,190,210)  # default soil layer sequence for Nwheat modelk
-# TODO: compare base and given seq + aggregate?
+#' 
 
 normalize_soil_profile <- function(data,
                                    depth_seq = c(5,10,20,30,40,50,60,70,90,110,130,150,170,190,210),
-                                   method = "linear") {
+                                   method = "linear",
+                                   diagnostics = TRUE,
+                                   output_path = NULL) {
+  
+  # Resolve input data
+  if (is.data.frame(data)) {
+    data <- list(SOIL = data)
+  }
+  data_list <- resolve_input(data)
+  data <- data_list[["SOIL"]]
   
   # Preserve additional attributes
   attr <- attributes(data)[!names(attributes(data)) %in% c("names", "row.names", "class")]
   
-  # Unnest if profile in nested DSSAT write-ready format
-  nested_cols <- sapply(data, is.list)
-  if (any(nested_cols)) {
-    data <- unnest(data, cols = names(nested_cols[nested_cols]))
-  }
-  
   depth_col <- which(colnames(data) == "SLB")
   headers <- data[, 1:depth_col]
-  profile <- data[, depth_col:ncol(data)]  # profile profile starting with depth col in standard DSSAT format
+  profile <- data[, depth_col:ncol(data)]  # profile table starting with depth col in standard DSSAT format
   profile_nas <- profile[, colSums(is.na(profile)) == nrow(profile)]  # stored only NAs
   profile_fct <- profile[, sapply(profile, is.character)]  #
   profile <- profile[, colSums(is.na(profile)) < nrow(profile)]  # remove missing variables (only NAs)
@@ -69,20 +67,35 @@ normalize_soil_profile <- function(data,
   
   std_profile <- rbind(profile, interp)
   
-  # Result control plots
-  plot_df <- std_profile %>%
-    mutate(src = ifelse(SLB %in% setdiff(depth_seq, profile$SLB), "interpolated", "input")) %>%
-    relocate(src, .before = SLB) %>%
-    gather("var", "value", 3:ncol(.)) %>%
-    arrange(var, -SLB)
+  # Make diagnostic plots
+  if (diagnostics) {
+    
+    plot_df <- std_profile %>%
+      mutate(src = ifelse(SLB %in% setdiff(depth_seq, profile$SLB), "interpolated", "input")) %>%
+      relocate(src, .before = SLB) %>%
+      gather("var", "value", 3:ncol(.)) %>%
+      arrange(var, -SLB)
+    
+    plot <- ggplot(plot_df, aes(x = value, y = -SLB)) +
+      geom_point(aes(colour = src)) +
+      geom_path() +
+      facet_wrap(~var, ncol = 4, scales = "free_x") +
+      theme_bw()
+    
+    if (!is.null(output_path)) {
+      plot_file_name <- file.path(dirname(output_path), "soil_normalization_diagnostics.png")
+      ggsave(
+        filename = plot_file_name,
+        plot,
+        width = 15, height = 12, units = "cm",
+        dpi = 600,
+        bg = "white"
+      )
+    }
+  }
   
-  plot <- ggplot(plot_df, aes(x = value, y = -SLB)) +
-    geom_point(aes(colour = src)) +
-    geom_path() +
-    facet_wrap(~var, ncol = 4, scales = "free_x") +
-    theme_bw()
-  
-  data_out <- cbind(headers, profile_nas, profile_fct) %>%
+  # Format normalized soil profile
+  normalized_profile <- cbind(headers, profile_nas, profile_fct) %>%
     right_join(std_profile, by = "SLB") %>%
     mutate(across(everything(), ~ {
       unique_vals <- unique(na.omit(.))
@@ -97,22 +110,10 @@ normalize_soil_profile <- function(data,
     arrange(SLB) %>%
     select(colnames(data))
   
-  # Return as nested format is input in nested format
-  if(any(nested_cols)) {
-    data_out <- collapse_cols(
-      data_out, colnames(data_out[which(apply(
-        data_out, 2, function(x) length(unique(x))
-        )>1)])
-      )
-    data_out <- as_DSSAT_tbl(data_out)
-  }
-  
-  # Append preserved attributes
-  attributes(data_out) <- c(attributes(data_out), attr)
-  
-  out <- list()
-  out$data <- data_out
-  out$plot <- plot
-  
+  # Restore preserved attributes
+  attributes(normalized_profile) <- c(attributes(normalized_profile), attr)
+  out <- list(SOIL = normalized_profile)
+  out <- export_output(out, output_path = output_path)
+
   return(out)
 }

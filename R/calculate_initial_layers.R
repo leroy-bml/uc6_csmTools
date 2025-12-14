@@ -1,15 +1,14 @@
-#' Wrapper to calculate initial soil conditions for DSSAT simulations
+#' Calculate initial soil conditions for DSSAT simulations
 #'
 #' Calculates initial soil conditions for water and/or nitrogen based on single input values. 
 #' 
 #' @param soil_profile A data.frame representing a DSSAT soil profile.
 #' @param percent_available_water A numeric value (0-100); available water for entire profile (%).
 #' @param total_n_kgha A numeric value; total nitrogen fo entire profile (kg/ha).
+#' @param output_path (character) Optional file path to save the output.
 #'
-#' @return A data.frame representing the DSSAT initial condition layers section ('SH2O', 'SNO3', 'SNH4')
-#'   for each soil layer defined in the input soil profile.
-#'
-#' @export
+#' @return A data.frame representing the DSSAT initial condition layers section ('SH2O', 'SNO3', 'SNH4') for each soil layer
+#'   defined in the input soil profile.
 #'
 #' @examples
 #' # Define a sample soil profile
@@ -29,9 +28,24 @@
 #' # Calculate only nitrogen
 #' calculate_initial_conditions(soil_df, total_n_kgha = 40)
 #' 
+#' 
+#' @note
+#' Implementation of the initial layer module in DSSAT Xbuild.
+#' 
+#' @importFrom tidyr unnest
+#' 
+#' @export
+#' 
 
-calculate_initial_layers <- function(soil_profile, percent_available_water = NULL, total_n_kgha = NULL) {
+calculate_initial_layers <- function(soil_profile, percent_available_water = NULL, total_n_kgha = NULL, output_path = NULL) {
   
+  # Resolve input data
+  if (is.data.frame(soil_profile)) {
+    data <- list(SOIL = soil_profile)
+  }
+  data_list <- resolve_input(soil_profile)
+  soil_profile <- data_list[["SOIL"]]
+
   if(is.null(percent_available_water) && is.null(total_n_kgha)){
     stop("Please provide a value for either percent_available_water or total_n_kgha.")
   }
@@ -62,7 +76,11 @@ calculate_initial_layers <- function(soil_profile, percent_available_water = NUL
     result$SNO3 <- NA
   }
   
-  return(result)
+  # Resolve output
+  out <- list(INITIAL_CONDITIONS = result)
+  out <- export_output(out, output_path = output_path)
+  
+  return(out)
 }
 
 #' Calculate initial volumetric soil water by layer (SH2O)
