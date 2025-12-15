@@ -1694,6 +1694,8 @@ rules:
           HWUM: unit_dry_wt_harv_matur
           CWAA: tops_dry_weight_anthesis
           GWAM: grain_dry_wt_at_maturity
+          GYAM: harv_yld_grn_fresh_matur
+          'GW%M': grain_moisture_harvest  # Not exact match (at maturity)??
           PWAM: pod_dry_weight_maturity
           TWAH: tot_dry_wt_at_harvest
           UWAH: tuber_dry_wt_at_harvest
