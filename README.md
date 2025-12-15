@@ -62,11 +62,36 @@ devtools::install_github("leroy-bml/csmTools")
 ```
 Linux users may need to execute `install_requirements.sh` to install required apt packages. If you need to install DSSAT there is a `install_dssat.sh` to clone and build the package on Linux. Windows Users can just use DSSATs installer. 
 
-## Test script
-A [test script](inst/examples/sciwin/workflow_experiment_ochsenwasen_sciwin.R) allows to run the entire pipeline, from raw data acquisition to simulation output.
-```bash
-Rscript inst/examples/sciwin/workflow_experiment_ochsenwasen_sciwin.R
+### System Dependencies
+*   **R Environment:** This package requires a functioning R installation.
+*   **R Packages:** The package itself will list its R dependencies in the `DESCRIPTION` file. Additionally, for plotting results, `DSSAT`, `dplyr`, and `ggplot2` are typically used.
+*   **DSSAT CSM:** To utilize the DSSAT simulation functionalities, a local installation of DSSAT CSM (e.g., `C:/DSSAT48` on Windows) is required.
+*   **API Credentials:** For functions interacting with external APIs (e.g., `get_sensor_data` for FROST server), you will need to set specific environment variables for authentication. Examples include:
+    *   `FROST_CLIENT_ID`
+    *   `FROST_CLIENT_SECRET`
+    *   `FROST_USERNAME`
+    *   `FROST_PASSWORD`
+    *   `FROST_USER_URL`
+    It is recommended to store these securely (e.g., in an `.Renviron` file).
+
+## Usage Example
+A comprehensive example of how to use the package's functions in an end-to-end ETL and simulation pipeline is provided in `inst/examples/sciwin/workflow_experiment_ochsenwasen_sciwin.R`. This script demonstrates:
+1.  **Extracting** crop management, sensor weather, complementary weather, soil, and phenology data.
+2.  **Transforming** and mapping data to ICASA and then to DSSAT models.
+3.  **Assembling** the final DSSAT input dataset.
+4.  **Running** a DSSAT simulation.
+5.  **Visualizing** the simulation results against observed data.
+You can run this example after installing the package and setting up your environment variables:
+
+```R
+# After installing the package and setting up credentials
+library(fairagroUC6.RDM) # Replace with your actual package name
+
+# Locate the example script (adjust path if needed)
+example_script_path <- system.file("examples", "sciwin", "example_pipeline_experiment.R", package = "fairagroUC6.RDM")
+source(example_script_path)
 ```
+
 You can also run the pipeline using Docker and the provided Dockerfile and later on copy files with `docker cp`.
 ```bash
 docker build . -t uc6_image
@@ -74,3 +99,9 @@ docker run uc6_image --name uc6_container
 docker start uc6_container
 docker cp uc6_container:/uc6_csmTools/Rplots.pdf ./Rplots.pdf
 ```
+
+## License
+This project is open-sourced under the MIT License. See the `LICENSE` file for details.
+
+## Contact
+For questions, bug reports, or feedback, please contact Benjamin Leroy at [benjamin.leroy@tum.de](mailto:benjamin.leroy@tum.de).
