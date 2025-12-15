@@ -1329,6 +1329,8 @@ rules:
           EXP_YEAR: experiment_year
           CR: crop_id
           C: genotype_level
+          # DSSAT attribute, provided for input of existing cultivars in DSSAT files
+          INGENO: cultivar_identifier
           CNAME: genotype_name
           GENO_NOTES: genotype_notes
 

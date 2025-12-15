@@ -1,5 +1,7 @@
 #'
 #'
+#' @noRd
+#' 
 
 apply_naming_rules <- function(dataset) {
   
