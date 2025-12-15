@@ -2,7 +2,7 @@
 
 ******************************************************************************
 
-*DSSAT Cropping System Model Ver. 4.8.2.000 -release  DEC 14, 2025 20:34:40
+*DSSAT Cropping System Model Ver. 4.8.2.000 -release  DEC 15, 2025 04:12:05
 
 *RUN   1        : No N                      WHAPS048 HWOC2501    1
  MODEL          : WHAPS048 - Wheat
@@ -53,14 +53,483 @@
  A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
  Please check your SOIL.SOL file.                                              
 
- IPWTH   YEAR DOY = 2025   1
- Error opening weather file.                                                   
-   LL912501.WTH                                                                
- Simulation will end.                                                          
+ IPWTH   YEAR DOY = 2025 122
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 121                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 123
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 122                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 124
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 123                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 125
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 124                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 126
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 125                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 127
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 126                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 128
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 127                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 129
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 128                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 130
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 129                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 131
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 130                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 132
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 131                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 133
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 132                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 134
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 133                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 135
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 134                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 136
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 135                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 137
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 136                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 138
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 137                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 139
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 138                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 140
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 139                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 141
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 140                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 142
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 141                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 143
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 142                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 144
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 143                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 145
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 144                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 146
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 145                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 147
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 146                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 148
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 147                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 149
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 148                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 150
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 149                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 151
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 150                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 152
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 151                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 153
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 152                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 154
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 153                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 155
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 154                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 156
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 155                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 157
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 156                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 158
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 157                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 159
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 158                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 160
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 159                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 161
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 160                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 162
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 161                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 163
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 162                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 164
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 163                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 165
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 164                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 166
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 165                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 167
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 166                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 168
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 167                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 169
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 168                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 170
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 169                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 171
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 170                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 172
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 171                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 173
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 172                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 174
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 173                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 175
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 174                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 176
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 175                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 177
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 176                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 178
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 177                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 179
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 178                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 180
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 179                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 181
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 180                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 182
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 181                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 183
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 182                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 184
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 183                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 185
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 184                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 186
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 185                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 187
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 186                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 188
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 187                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 189
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 188                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ NWGRNI  YEAR DOY = 2025 189
+ pnout bound check >navl error                                                 
+
+ IPWTH   YEAR DOY = 2025 190
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 189                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 191
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 190                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 192
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 191                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ NWGRNI  YEAR DOY = 2025 192
+ pnout bound check >navl error                                                 
+
+ IPWTH   YEAR DOY = 2025 193
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 192                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 194
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 193                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 195
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 194                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 196
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 195                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 197
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 196                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 198
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 197                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 199
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 198                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
 
 ******************************************************************************
 
-*DSSAT Cropping System Model Ver. 4.8.2.000 -release  DEC 14, 2025 20:34:40
+*DSSAT Cropping System Model Ver. 4.8.2.000 -release  DEC 15, 2025 04:12:05
 
 *RUN   2        : 147 kg[N]/ha - broadcast  WHAPS048 HWOC2501    3
  MODEL          : WHAPS048 - Wheat
@@ -111,14 +580,477 @@
  A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
  Please check your SOIL.SOL file.                                              
 
- IPWTH   YEAR DOY = 2025   1
- Error opening weather file.                                                   
-   LL912501.WTH                                                                
- Simulation will end.                                                          
+ IPWTH   YEAR DOY = 2025 122
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 121                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 123
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 122                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 124
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 123                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 125
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 124                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 126
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 125                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 127
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 126                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 128
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 127                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 129
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 128                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 130
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 129                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 131
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 130                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 132
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 131                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 133
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 132                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 134
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 133                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 135
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 134                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 136
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 135                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 137
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 136                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 138
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 137                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 139
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 138                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 140
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 139                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 141
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 140                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 142
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 141                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 143
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 142                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 144
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 143                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 145
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 144                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 146
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 145                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 147
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 146                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 148
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 147                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 149
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 148                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 150
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 149                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 151
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 150                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 152
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 151                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 153
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 152                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 154
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 153                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 155
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 154                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 156
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 155                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 157
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 156                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 158
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 157                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 159
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 158                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 160
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 159                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 161
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 160                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 162
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 161                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 163
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 162                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 164
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 163                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 165
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 164                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 166
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 165                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 167
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 166                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 168
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 167                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 169
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 168                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 170
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 169                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 171
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 170                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 172
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 171                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 173
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 172                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 174
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 173                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 175
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 174                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 176
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 175                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 177
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 176                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 178
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 177                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 179
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 178                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 180
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 179                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 181
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 180                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 182
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 181                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 183
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 182                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 184
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 183                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 185
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 184                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 186
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 185                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 187
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 186                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 188
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 187                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 189
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 188                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 190
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 189                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 191
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 190                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 192
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 191                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 193
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 192                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 194
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 193                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 195
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 194                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 196
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 195                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 197
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 196                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 198
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 197                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 199
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 198                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
 
 ******************************************************************************
 
-*DSSAT Cropping System Model Ver. 4.8.2.000 -release  DEC 14, 2025 20:34:40
+*DSSAT Cropping System Model Ver. 4.8.2.000 -release  DEC 15, 2025 04:12:05
 
 *RUN   3        : 180 kg[N]/ha - broadcast  WHAPS048 HWOC2501    7
  MODEL          : WHAPS048 - Wheat
@@ -169,7 +1101,470 @@
  A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
  Please check your SOIL.SOL file.                                              
 
- IPWTH   YEAR DOY = 2025   1
- Error opening weather file.                                                   
-   LL912501.WTH                                                                
- Simulation will end.                                                          
+ IPWTH   YEAR DOY = 2025 122
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 121                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 123
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 122                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 124
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 123                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 125
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 124                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 126
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 125                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 127
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 126                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 128
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 127                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 129
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 128                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 130
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 129                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 131
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 130                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 132
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 131                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 133
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 132                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 134
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 133                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 135
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 134                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 136
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 135                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 137
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 136                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 138
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 137                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 139
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 138                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 140
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 139                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 141
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 140                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 142
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 141                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 143
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 142                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 144
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 143                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 145
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 144                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 146
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 145                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 147
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 146                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 148
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 147                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 149
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 148                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 150
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 149                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 151
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 150                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 152
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 151                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 153
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 152                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 154
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 153                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 155
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 154                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 156
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 155                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 157
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 156                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 158
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 157                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 159
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 158                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 160
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 159                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 161
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 160                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 162
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 161                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 163
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 162                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 164
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 163                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 165
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 164                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 166
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 165                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 167
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 166                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 168
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 167                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 169
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 168                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 170
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 169                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 171
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 170                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 172
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 171                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 173
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 172                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 174
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 173                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 175
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 174                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 176
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 175                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 177
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 176                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 178
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 177                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 179
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 178                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 180
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 179                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 181
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 180                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 182
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 181                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 183
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 182                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 184
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 183                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 185
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 184                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 186
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 185                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 187
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 186                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 188
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 187                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 189
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 188                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 190
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 189                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 191
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 190                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 192
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 191                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 193
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 192                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 194
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 193                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 195
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 194                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 196
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 195                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 197
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 196                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 198
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 197                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       
+
+ IPWTH   YEAR DOY = 2025 199
+ Duplicate record found in weather file.                                       
+ Year 2025 DOY 198                                                             
+ File: LL912501.WTH                                                            
+ Record will be ignored.                                                       

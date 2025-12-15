@@ -1,15 +1,14 @@
 ## -----------------------------------------------------------------------------------
-## Script name: example_pipeline_experiment.R
-## Purpose of script: showcasing etl pipeline prototype of FAIRagro 
+## Script name: example_pipeline_experiment_sciwin.R
+## Purpose of script: showcasing etl pipeline prototype (SciWIn-compatible) of FAIRagro 
 ## UC6 as an example of application of FAIR RDM
 ##
 ## Author: Benjamin Leroy
-## Date Created: 2024-01-31
+## Date Created: 2024-12-12
 ## Copyright (c) Benjamin Leroy, 2024
 ## Email: benjamin.leroy@tum.de
 ## -----------------------------------------------------------------------------------
-## Notes: data are at least partially simulated and do not represent the actual
-## experiment results
+## Notes: simulation results have yet to be refined
 ## 
 ## -----------------------------------------------------------------------------------
 
@@ -49,6 +48,9 @@ uc6_creds <- list(
   username = Sys.getenv("FROST_USERNAME"),
   password = Sys.getenv("FROST_PASSWORD")
 )
+## Note: here you can also use the path to a YAML or JSON credentials file:
+# uc6_creds <- "./inst/examples/sciwin/frost_credentials.yaml"
+# However these needs to be safely specified (currently just dummy credentials, will not work as is!)
 
 # Data extraction and mapping
 wth_sensor_raw <- get_sensor_data(
@@ -327,7 +329,7 @@ plot_growth <- sims %>%
         axis.text = element_text(size = 9, colour = "black"))
 
 ggsave(
-  filename = "./inst/examples/simulation_results.png",
+  filename = "./inst/examples/sciwin/simulation_results.png",
   plot_growth,
   width = 15, height = 12, units = "cm",
   dpi = 600,

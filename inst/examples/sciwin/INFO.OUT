@@ -2,7 +2,7 @@
 
 ******************************************************************************
 
-*DSSAT Cropping System Model Ver. 4.8.2.000 -release  DEC 14, 2025 20:34:40
+*DSSAT Cropping System Model Ver. 4.8.2.000 -release  DEC 15, 2025 04:12:05
 
 *RUN   1        : No N                               HWOC2501    1
 
@@ -112,12 +112,12 @@
  Before till  5.261 10.000 15.000  1.530  1.610  1.610  1.610  1.610  1.610    
  After till   5.278 10.000 15.000  1.487  1.610  1.610                         
 
- ENDRUN  YEAR DOY = 2025   1
+ ENDRUN  YEAR DOY = 2025 203
  Normal end of run        1                                                    
 
 ******************************************************************************
 
-*DSSAT Cropping System Model Ver. 4.8.2.000 -release  DEC 14, 2025 20:34:40
+*DSSAT Cropping System Model Ver. 4.8.2.000 -release  DEC 15, 2025 04:12:05
 
 *RUN   2        : 147 kg[N]/ha - broadcast  WHAPS048 HWOC2501    3
  MODEL          : WHAPS048 - Wheat
@@ -194,6 +194,18 @@
    9  15.5   0.0   0.21   0.0  0.00   -99                                      
   10  15.5   0.0   0.21   0.0  0.00   -99                                      
 
+ IPWTH   YEAR DOY = 2024 296
+ LL912401.WTH                                                                  
+ Found daily weather data headers for:                                         
+   SRAD           Col   7 -  11                                                
+   TMAX           Col  13 -  17                                                
+   TMIN           Col  19 -  23                                                
+   RAIN           Col  25 -  29                                                
+   DEWP           Col  31 -  35                                                
+   WIND           Col  37 -  41                                                
+   PAR            Col  43 -  47                                                
+   RHUM           Col  55 -  59                                                
+
  TILEVENT  YEAR DOY = 2024 296
               -- Lyr Thick (cm)--  --Blk dens (g/cm3)- ---- SOM-BD --------    
                 DL1    DL2    DL3    BD1    BD2    BD3   BDS1   BDS2   BDS3    
@@ -206,12 +218,12 @@
  Before till  5.261 10.000 15.000  1.530  1.610  1.610  1.610  1.610  1.610    
  After till   5.278 10.000 15.000  1.487  1.610  1.610                         
 
- ENDRUN  YEAR DOY = 2025   1
+ ENDRUN  YEAR DOY = 2025 203
  Normal end of run        2                                                    
 
 ******************************************************************************
 
-*DSSAT Cropping System Model Ver. 4.8.2.000 -release  DEC 14, 2025 20:34:40
+*DSSAT Cropping System Model Ver. 4.8.2.000 -release  DEC 15, 2025 04:12:05
 
 *RUN   3        : 180 kg[N]/ha - broadcast  WHAPS048 HWOC2501    7
  MODEL          : WHAPS048 - Wheat
@@ -288,6 +300,18 @@
    9  15.5   0.0   0.21   0.0  0.00   -99                                      
   10  15.5   0.0   0.21   0.0  0.00   -99                                      
 
+ IPWTH   YEAR DOY = 2024 296
+ LL912401.WTH                                                                  
+ Found daily weather data headers for:                                         
+   SRAD           Col   7 -  11                                                
+   TMAX           Col  13 -  17                                                
+   TMIN           Col  19 -  23                                                
+   RAIN           Col  25 -  29                                                
+   DEWP           Col  31 -  35                                                
+   WIND           Col  37 -  41                                                
+   PAR            Col  43 -  47                                                
+   RHUM           Col  55 -  59                                                
+
  TILEVENT  YEAR DOY = 2024 296
               -- Lyr Thick (cm)--  --Blk dens (g/cm3)- ---- SOM-BD --------    
                 DL1    DL2    DL3    BD1    BD2    BD3   BDS1   BDS2   BDS3    
@@ -300,5 +324,5 @@
  Before till  5.261 10.000 15.000  1.530  1.610  1.610  1.610  1.610  1.610    
  After till   5.278 10.000 15.000  1.487  1.610  1.610                         
 
- ENDRUN  YEAR DOY = 2025   1
+ ENDRUN  YEAR DOY = 2025 203
  Normal end of run        3                                                    

@@ -270,7 +270,7 @@
     },
     "attributes": {
       "_class_attribute": ["tbl_df", "tbl", "data.frame"],
-      "comments": ["Soil profile generated using ISRIC SoilGrid1km (see Han et al. [2015] 10.1016/j.envsoft.2019.05.012)", "Data extracted from the Harvard Dataverse (10.7910/DVN/1PEEY0) on 2025-12-14"]
+      "comments": ["Soil profile generated using ISRIC SoilGrid1km (see Han et al. [2015] 10.1016/j.envsoft.2019.05.012)", "Data extracted from the Harvard Dataverse (10.7910/DVN/1PEEY0) on 2025-12-15"]
     }
   },
   "SOIL_PROFILE": {
