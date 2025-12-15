@@ -50,7 +50,7 @@
 #' }
 #'
 #' @importFrom tools file_ext
-#' @importFrom yaml yaml.load.file
+#' @importFrom yaml read_yaml
 #' @importFrom jsonlite fromJSON
 #' @importFrom magrittr %>%
 #' @importFrom rlang !! :=
@@ -75,7 +75,7 @@ get_sensor_data <- function(url, creds = NULL, var, lon, lat, radius, from, to, 
     
     creds_ext <- tolower(file_ext(creds))
     if (creds_ext == "yaml" || creds_ext == "yml") {
-      creds <- yaml.load_file(creds)
+      creds <- read_yaml(creds)
     } else if (creds_ext == "json") {
       creds <- fromJSON(txt = readLines(creds))
     } else {

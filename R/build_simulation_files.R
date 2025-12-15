@@ -59,7 +59,10 @@
 #'   write_in_dssat_dir = TRUE
 #' )
 #' }
-#'
+#' @importFrom tools file_ext
+#' @importFrom yaml read_yaml
+#' @importFrom jsonlite fromJSON
+#' 
 #' @export
 #'
 
@@ -79,11 +82,11 @@ build_simulation_files <- function(
       stop("Control configuration file not found at: ", control_config)
     }
     
-    config_ext <- tolower(tools::file_ext(control_config))
+    config_ext <- tolower(file_ext(control_config))
     if (config_ext == "yaml" || config_ext == "yml") {
-      control_args <- yaml::yaml.load_file(control_config)
+      control_args <- read_yaml(control_config)
     } else if (config_ext == "json") {
-      control_args <- jsonlite::fromJSON(txt = readLines(control_config))
+      control_args <- fromJSON(txt = readLines(control_config))
     } else {
       stop("Unsupported configuration file format. Use YAML (.yaml/.yml) or JSON (.json)")
     }
