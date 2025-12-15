@@ -49,6 +49,9 @@
 #' )
 #' }
 #'
+#' @importFrom tools file_ext
+#' @importFrom yaml yaml.load.file
+#' @importFrom jsonlite fromJSON
 #' @importFrom magrittr %>%
 #' @importFrom rlang !! :=
 #' @importFrom dplyr mutate select
@@ -63,6 +66,21 @@ get_sensor_data <- function(url, creds = NULL, var, lon, lat, radius, from, to, 
   # --- Credential validation ---
   if(is.null(creds)) {
     stop("Access denied. Please provide the 'creds' list containing your authentication details.")
+  }
+  if (is.character(creds)) {
+    
+    if (!file.exists(creds)) {
+      stop("Credential file not found at: ", creds)
+    }
+    
+    creds_ext <- tolower(file_ext(creds))
+    if (creds_ext == "yaml" || creds_ext == "yml") {
+      creds <- yaml.load_file(creds)
+    } else if (creds_ext == "json") {
+      creds <- fromJSON(txt = readLines(creds))
+    } else {
+      stop("Unsupported configuration file format. Use YAML (.yaml/.yml) or JSON (.json)")
+    }
   }
   
   required_keys <- c("url", "client_id", "client_secret", "username", "password")
