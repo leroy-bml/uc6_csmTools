@@ -206,7 +206,7 @@ resolve_dssat_codes <- function(dataset) {
           institution = dplyr::first(INSI),  #TODO IMPUTATION!
           site = dplyr::first(WST_NAME),
           year = dplyr::first(YEAR),
-          sequence_no = dplyr::cur_group_id()
+          sequence_no = 1  # Need another data identifier to do real count!
         )
       } else {
         dplyr::first(INSI)
@@ -214,7 +214,8 @@ resolve_dssat_codes <- function(dataset) {
     ) %>%
     dplyr::mutate(
       file_name = paste0(
-        INSI_new, YEAR, sprintf("%02d", dplyr::cur_group_id()), ".WTH"
+        # Need another data identifier to do real count!
+        INSI_new, YEAR, sprintf("%02d", 1), ".WTH"
       )
     ) %>%
     dplyr::ungroup()
@@ -222,12 +223,6 @@ resolve_dssat_codes <- function(dataset) {
   # --- Format output ---
   wth_dssat_out <- wth_dssat_fmt_nms |>
     dplyr::mutate(INSI = INSI_new)
-    # TODO: CLEAR!
-    # dplyr::select(
-    #   file_name,
-    #   EXP_ID, WST_NAME,
-    #   any_of(union(colnames(wth_data), colnames(WEATHER_header_template)))
-    # )
   
   # ID map for referential integrity checks
   attr(wth_dssat_out, "code_map") <- wth_dssat_fmt_nms |>
