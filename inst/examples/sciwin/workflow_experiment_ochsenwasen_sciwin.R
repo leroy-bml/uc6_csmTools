@@ -57,10 +57,10 @@ wth_sensor_raw <- get_sensor_data(
   url = Sys.getenv("FROST_USER_URL"),
   creds = uc6_creds,
   var = c("air_temperature", "solar_radiation", "volume_of_hydrological_precipitation"),
-  lon = 10.645269,
-  lat = 49.20868, 
+  lon = 10.64506,
+  lat = 49.20901,
   radius = 10,
-  from = "2024-01-01",
+  from = "2025-01-01",
   to = "2025-08-09",
   output_path = "./inst/examples/sciwin/ochsenwasen_weather_sensor.json"
 )
@@ -85,8 +85,8 @@ wth_sensor_icasa <- convert_dataset(
 
 # --- Download complementary weather data ---
 wth_model_nasapower <- get_weather_data(
-  lon = 10.645269,
-  lat = 49.20868,
+  lon = 10.64506,
+  lat = 49.20901,
   pars = c("air_temperature", "precipitation", "solar_radiation"),
   res = "daily",
   from = "2024-01-01",
@@ -129,8 +129,8 @@ wth_icasa <- assemble_dataset(
 
 #####----- Extract profile data from SoilGrids --------------------------------------
 soil_icasa <- get_soil_profile(
-  lon = 10.645269,
-  lat = 49.20868,
+  lon = 10.64506,
+  lat = 49.20901,
   src = "soil_grids",
   dir = NULL,
   delete_raw_files = FALSE,

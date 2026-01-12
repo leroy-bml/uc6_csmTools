@@ -1,8 +1,8 @@
 {
   "WEATHER_METADATA": {
     "data": {
-      "weather_sta_longitude": 10.6453,
-      "weather_sta_latitude": 49.2087,
+      "weather_sta_longitude": 10.6451,
+      "weather_sta_latitude": 49.209,
       "temperature_sensor_ht": 2
     },
     "attributes": {

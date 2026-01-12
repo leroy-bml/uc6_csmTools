@@ -2,7 +2,7 @@
 
 ******************************************************************************
 
-*DSSAT Cropping System Model Ver. 4.8.2.000 -release  DEC 15, 2025 04:12:05
+*DSSAT Cropping System Model Ver. 4.8.2.000 -release  JAN 12, 2026 12:42:39
 
 *RUN   1        : No N                      WHAPS048 HWOC2501    1
  MODEL          : WHAPS048 - Wheat
@@ -476,6 +476,9 @@
  File: LL912501.WTH                                                            
  Record will be ignored.                                                       
 
+ NWGRNI  YEAR DOY = 2025 191
+ pnout bound check >navl error                                                 
+
  IPWTH   YEAR DOY = 2025 192
  Duplicate record found in weather file.                                       
  Year 2025 DOY 191                                                             
@@ -529,7 +532,7 @@
 
 ******************************************************************************
 
-*DSSAT Cropping System Model Ver. 4.8.2.000 -release  DEC 15, 2025 04:12:05
+*DSSAT Cropping System Model Ver. 4.8.2.000 -release  JAN 12, 2026 12:42:40
 
 *RUN   2        : 147 kg[N]/ha - broadcast  WHAPS048 HWOC2501    3
  MODEL          : WHAPS048 - Wheat
@@ -1050,7 +1053,7 @@
 
 ******************************************************************************
 
-*DSSAT Cropping System Model Ver. 4.8.2.000 -release  DEC 15, 2025 04:12:05
+*DSSAT Cropping System Model Ver. 4.8.2.000 -release  JAN 12, 2026 12:42:40
 
 *RUN   3        : 180 kg[N]/ha - broadcast  WHAPS048 HWOC2501    7
  MODEL          : WHAPS048 - Wheat

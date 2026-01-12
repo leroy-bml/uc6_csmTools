@@ -1,9 +1,9 @@
 *WEATHER DATA : 91746, WEIDENBACH, BAYERN, DEUTSCHLAND
 
-! Dataset processed on 2025-12-15 with csmtools.
+! Dataset processed on 2026-01-12 with csmtools.
 
 @ INSI      LAT     LONG  ELEV   TAV   AMP REFHT WNDHT
-  LL91   49.209   10.645   435  10.4   9.9   2.0   -99
+  LL91   49.209   10.645   456  10.4   9.9   2.0   -99
 
 @DATE  SRAD  TMAX  TMIN  RAIN  DEWP  WIND   PAR  EVAP  RHUM
 24001   2.3   6.5   1.4   0.2   -99   -99   -99   -99   -99
