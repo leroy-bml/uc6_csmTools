@@ -604,7 +604,7 @@ format_envmod_tbl <- function(ls){
 #'
 #' @importFrom magrittr %>%
 #' @importFrom rlang !! := sym
-#' @importFrom dplyr mutate arrange group_by ungroup left_join select filter coalesce all_of
+#' @importFrom dplyr mutate arrange group_by ungroup left_join select filter coalesce all_of cur_group_id
 #' 
 #' @noRd
 #' 

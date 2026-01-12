@@ -65,6 +65,7 @@
 #' }
 #'
 #' @importFrom purrr reduce map
+#' @importFrom dplyr full_join left_join right_join inner_join
 #' 
 #' @export
 #' 
@@ -164,23 +165,23 @@ assemble_dataset <- function(components = list(), keep_all = FALSE, action = "me
 #' 
 
 .aggregate_records <- function(data_list, groups = NULL, agg_fun = "coalesce") {
-  
+
   # Stack all inputs
   combined_df <- dplyr::bind_rows(data_list)
-  
+
   # Return the stacked data if no groups are defined
   if (is.null(groups) || length(groups) == 0) {
     return(combined_df)
   }
-  
+
   # Select aggregation logic
   .aggregate_val <- function(x) {
     x_clean <- na.omit(x)
     if(length(x_clean) == 0) return(NA)
-    
+
     # Text or default -> first value
     if (agg_fun == "coalesce") return(dplyr::first(x_clean))
-    
+
     if (is.numeric(x_clean) || is.logical(x_clean)) {
       if (agg_fun %in% c("average", "mean")) return(mean(x_clean))
       if (agg_fun == "sum") return(sum(x_clean))
@@ -189,12 +190,12 @@ assemble_dataset <- function(components = list(), keep_all = FALSE, action = "me
     }
     return(dplyr::first(x_clean))
   }
-  
+
   # Perform the aggregation
   out <- combined_df %>%
-    dplyr::group_by(dplyr::across(dplyr::all_of(groups))) %>%
+    dplyr::group_by(dplyr::across(dplyr::any_of(groups))) %>%
     dplyr::summarise(dplyr::across(dplyr::everything(), .aggregate_val), .groups = "drop")
-  
+
   return(out)
 }
 

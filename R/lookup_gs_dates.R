@@ -64,7 +64,7 @@
 #' lookup_gs_dates(phenology_data, date_select_rule = "all",
 #'                output_path = "gs_dates_output/")
 #'
-#' @importFrom dplyr filter group_by summarise mutate left_join select distinct
+#' @importFrom dplyr filter group_by summarise mutate left_join select distinct n rename
 #' @importFrom lubridate ymd year yday
 #' 
 #' @export

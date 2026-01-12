@@ -127,6 +127,7 @@ get_sensor_data <- function(url, creds = NULL, var, lon, lat, radius, from, to, 
     to = to
   )
   
+  # TODO: fix, returns a message, not a df when no ds is found
   if(nrow(ds_metadata) == 0) {
     warning("No datastreams found at the specified location.")
     return(NULL)
@@ -725,7 +726,7 @@ patch_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","Da
     
     # --- Join datastreams by device ---
     joined_data <- if (length(data_agg) > 0) {
-      purrr::reduce(data_agg, full_join, by = "phenomenonTime")
+      purrr::reduce(data_agg, dplyr::full_join, by = "phenomenonTime")
     } else {
       NULL
     }
