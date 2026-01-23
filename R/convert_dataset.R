@@ -76,8 +76,8 @@ convert_dataset <- function(dataset, input_model, output_model, output_path = NU
   message("Step 2: Standardizing output format...")
   
   # --- Deduplicate and drop NAs ---
-  mapped_data_clean <- lapply(mapped_data, remove_all_na_cols)
-  mapped_data_clean <- lapply(mapped_data_clean, function(df) unique(df))
+  mapped_data_clean <- lapply(mapped_data, remove_all_na_cols)  # TODO: fix deleting exp_year if empty
+  mapped_data_clean <- lapply(mapped_data, function(df) unique(df))
 
   # --- Apply post-processing logic, if applicable ---
   dataset_std <- standardize_data(dataset = mapped_data_clean, data_model = output_model)
