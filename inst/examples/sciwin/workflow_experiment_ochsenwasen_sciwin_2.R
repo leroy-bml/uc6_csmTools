@@ -103,18 +103,6 @@ wth_model_icasa <- convert_dataset(
   output_path = "./inst/examples/sciwin/ochsenwasen_weather_nasapower_icasa.json"
 )
 
-# -- Assemble composite dataset ---
-wth_icasa <- assemble_dataset(
-  components = list(
-    "./inst/examples/sciwin/ochsenwasen_weather_sensor_icasa.json",
-    "./inst/examples/sciwin/ochsenwasen_weather_nasapower_icasa.json"
-  ),
-  keep_all = FALSE,
-  action = "merge_properties",
-  join_type = "full",
-  output_path = "./inst/examples/sciwin/ochsenwasen_weather_icasa.json"
-)
-
 
 ###----- Soil profile data - external database --------------------------------------
 ## ----------------------------------------------------------------------------------
@@ -210,8 +198,15 @@ dataset_dssat <- convert_dataset(
 # TODO: add default + calibration
 
 # --- Test new soil profiles ---
-generic_loam_slp <- read_sol(file_name = "C:/DSSAT48/Soil/SOIL.SOL", id_soil = "IB00000005")
-generic_loam_slp <- as_DSSAT_tbl(generic_loam_slp)
+generic_loam_slp <- read_sol(file_name = "C:/DSSAT48/Soil/SOIL.SOL", id_soil = "IB00000007")
+generic_loam_slp <- unnest(generic_loam_slp, cols = c(SLB, SLMH, SLLL, SDUL, SSAT, SRGF, SSKS, SBDM, SLOC, SLCL, SLSI, SLCF, SLNI, SLHW, SLHB, SCEC, SADC))
+generic_loam_slp$PEDON <- "DE02114767"
+generic_loam_slp$SDUL - generic_loam_slp$SLLL  # Not very high...
+generic_loam_slp$SDUL <- generic_loam_slp$SDUL * 1.2
+generic_loam_slp$SSAT <- generic_loam_slp$SSAT * 1.2
+
+# generic_loam_slp$PEDON <- "LL00000001"
+# dataset_dssat$MANAGEMENT$FIELDS$ID_SOIL <- "LL00000001"
 
 
 # --- Normalize soil profile ---
@@ -226,7 +221,7 @@ soil_dssat_std <- normalize_soil_profile(
 # Update dataset with normalized soil profile ('replace')
 dataset_dssat <- assemble_dataset(
   components = list(
-    "./inst/examples/sciwin/ochsenwasen_dssat.json",
+    dataset_dssat,
     "./inst/examples/sciwin/ochsenwasen_soil_dssat_normalized.json"
   ),
   keep_all = FALSE,

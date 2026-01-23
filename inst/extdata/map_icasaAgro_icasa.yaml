@@ -1,0 +1,4229 @@
+# BonaRes-LTE to ICASA data map (v2.0.0)
+
+# =================================================================
+# DEFINITIONS & ANCHORS
+# =================================================================
+
+definitions:
+
+  experiment_type_map: &experiment_type_map
+    'Conventional replicated field trial': 'ET001'
+    'Breeding nursery or varietal trial': 'ET002'
+    'Free-air CO2 enrichment': 'ET003'
+    'Open-top chamber CO2 enrichment': 'ET004'
+    'Closed chamber': 'ET005'
+    'Moisture or nutrient gradient study': 'ET006'
+
+  management_type_map: &management_type_map
+    'Researcher managed on experiment station': 'MT001'
+    'Researcher managed on farm': 'MT002'
+    'Farmer managed on farm': 'MT003'
+    'Researcher and farmer joint-managed': 'MT004'
+
+  researcher_role_map: &researcher_role_map
+    'Principal investigator': 'PR001'
+    'Collaborator': 'PR002'
+    'Supervisor': 'PR003'
+    'Technical support': 'PR004'
+    'Data analyst': 'PR005'
+    'Converts data to ICASA format': 'PR006'
+    'Producer': 'PR007'
+
+  institute_type_map: &institute_type_map
+    'University, main campus': 'IT001'
+    'University experiment station': 'IT002'
+    'Government research institution': 'IT003'
+    'Government research institution, designated laboratory or center': 'IT004'
+    'Private company': 'IT005'
+    'Farm': 'IT006'
+    'Farmer association or cooperative': 'IT007'
+    'Non-governmental organization': 'IT008'
+
+  institute_role_map: &institute_role_map
+    'Primary role in executing experiment': 'IL001'
+    'Supporting role': 'IL002'
+    'Source of economic or other support': 'IL003'
+    'Data organization or conversion': 'IL004'
+
+  crop_name_map: &crop_name_map
+    'Artichoke': 'ACK'
+    'Almond': 'ALD'
+    'Alfalfa': 'ALF'
+    'Amaranth': 'AMR'
+    'Apple': 'APL'
+    'Apricot': 'APR'
+    'Asparagus': 'ASP'
+    'Avocado': 'AVC'
+    'Barley': 'BAR'
+    'Blueberry': 'BBR'
+    'Bitter gourd': 'BGR'
+    'Bahia grass': 'BHG'
+    'Broad leaf weeds': 'BLW'
+    'Bermudagrass': 'BMD'
+    'Bambara groundnut': 'BMG'
+    'Dry bean': 'BND'
+    'Green bean': 'BNG'
+    'Banana': 'BNN'
+    'Brachiaria': 'BRC'
+    'Buckwheat': 'BWH'
+    'Camelina': 'CAM'
+    'Carrot': 'CAR'
+    'Cabbage': 'CBG'
+    'Cranberry': 'CBY'
+    'Chinese cabbage': 'CCB'
+    'Coconut': 'CCN'
+    'Celery': 'CEL'
+    'Coffee': 'CFE'
+    'Concord grape': 'CGR'
+    'Chia': 'CHI'
+    'Chestnut': 'CHN'
+    'Chickpea': 'CHP'
+    'Cherry': 'CHR'
+    'Citrus': 'CIT'
+    'Cauliflower': 'CLF'
+    'Clover': 'CLV'
+    'Canola': 'CNL'
+    'Chocolate': 'COC'
+    'Cotton': 'COT'
+    'Carob': 'CRB'
+    'Crambe': 'CRM'
+    'Castor bean': 'CST'
+    'Cassava': 'CSV'
+    'Cashew': 'CSW'
+    'Cucumber': 'CUC'
+    'Cowpea': 'CWP'
+    'Dates': 'DAT'
+    'Eggplant': 'EGP'
+    'Endive': 'END'
+    'Ethiopian mustard': 'BCR'
+    'Fallow': 'FAL'
+    'Faba bean': 'FBN'
+    'Fig': 'FIG'
+    'Flax': 'FLX'
+    'Finger millet': 'FML'
+    'Forage (generic)': 'FRG'
+    'Forage maize': 'FMZ'
+    'Red fescue': 'FSR'
+    'Foxtail millet': 'FXM'
+    'Garlic': 'GAR'
+    'Guinea grass': 'GGR'
+    'Grass vegetations': 'GRV'
+    'Grass weeds': 'GRW'
+    'Guayule': 'GUA'
+    'Guar': 'GUR'
+    'Hemp': 'HMP'
+    'Hops': 'HOP'
+    'Hesperaloe': 'HSP'
+    'Hairy vetch': 'HVT'
+    'Hazelnut': 'HZN'
+    'Jatropha': 'JAT'
+    'Jack bean': 'JBN'
+    'Jute': 'JUT'
+    'Kenaf': 'KNF'
+    'Lablab': 'LAB'
+    'Lima bean': 'LBN'
+    'Licorice (LCG)': 'LCG'  # Note: Duplicate code (LCL) - verify which is correct
+    'Licorice (LCL)': 'LCL'  # Note: Duplicate code (LCG) - verify which is correct
+    'Leek': 'LEK'
+    'Lentil': 'LEN'
+    'Lettuce': 'LET'
+    'Maize': 'MAZ'
+    'Macadamia nut': 'MCN'
+    'Mung bean': 'MNG'
+    'Napier grass': 'NPG'
+    'Nopal': 'NPL'
+    'Erect prickly pear': 'OST'
+    'Cochineal nopal cactus': 'NCO'
+    'Pitaya': 'PTY'
+    'Dragon fruit': 'DRF'
+    'Oats': 'OAT'
+    'Okra': 'OKR'
+    'Oil palm': 'OLP'
+    'Olives': 'OLV'
+    'Onion': 'ONI'
+    'Other': 'OTH'
+    'Parsnip': 'PAR'
+    'Pak choi': 'PCH'
+    'Pecan': 'PCN'
+    'Pea': 'PEA'
+    'Pear': 'PER'
+    'Pigeon pea': 'PGP'
+    'Plum': 'PLM'
+    'Pumpkin': 'PMK'
+    'Pearl millet': 'PML'
+    'Pineapple': 'PNA'
+    'Peanut': 'PNT'
+    'Poplar': 'POP'
+    'Potato': 'POT'
+    'Perennial peanut': 'PPN'
+    'Bell pepper': 'PPR'
+    'Papaya': 'PPY'
+    'Proso millet': 'PRM'
+    'Parsley': 'PRS'
+    'Persimmon': 'PSM'
+    'Pistachio': 'PST'
+    'Quinoa': 'QUN'
+    'Radish': 'RAD'
+    'Rape': 'RAP'
+    'Red clover': 'RCL'
+    'Annual ryegrass': 'RGA'
+    'Perennial ryegrass': 'RGP'
+    'Rhizoma peanut': 'RHP'
+    'Rice': 'RIC'
+    'Rye': 'RYE'
+    'Safflower': 'SAF'
+    'Soybean': 'SBN'
+    'Sugar beet': 'SBT'
+    'Sesame': 'SES'
+    'Sorghum': 'SGG'
+    'Shallot': 'SHL'
+    'Spinach': 'SPN'
+    'Summer squash': 'SQS'
+    'Winter squash': 'SQW'
+    'Strawberry': 'STB'
+    'Shrubs/trees': 'STR'
+    'Stevia': 'STV'
+    'Sugarcane': 'SUC'
+    'Sunflower': 'SUN'
+    'Sweet corn': 'SWC'
+    'Switch grass': 'SWG'
+    'Sweet potato': 'SWP'
+    'Tannier': 'TAN'
+    'Taro': 'TAR'
+    'Tepary bean': 'TBN'
+    'Tea': 'TEA'
+    'Teff': 'TEF'
+    'Tall fescue': 'TFS'
+    'Table grape': 'TGR'
+    'Turnip': 'TNP'
+    'Tobacco': 'TOB'
+    'Tomato': 'TOM'
+    'Triticale': 'TRT'
+    'Velvet bean': 'VBN'
+    'Wine grape': 'VIN'
+    'Black gram': 'VMG'
+    'Bread wheat': 'WHB'
+    'Durum wheat': 'WHD'
+    'Wheat': 'WHT'
+    'Willow': 'WIL'
+    'Watermelon': 'WML'
+    'Black walnut': 'WNB'
+    'Walnut': 'WNT'
+    'Yam': 'YAM'
+    'Cereal-unknown or mixture': 'ZZ1'
+    'Legume-unknown or mixture': 'ZZ2'
+    'Grass-unknown or mixture': 'ZZ3'
+    'Cover crop-unknown or mixture': 'ZZ4'
+
+  soil_texture_map: &soil_texture_map
+    'Coarse loamy sand': 'CLOSA'
+    'Coarse sand': 'CSA'
+    'Coarse silt': 'CSI'
+    'Coarse sandy loam': 'CSALO'
+    'Clay': 'CL'
+    'Clay loam': 'CLLO'
+    'Fine loam': 'FLO'
+    'Fine loamy sand': 'FLOSA'
+    'Fine sand': 'FSA'
+    'Fine sandy loam': 'FSALO'
+    'Silty clay loam': 'SICLL'
+    'Loam': 'LO'
+    'Loamy sand': 'LOSA'
+    'Sand': 'SA'
+    'Sandy clay': 'SACL'
+    'Sandy clay loam': 'SACLL'
+    'Silt': 'SI'
+    'Silty clay': 'SICL'
+    'Silty loam': 'SILO'
+    'Sandy loam': 'SALO'
+    'Very fine loamy sand': 'VFLOS'
+    'Very fine sand': 'VFSA'
+    'Very fine sandy loam': 'VFSAL'
+
+  logical_code_map: &logical_code_map
+    'Yes': 'Y'
+    'No': 'N'
+
+  tillage_implement_map: &tillage_implement_map
+    'V-Ripper': 'TI001'
+    'Subsoiler': 'TI002'
+    'Moldboard plow 20 cm depth': 'TI003'
+    'Chisel plow, sweeps': 'TI004'
+    'Chisel plow, straight point': 'TI005'
+    'Chisel plow, twisted shovels': 'TI006'
+    'Disk plow': 'TI007'
+    'Disk, 1-way': 'TI008'
+    'Disk, tandem': 'TI009'
+    'Disk, double disk': 'TI010'
+    'Cultivator, field': 'TI011'
+    'Cultivator, row': 'TI012'
+    'Cultivator, ridge till': 'TI013'
+    'Harrow, spike': 'TI014'
+    'Harrow, tine': 'TI015'
+    'Lister': 'TI016'
+    'Bedder': 'TI017'
+    'Blade cultivator': 'TI018'
+    'Fertilizer applicator, anhydr': 'TI019'
+    'Manure injector': 'TI020'
+    'Mulch treader': 'TI022'
+    'Plank': 'TI023'
+    'Roller packer': 'TI024'
+    'Drill, double-disk': 'TI025'
+    'Drill, deep furrow': 'TI026'
+    'Drill, no-till': 'TI031'
+    'Drill, no-till; into sod': 'TI032'
+    'Planter, row': 'TI033'
+    'Planter, no-till': 'TI034'
+    'Planting stick (hand)': 'TI035'
+    'Matraca hand planter': 'TI036'
+    'Rod weeder': 'TI037'
+    'Rotary hoe': 'TI038'
+    'Roller harrow, cultipacker': 'TI039'
+    'Moldboard plow 25 cm': 'TI041'
+    'Moldboard plow 30 cm': 'TI042'
+    'Strip tillage': 'TI043'
+    'Laser leveling': 'TI044'
+
+  crop_intended_use_map: &crop_intended_use_map
+    'Cash crop': 'CA'
+    'Cover crop': 'CO'
+    'Green manure': 'GM'
+    'Dual purpose': 'DU'
+    'Propagation of seed or vegetative material': 'SP'
+    'Grain': 'GR'
+    'Silage': 'SI'
+    'Other': 'OT'
+
+  drainage_type_map: &drainage_type_map
+    'No drainage': 'DR000'
+    'Ditches': 'DR001'
+    'Sub-surface tiles': 'DR002'
+    'Surface furrows': 'DR003'
+
+  field_history_map: &field_history_map
+    'Cultivated, good management, init. default SOM': 'FH101'
+    'Cultivated, good management, init. degraded land': 'FH301'
+    'Cultivated, good management, init. grass or forest': 'FH201'
+    'Cultivated, poor management, init. default SOM': 'FH102'
+    'Cultivated, poor management, init. degraded land': 'FH302'
+    'Cultivated, poor management, init. grass or forest': 'FH202'
+
+  planting_material_map: &planting_material_map
+    'Dry seed': 'S'
+    'Transplants': 'T'
+    'Nursery': 'N'
+    'Pregerminated seed': 'P'
+    'Ratoon': 'R'
+    'Vertically planted sticks': 'V'
+    'Horizontally planted sticks': 'H'
+    'Inclined (45o) sticks': 'I'
+    'Cutting': 'C'
+  
+  planting_distribution_map: &planting_distribution_map
+    'Rows': 'R'
+    'Hills': 'H'
+    'Uniform/Broadcast': 'U'
+    'Rows on beds': 'RB'
+    'Unknown/not given': 'N'
+    'Pots': 'P'
+
+  mulch_color_map: &mulch_color_map
+    'Transparent': 'MC001'
+    'White': 'MC002'
+    'Black': 'MC003'
+    'Brown': 'MC004'
+    'Gray': 'MC005'
+    'Light straw color': 'MC006'
+
+  mulch_type_map: &mulch_type_map
+    'Polyethylene sheet - solid': 'MT001'
+    'Polyethylene sheet - perforated': 'MT002'
+    'Landscape fabric': 'MT003'
+    'Paper': 'MT004'
+    'Grass clippings': 'MT005'
+    'Pine needles': 'MT006'
+    'Straw': 'MT007'
+    'Foil': 'MT008'
+    'Foil coated plastic': 'MT009'
+    'Photodegradable plastic': 'MT010'
+    'Not given/unknown': 'MT999'
+  mulch_type_default: &mulch_type_default MT999  
+
+  irrigation_operation_map: &irrigation_operation_map
+    'Furrow, mm': 'IR001'
+    'Alternating furrows, mm': 'IR002'
+    'Flood, mm': 'IR003'
+    'Sprinkler, mm': 'IR004'
+    'Drip or trickle, mm': 'IR005'
+    'Flood depth, mm': 'IR006'
+    'Water table depth, mm': 'IR007'
+    'Percolation rate, mm day-1': 'IR008'
+    'Bund height, mm': 'IR009'
+    'Puddling (for Rice only)': 'IR010'
+    'Constant flood depth, mm': 'IR011'
+    'Subsurface (burried) drip, mm': 'IR012'
+    'Irrigation method unknown/not given': 'IR999'
+  irrigation_operation_default: &irrigation_operation_default IR999  
+
+  organic_fertilizer_material_map: &organic_fertilizer_material_map
+    'Generic crop residue': 'RE001'
+    'Green manure': 'RE002'
+    'Barnyard manure': 'RE003'
+    'Liquid manure': 'RE004'
+    'Compost': 'RE005'
+    'Bark': 'RE006'
+    'Generic legume residue': 'RE101'
+    'Cowpea residue': 'RE102'
+    'Mucuna residue': 'RE103'
+    'Peanut residue': 'RE104'
+    'Pigeon Pea residue': 'RE105'
+    'Soybean residue': 'RE106'
+    'Alfalfa residue': 'RE107'
+    'Chickpea forage': 'RE108'
+    'Faba bean': 'RE109'
+    'Pea residue': 'RE110'
+    'Hairy vetch': 'RE111'
+    'Generic cereal crop residue': 'RE201'
+    'Pearl millet residue': 'RE202'
+    'Maize residue': 'RE203'
+    'Sorghum residue': 'RE204'
+    'Wheat residue': 'RE205'
+    'Barley': 'RE206'
+    'Rice': 'RE207'
+    'Rye': 'RE208'
+    'Generic grass': 'RE301'
+    'Bahiagrass': 'RE302'
+    'Bermudagrass': 'RE303'
+    'Switchgrass': 'RE304'
+    'brachiaria': 'RE305'
+    'forage grasses': 'RE306'
+    'Bush fallow residue': 'RE401'
+    'Sugarcane': 'RE402'
+    'Pineapple': 'RE403'
+    'Decomposed crop residue': 'RE999'
+
+  inorganic_fertilizer_material_map: &inorganic_fertilizer_material_map
+    'Ammonium nitrate': 'FE001'
+    'Ammonium sulfate': 'FE002'
+    'Ammonium nitrate sulfate': 'FE003'
+    'Anhydrous ammonia': 'FE004'
+    'Urea': 'FE005'
+    'Diammonium phosphate (DAP)': 'FE006'
+    'Monoammonium phosphate (MAP)': 'FE007'
+    'Calcium nitrate': 'FE008'
+    'Aqua ammonia': 'FE009'
+    'Urea ammonium nitrate': 'FE010'
+    'Calcium ammonium nitrate': 'FE011'
+    'Ammonium poly-phosphate': 'FE012'
+    'Single super phosphate': 'FE013'
+    'Triple super phosphate (TSP)': 'FE014'
+    'Liquid phosphoric acid': 'FE015'
+    'Potassium chloride (muriate of potash, MOP)': 'FE016'
+    'Potassium nitrate (nitrate of potash)': 'FE017'
+    'Potassium sulfate': 'FE018'
+    'Urea super granules': 'FE019'
+    'Dolomitic limestone': 'FE020'
+    'Rock phosphate': 'FE021'
+    'Calcitic limestone': 'FE022'
+    'Urea ammonium sulfate': 'FE023'
+    'Rhizobium': 'FE024'
+    'Calcium hydroxide (hydrated lime)': 'FE026'
+    'NPK - ammonium nitrate': 'FE027'
+    'NPK - urea': 'FE028'
+    'NPK - ammonium nitrate urea': 'FE029'
+    'NPK - user blend': 'FE030'
+    '32% UAN (35% urea + 45% A.N.)': 'FE036'
+    '30% UAN (33% urea + 42% A.N.)': 'FE037'
+    '28% UAN (30% urea + 40% A.N.)': 'FE038'
+    '21% AN (60% A.N. + 40% water)': 'FE039'
+    '19% AN (54% A.N. + 46% water)': 'FE040'
+    'Ammonium nitrate limestone': 'FE041'
+    'Ammonionated super phosphate': 'FE042'
+    'Ammonium phosphate nitrate': 'FE043'
+    'Ammonium phosphate sulfate': 'FE044'
+    'Urea ammonium phosphate': 'FE045'
+    'Urea phosphate': 'FE046'
+    'Calcium cyanamide': 'FE050'
+    'Calcium nitrate-urea': 'FE051'
+    'Sodium nitrate': 'FE055'
+    'Magnesium nitrate': 'FE056'
+    'Ammonium thiosulfate** (60% solution)': 'FE057'
+    'Ammonium polysulfide': 'FE058'
+    'Ammonium sulfate solution': 'FE059'
+    'Ammonium sulfate - nitrate': 'FE060'
+    'Ferrous ammonium sulfate': 'FE061'
+    'Liquid ammonium polyphosphate': 'FE062'
+    'Nitric phosphate': 'FE063'
+    'Nitric acid': 'FE064'
+    'Urea solution': 'FE065'
+    'Zinc ammonium sulfate solution': 'FE066'
+    'Zinc manganese ammonium sulfate': 'FE067'
+    'Ammonium metaphosphate': 'FE068'
+    'Ammonium phosphate': 'FE069'
+    'Potassium - sodium nitrate': 'FE070'
+    'ESN': 'FE201'
+    'NBTPT': 'FE202'
+    'DCD (dicyandiamide)': 'FE203'
+    'SuperU': 'FE204'
+    'DMPP (3,4-Dimethylpyrazole phosphate)': 'FE205'
+    'Sulfur coated urea (thin coat)': 'FE206'
+    'Sulfur coated urea (thick coat)': 'FE207'
+    'ESN + NBTPT': 'FE208'
+    'Ureaform (urea + formaldehyde)': 'FE209'
+    'Crotonylidene diurea (CDU)': 'FE210'
+    'Isobutylidene diurea (IBDU)': 'FE211'
+    'Methylene ureas': 'FE212'
+    'Mono potassium phosphate (MKP)': 'FE300'
+    'Superphosphoric acid': 'FE301'
+    'Calcium metaphosphate': 'FE302'
+    'Potassium metaphosphate': 'FE303'
+    'Precipitated phosphate': 'FE304'
+    'Magnesium ammonium phosphate (struvite)': 'FE305'
+    'Bone meal (steamed)': 'FE306'
+    'Superphosphate, enriched': 'FE307'
+    'Basic Lime phosphate': 'FE308'
+    'Magnesium phosphate': 'FE309'
+    'Limestone, phosphatic': 'FE310'
+    'Basic slag': 'FE311'
+    'Colloidal phosphate (Soft)': 'FE312'
+    'Potash suspensions': 'FE400'
+    'Potassium carbonate K2CO3 solid': 'FE401'
+    'Potassium carbonate K2CO3 liquid': 'FE402'
+    'Potassium magnesium sulfate**': 'FE403'
+    'Manure salts': 'FE404'
+    'Kainite KMg(SO4)Cl·3H2O': 'FE405'
+    'Carnallite (hydrated potassium magnesium chloride)': 'FE406'
+    'Lime-potash mixtures': 'FE407'
+    'Greensand': 'FE408'
+    'Wettable S': 'FE500'
+    'Flowable S': 'FE501'
+    'Flowers of S': 'FE502'
+    'Gypsum': 'FE503'
+    'Magnesium sulfate (epsom salt)': 'FE504'
+    'Magnesium sulfate (Kieserite)': 'FE505'
+    'Sulfuric acid': 'FE506'
+    'Copper sulfate': 'FE507'
+    'Aluminum sulfate': 'FE508'
+    'Cobalt sulfate': 'FE509'
+    'Ferric sulfate': 'FE510'
+    'Ferrous sulfate': 'FE511'
+    'Calcium sulfate (hydrous)': 'FE512'
+    'Lime sulfur solution': 'FE513'
+    'Magnesia (Magnesium oxide)': 'FE600'
+    'Brucite (Magnesium hydroxide)': 'FE601'
+    'Magnesium chelate': 'FE602'
+    'Calcium chloride': 'FE620'
+    'Calcium oxide (burned lime, quicklime)': 'FE621'
+    'Selma chalk': 'FE622'
+    'Calcium chelate': 'FE623'
+    'Borax': 'FE640'
+    'Boric acid': 'FE641'
+    'Zinc sulfate monohydrate': 'FE660'
+    'Zinc sulfate heptahydrate': 'FE661'
+    'Zinc oxysulfate': 'FE662'
+    'Basic zinc sulfate': 'FE663'
+    'Zinc oxide': 'FE664'
+    'Zinc carbonate': 'FE665'
+    'Zinc chloride': 'FE666'
+    'Zinc nitrate': 'FE667'
+    'Zinc phosphate': 'FE668'
+    'Zonc frits': 'FE669'
+    'Ammoniated zinc': 'FE670'
+    'Manganese agstone': 'FE680'
+    'Manganese chelate': 'FE681'
+    'Manganese oxide': 'FE682'
+    'Manganese slag': 'FE683'
+    'Manganese sulfate': 'FE684'
+    'Manganous oxide': 'FE685'
+    'Iron chelate': 'FE700'
+    'Iron compound': 'FE701'
+    'Ferric oxide': 'FE702'
+    'Copper oxide, black': 'FE720'
+    'Copper oxide, red': 'FE721'
+    'Copper chelate': 'FE722'
+    'Copper compound': 'FE723'
+    'Sodium molybdonate': 'FE740'
+    'Generic fertilizer': 'FE900'
+
+  application_method_map: &application_method_map
+    'Broadcast, not incorporated': 'AP001'
+    'Broadcast, incorporated': 'AP002'
+    'Banded on surface': 'AP003'
+    'Banded beneath surface': 'AP004'
+    'Applied in irrigation water': 'AP005'
+    'Foliar spray': 'AP006'
+    'Bottom of hole': 'AP007'
+    'On the seed': 'AP008'
+    'Injected': 'AP009'
+    'Broadcast on flooded/saturated soil, none in soil': 'AP011'
+    'Broadcast on flooded/saturated soil, 15% in soil': 'AP012'
+    'Broadcast on flooded/saturated soil, 30% in soil': 'AP013'
+    'Broadcast on flooded/saturated soil, 45% in soil': 'AP014'
+    'Broadcast on flooded/saturated soil, 60% in soil': 'AP015'
+    'Broadcast on flooded/saturated soil, 75% in soil': 'AP016'
+    'Broadcast on flooded/saturated soil, 90% in soil': 'AP017'
+    'Band on saturated soil,2cm flood, 92% in soil': 'AP018'
+    'Deeply placed urea super granules/pellets, 95% in soil': 'AP019'
+    'Deeply placed urea super granules/pellets, 100% in soil': 'AP020'
+    'Application method unknown/not given': 'AP999'
+  application_method_default: &application_method_default AP999  
+
+  element_map: &element_map
+    'Magnesium': 'Mg'
+    'Manganese': 'Mn'
+    'Cadmium': 'Cd'
+    'Zinc': 'Zn'
+    'Sulfur': 'S'
+    'Iron': 'Fe'
+    'Selenium': 'Se'
+    'Boron': 'B'
+  
+  pesticide_material_map: &pesticide_material_map
+    'Alachlor (Lasso), Metolachlor (Dual) [Herbicide]': 'CH001'
+    'Propanil [Herbicide]': 'CH002'
+    'Trifluralin [Herbicide]': 'CH003'
+    'Dalapon [Herbicide]': 'CH004'
+    'MCPA [Herbicide]': 'CH005'
+    '2,4-D [Herbicide]': 'CH006'
+    '2,4,5-T [Herbicide]': 'CH007'
+    'Pendimethalin [Herbicide]': 'CH008'
+    'Atrazine [Herbicide]': 'CH009'
+    'Diquat [Herbicide]': 'CH010'
+    'Paraquat [Herbicide]': 'CH011'
+    'Glyphosate [Herbicide]': 'CH012'
+    'Carbaryl, Sevin, Septene [Insecticide]': 'CH021'
+    'Malathion, Mercaptothion [Insecticide]': 'CH022'
+    'Naled [Insecticide]': 'CH023'
+    'Dimethoate [Insecticide]': 'CH024'
+    'Fention [Insecticide]': 'CH025'
+    'Diazinon, Basudin [Insecticide]': 'CH026'
+    'Ethion, Diethion [Insecticide]': 'CH027'
+    'Oxydemeton-Methyl [Insecticide]': 'CH028'
+    'Azinphos-Methyl [Insecticide]': 'CH029'
+    'Phosphamidon [Insecticide]': 'CH030'
+    'Mevinphosl [Insecticide]': 'CH031'
+    'Methyl Parathion [Insecticide]': 'CH032'
+    'Parathion [Insecticide]': 'CH033'
+    'DDT [Insecticide]': 'CH034'
+    'BHC, HCH [Insecticide]': 'CH035'
+    'Chlordane [Insecticide]': 'CH036'
+    'Heptachlor [Insecticide]': 'CH037'
+    'Toxaphene [Insecticide]': 'CH038'
+    'Aldrin [Insecticide]': 'CH039'
+    'Dieldrin [Insecticide]': 'CH040'
+    'Endrin, Nendrin [Insecticide]': 'CH041'
+    'Methomyl, Lannat [Insecticide]': 'CH042'
+    'Thiotex [Insecticide]': 'CH043'
+    'Furadan [Insecticide]': 'CH044'
+    'Endosulfan [Insecticide]': 'CH045'
+    'Captan [Fungicide]': 'CH051'
+    'Benomyl [Fungicide]': 'CH052'
+    'Zineb [Fungicide]': 'CH053'
+    'Maneb [Fungicide]': 'CH054'
+    'Mancozeb [Fungicide]': 'CH055'
+    'Tilt [Fungicide]': 'CH056'
+    'Rhizobium (for legume crops)': 'CH057'
+    'Mepiquat chloride, Pix': 'CH100'
+    'Ethephon': 'CH101'
+    'Ethylene': 'CH102'
+    'Coragen / Chlorantraniliprole': 'CH201'
+
+  environ_mod_param_map: &environ_mod_param_map
+    'CO2 concentration': 'CO2'
+    'Daylength': 'daylen'
+    'Dewpoint temperature': 'dewpt'
+    'Maximum temperature': 'tmax'
+    'Minimum temperature': 'tmin'
+    'Rainfall': 'rain'
+    'Radiation': 'radiat'
+    'Wind speed': 'wind'
+
+  environ_mod_code_map: &environ_mod_code_map
+    'Add': 'A'
+    'Substract': 'S'
+    'Multiply': 'M'
+    'Replace': 'R'
+
+  harvest_stage_map: &harvest_stage_map
+    'None': 'GS000'
+    'Terminal spikelet': 'GS001'
+    'End of vegetative phase': 'GS002'
+    'End of ear growth': 'GS003'
+    'Ear emergence': 'GS004'
+    'End of grain filling phase': 'GS005'
+    'Maturity': 'GS006'
+    'Sowing date': 'GS007'
+    'Germination': 'GS008'
+    'Emergence': 'GS009'
+  harvest_stage_default: &harvest_stage_default GS006
+
+  harvest_component_map: &harvest_component_map
+    'Above-ground biomass': 'canopy'
+    'Leaves': 'leaf'
+    'Grain, legume seeds': 'grain'
+    'Silage': 'silage'
+    'Underground storage components (e.g., tubers, roots, corms, rhyzomes, etc.)': 'tuber'
+    'Fruit': 'fruit'
+    'Fiber, e.g., cotton': 'fiber'
+    'Cotton boll, including lint': 'seed_cotton'
+    'Stem': 'stem'
+  
+  harvest_method_map: &harvest_method_map
+    'Combined': 'HM001'
+    'Hand cut, machine threshed': 'HM002'
+    'Hand cut, hand threshed': 'HM003'
+    'Hand picked, no further processing': 'HM004'
+    'Hand picked, machine processing': 'HM005'
+    'Cotton stripper': 'HM006'
+    'Method unknown/not given': 'HM999'
+  harvest_method_default: &harvest_method_default HM999  
+
+  harvest_size_map: &harvest_size_map
+    'All': 'A'
+    'Small - less than 1/3 full size': 'S'
+    'Medium - from 1/3 to 2/3 full size': 'M'
+    'Large - greater than 2/3 full size': 'L'
+
+  soil_drainage_class_map: &soil_drainage_class_map
+    'excessively drained': 'ED'
+    'somewhat excessively drained': 'SED'
+    'well drained': 'WD'
+    'moderately well drained': 'MWD'
+    'somewhat poorly drained': 'SPD'
+    'poorly drained': 'PD'
+    'very poorly drained': 'VPD'
+
+  method_ph_buffer_map: &method_ph_buffer_map
+    'SA101': 'SA101'  # Note 2025-01-16: Placeholder, missing from ICASA dictionary
+    'SA102': 'SA102'  # Note 2025-01-16: Placeholder, missing from ICASA dictionary
+    'SA103': 'SA103'  # Note 2025-01-16: Placeholder, missing from ICASA dictionary
+    'SA104': 'SA104'  # Note 2025-01-16: Placeholder, missing from ICASA dictionary
+    'SA105': 'SA105'  # Note 2025-01-16: Placeholder, missing from ICASA dictionary
+    'Method unknown/not given': 'SA199'
+  method_ph_buffer_default: &method_ph_buffer_default SA199
+
+  method_phosphorus_map: &method_phosphorus_map
+    'Olsen': 'SA001'
+    'Bray No. 1': 'SA002'
+    'Bray No. 2': 'SA003'
+    'Mehlich I (double acid, 1:5)': 'SA004'
+    'Anion exchange resin': 'SA005'
+    'Truog': 'SA006'
+    'Mehlich I (double acid, 1:10)': 'SA007'
+    'Colwell': 'SA008'
+    'Water': 'SA009'
+    'IFDC Pi strip': 'SA010'
+    'pH in Water': 'SA011'
+    'pH in KCl': 'SA012'
+    'Mehlich 3': 'SA013'
+    'Morgans solution': 'SA014'
+    'NH4OAc': 'SA015'
+    'Method unknown/not given': 'SA099'
+  method_phosphorus_default: &method_phosphorus_default SA099
+
+  method_potassium_map: &method_potassium_map
+    'NH4OAc': 'SA201'
+    'Mehlich I (1:5)': 'SA202'
+    'Mehlich I (1:10)': 'SA203'
+    'Mehlich 3': 'SA204'
+    'Method unknown/not given': 'SA299'
+    'Morgans solution': 'SA014'
+  method_potassium_default: &method_potassium_default SA299
+
+  # The following map are placeholders; not code list in ICASA as of 2026-01-16
+  method_calcium_map: &method_calcium_map
+    'Method unknown/not given': 'SA399'
+  method_calcium_default: &method_calcium_default SA399
+
+  method_magnesium_map: &method_magnesium_map
+    'Method unknown/not given': 'SA499'
+  method_magnesium_default: &method_magnesium_default SA499
+
+  method_boron_map: &method_boron_map
+    'Method unknown/not given': 'SA599'
+  method_boron_default: &method_boron_default SA599
+
+  method_sulfur_map: &method_sulfur_map
+    'Method unknown/not given': 'SA699'
+  method_sulfur_default: &method_sulfur_default SA699
+
+  method_zinc_map: &method_zinc_map
+    'Method unknown/not given': 'SA799'
+  method_zinc_default: &method_zinc_default SA799
+
+
+# =================================================================
+# MAPPING RULES
+# =================================================================
+
+rules:
+
+# -----------------------------------------------------------------
+# PHASE 1: Data Transformation and Lookups
+# -----------------------------------------------------------------
+
+## Intermediate table for mappings
+
+  - mapping_uid: '1'
+    notes: "Create intermediate management table including experiment year and crop name for definition of modeling experiments."
+    source:
+      section: MANAGEMENTS
+    target:
+      section: EXPERIMENTAL_DESIGN
+    actions:
+      - type: lookup_and_add
+        lookup_data_source: { section: CROP_SEASON }
+        on_key:
+          source_key: [experiment_id, crop_season_id] 
+          lookup_key: [experiment_id, crop_season_id]
+        select_columns:
+          experiment_year: experiment_year
+          crop_id: crop_id
+      - type: map_values
+        input_map: { x: crop_id }
+        output_header: crop_id
+        map: *crop_name_map
+
+
+#### ------ CONTEXT METADATA SECTIONS ------------------------------------
+
+## --- SECTION: GENERAL ---
+
+  - mapping_uid: '2'
+    notes: "xxx."
+    source:
+      section: EXPERIMENT
+    target:
+      section: GENERAL
+    actions:
+      - type: lookup_and_add
+        lookup_data_source: { section: PLOT_LAYOUT }
+        on_key:
+          source_key: [experiment_id]
+          lookup_key: [experiment_id]
+        select_columns:
+          experimental_design: experimental_design
+      - type: map_values
+        input_map: { x: experiment_type }
+        output_header: experiment_type
+        map: *experiment_type_map
+      - type: map_values
+        input_map: { x: management_type }
+        output_header: management_type
+        map: *management_type_map
+      - type: format_column
+        formats:
+          revision_date_first: "%Y-%m-%d"
+          revision_date_latest: "%Y-%m-%d"
+
+  - mapping_uid: '3'
+    notes: "xxx."
+    source:
+      section: EXPERIMENT
+    target:
+      section: NOTES
+
+  # --- SECTIONS: PERSONS ---
+
+  - mapping_uid: '4'
+    notes: "Creates intermediate table to dispatch PERSONS metadata across resource/data types (experiment, soil, weather, genotypes)."
+    source:
+      section: PERSONS
+    target:
+      section: PERSONS_INTERMEDIATE
+    actions:
+      - type: map_values
+        input_map: { x: researcher_role }
+        output_header: researcher_role
+        map: *researcher_role_map
+      - type: extract_string
+        input_map: { header: resource_id }
+        output_col: resource_type
+        # Regex: captures text inside []
+        pattern: '\[(.*?)\]'
+      - type: extract_string
+        input_map: { header: resource_id }
+        output_col: resource_id
+        # Regex: captures text after []
+        pattern: '\]\s*(.*)'
+
+  - mapping_uid: '5'
+    order: 1
+    notes: "xxx."
+    source:
+      section: PERSONS_INTERMEDIATE
+    target:
+      section: EXPERIMENT_PERSONS
+    actions:
+      - type: filter_rows
+        on_column_values:
+          - column: { header: resource_type }
+            values: "Experiment"
+      - type: rename_column
+        input_name: resource_id
+        output_name: experiment_id
+
+  - mapping_uid: '6'
+    order: 1
+    notes: "xxx."
+    source:
+      section: PERSONS_INTERMEDIATE
+    target:
+      section: SOIL_PERSONS
+    actions:
+      - type: filter_rows
+        on_column_values:
+          - column: { header: resource_type }
+            values: "Soil"
+      - type: rename_column
+        input_name: resource_id
+        output_name: soil_profile_id
+
+  - mapping_uid: '7'
+    order: 1
+    notes: "xxx."
+    source:
+      section: PERSONS_INTERMEDIATE
+    target:
+      section: WEATHER_PERSONS
+    actions:
+      - type: filter_rows
+        on_column_values:
+          - column: { header: resource_type }
+            values: "Weather source"
+      - type: rename_column
+        input_name: resource_id
+        output_name: weather_station_id
+
+  - mapping_uid: '8'
+    order: 1
+    notes: "xxx."
+    source:
+      section: PERSONS_INTERMEDIATE
+    target:
+      section: GENOTYPES_PERSONS
+    actions:
+      - type: filter_rows
+        on_column_values:
+          - column: { header: resource_type }
+            values: "Genotype"
+      - type: rename_column
+        input_name: resource_id
+        output_name: genotype_level
+
+  # --- SECTIONS: INSTITUTIONS ---
+
+  - mapping_uid: '9'
+    notes: "Creates intermediate table to dispatch INSTITUTIONS metadata across resource/data types (experiment, soil, weather, genotypes)."
+    source:
+      section: INSTITUTIONS
+    target:
+      section: INSTITUTIONS_INTERMEDIATE
+    actions:
+      - type: map_values
+        input_map: { x: institute_type }
+        output_header: institute_type
+        map: *institute_type_map
+      - type: map_values
+        input_map: { x: institute_role }
+        output_header: institute_role
+        map: *institute_role_map
+      - type: extract_string
+        input_map: { header: resource_id }
+        output_col: resource_type
+        # Regex: captures text inside []
+        pattern: '\[(.*?)\]'
+      - type: extract_string
+        input_map: { header: resource_id }
+        output_col: resource_id
+        # Regex: captures text after []
+        pattern: '\]\s*(.*)'
+
+  - mapping_uid: '10'
+    order: 1
+    notes: "xxx."
+    source:
+      section: INSTITUTIONS_INTERMEDIATE
+    target:
+      section: EXPERIMENT_INSTITUTIONS
+    actions:
+      - type: filter_rows
+        on_column_values:
+          - column: { header: resource_type }
+            values: "Experiment"
+      - type: rename_column
+        input_name: resource_id
+        output_name: experiment_id
+
+  - mapping_uid: '11'
+    order: 1
+    notes: "xxx."
+    source:
+      section: INSTITUTIONS_INTERMEDIATE
+    target:
+      section: SOIL_INSTITUTIONS
+    actions:
+      - type: filter_rows
+        on_column_values:
+          - column: { header: resource_type }
+            values: "Soil"
+      - type: rename_column
+        input_name: resource_id
+        output_name: soil_profile_id
+
+  - mapping_uid: '12'
+    order: 1
+    notes: "xxx."
+    source:
+      section: INSTITUTIONS_INTERMEDIATE
+    target:
+      section: WEATHER_INSTITUTIONS
+    actions:
+      - type: filter_rows
+        on_column_values:
+          - column: { header: resource_type }
+            values: "Weather source"
+      - type: rename_column
+        input_name: resource_id
+        output_name: weather_station_id
+
+  - mapping_uid: '13'
+    order: 1
+    notes: "xxx."
+    source:
+      section: INSTITUTIONS_INTERMEDIATE
+    target:
+      section: GENOTYPES_INSTITUTIONS
+    actions:
+      - type: filter_rows
+        on_column_values:
+          - column: { header: resource_type }
+            values: "Genotype"
+      - type: rename_column
+        input_name: resource_id
+        output_name: genotype_level
+
+  # --- SECTIONS: DOCUMENTS ---
+
+  - mapping_uid: '14'
+    notes: "Creates intermediate table to dispatch DOCUMENTS metadata across resource/data types (experiment, soil, weather, genotypes)."
+    source:
+      section: DOCUMENTS
+    target:
+      section: DOCUMENTS_INTERMEDIATE
+    actions:
+      - type: format_column
+        formats:
+          document_date: "%Y-%m-%d"
+      - type: extract_string
+        input_map: { header: resource_id }
+        output_col: resource_type
+        # Regex: captures text inside []
+        pattern: '\[(.*?)\]'
+      - type: extract_string
+        input_map: { header: resource_id }
+        output_col: resource_id
+        # Regex: captures text after []
+        pattern: '\]\s*(.*)'
+
+  - mapping_uid: '15'
+    order: 1
+    notes: "xxx."
+    source:
+      section: DOCUMENTS_INTERMEDIATE
+    target:
+      section: EXPERIMENT_DOCUMENTS
+    actions:
+      - type: filter_rows
+        on_column_values:
+          - column: { header: resource_type }
+            values: "Experiment"
+      - type: rename_column
+        input_name: resource_id
+        output_name: experiment_id
+
+  - mapping_uid: '16'
+    order: 1
+    notes: "xxx."
+    source:
+      section: DOCUMENTS_INTERMEDIATE
+    target:
+      section: SOIL_DOCUMENTS
+    actions:
+      - type: filter_rows
+        on_column_values:
+          - column: { header: resource_type }
+            values: "Soil"
+      - type: rename_column
+        input_name: resource_id
+        output_name: soil_profile_id
+
+  - mapping_uid: '17'
+    order: 1
+    notes: "xxx."
+    source:
+      section: DOCUMENTS_INTERMEDIATE
+    target:
+      section: WEATHER_DOCUMENTS
+    actions:
+      - type: filter_rows
+        on_column_values:
+          - column: { header: resource_type }
+            values: "Weather source"
+      - type: rename_column
+        input_name: resource_id
+        output_name: weather_station_id
+
+  - mapping_uid: '18'
+    order: 1
+    notes: "xxx."
+    source:
+      section: DOCUMENTS_INTERMEDIATE
+    target:
+      section: GENOTYPES_DOCUMENTS
+    actions:
+      - type: filter_rows
+        on_column_values:
+          - column: { header: resource_type }
+            values: "Genotype"
+      - type: rename_column
+        input_name: resource_id
+        output_name: genotype_level
+
+  # --- SECTIONS: PLOT_DETAILS ---
+
+  - mapping_uid: '19'
+    notes: "Creates PLOT_DETAILS table from information in the PLOT_SETUP template section."
+    source:
+      section: PLOT_LAYOUT
+    target:
+      section: PLOT_DETAILS
+
+
+#### ------ MANAGEMENT METADATA SECTIONS ------------------------------------
+
+## --- SECTION: FIELDS ---
+
+  - mapping_uid: '20'
+    order: 1
+    notes: "Creates FIELDS table from contact information in the FIELDS template section."
+    source:
+      section: FIELDS
+    target:
+      section: FIELDS
+    actions:
+      # Join model run identifiers (year + crop)
+      - type: lookup_and_add
+        lookup_data_source: { section: EXPERIMENTAL_DESIGN }
+        on_key:
+          source_key: [field_level]
+          lookup_key: [field_level]
+        select_columns:
+          experiment_id: experiment_id
+      # Look up and add soil identifier from the SOILS table.
+      - type: lookup_and_add
+        lookup_data_source: { section: SOILS }
+        on_key:
+          source_key: [field_level]
+          lookup_key: [field_level]
+        select_columns:
+          soil_profile_id: soil_profile_id
+      # Look up and add weather identifier from the WEATHER_DATA table.
+      - type: lookup_and_add
+        lookup_data_source: { section: WEATHER_DATA }
+        on_key:
+          source_key: [field_level]
+          lookup_key: [field_level]
+        select_columns:
+          weather_station_id: weather_station_id  #!!rename?
+      # TODO: add field_slope_aspect
+      # - type: map_values
+      #   input_map: { x: field_slope_aspect }
+      #   output_header: field_slope_aspect
+      #   map: *field_slope_aspect_map
+      - type: map_values
+        input_map: { x: field_history }
+        output_header: field_history
+        map: *field_history_map
+      - type: map_values
+        input_map: { x: drainage_type }
+        output_header: drainage_type
+        map: *drainage_type_map
+      - type: map_values
+        input_map: { x: field_soil_texture }
+        output_header: field_soil_texture
+        map: *soil_texture_map
+      - type: map_values
+        input_map: { x: field_loc_anon }
+        output_header: field_loc_anon
+        map: *logical_code_map
+
+## --- SECTION: GENOTYPES ---
+
+  - mapping_uid: '21'
+    order: 1
+    notes: "Creates GENOTYPES table from contact information in the GENOTYPES and CROP_SEASON template section."
+    source:
+      section: GENOTYPES
+    target:
+      section: GENOTYPES
+    actions:
+      - type: lookup_and_add
+        lookup_data_source: { section: PLANTINGS }
+        on_key:
+          source_key: [genotype_level]
+          lookup_key: [genotype_level]
+        select_columns:
+          experiment_id: experiment_id
+      - type: lookup_and_add
+        lookup_data_source: { section: CROP_SEASON }
+        on_key:
+          source_key: [experiment_id, crop_id] 
+          lookup_key: [experiment_id, crop_id]
+        select_columns:
+          crop_intended_use: crop_intended_use
+      - type: map_values
+        input_map: { x: crop_id }
+        output_header: crop_id
+        map: *crop_name_map
+      - type: map_values
+        input_map: { x: crop_intended_use }
+        output_header: crop_intended_use
+        map: *crop_intended_use_map
+
+## --- SECTION: TILLAGE ---
+
+  - mapping_uid: '22'
+    order: 1
+    notes: "Creates TILLAGE table from contact information in the TILLAGE and TILLAGE_EVENTS template sections."
+    source:
+      section: TILLAGE
+    target:
+      section: TILLAGE
+    actions:
+      # Join management events
+      - type: lookup_and_add
+        lookup_data_source: { section: TILLAGE_EVENTS }
+        on_key:
+          source_key: [experiment_id, tillage_level]
+          lookup_key: [experiment_id, tillage_level]
+        select_columns:
+          # tillage_operations_year: tillage_operations_year  # TODO? convert to date in DSSAT mappings?
+          # tillage_operations_day: tillage_operations_day
+          tillage_date: tillage_date
+          tillage_operation_name: tillage_operation_name
+          tillage_order: tillage_order
+          tillage_implement: tillage_implement
+          tillage_operations_depth: tillage_operations_depth
+          till_disturb_ratio: till_disturb_ratio
+          till_mix_effectiveness: till_mix_effectiveness
+          till_op_comment: till_op_comment
+      - type: map_values
+        input_map: { x: tillage_implement }
+        output_header: tillage_implement
+        map: *tillage_implement_map
+      - type: format_column
+        formats:
+          tillage_date: "%Y-%m-%d"
+
+## --- SECTION: PLANTINGS ---
+
+  - mapping_uid: '23'
+    order: 1
+    notes: "Creates PLANTINGS table from contact information in the PLANTINGS template sections."
+    source:
+      section: PLANTINGS
+    target:
+      section: PLANTINGS
+    actions:
+      - type: map_values
+        input_map: { x: planting_material }
+        output_header: planting_material
+        map: *planting_material_map
+      - type: map_values
+        input_map: { x: planting_distribution }
+        output_header: planting_distribution
+        map: *planting_distribution_map
+      - type: format_column
+        formats:
+          planting_date: "%Y-%m-%d"
+          transplant_date: "%Y-%m-%d"
+
+## --- SECTION: ORGANIC_MATERIALS
+
+  - mapping_uid: '24'
+    order: 1
+    notes: "Creates ORGANIC_MATERIALS table from contact information in the ORGANIC_MATERIALS and ORGANIC_MATERIAL_APPLICS template sections."
+    source:
+      section: ORGANIC_MATERIALS
+    target:
+      section: ORGANIC_MATERIALS
+    actions:
+      # Join management events
+      - type: lookup_and_add
+        lookup_data_source: { section: ORGANIC_MATERIAL_APPLICS }
+        on_key:
+          source_key: [experiment_id, org_materials_applic_lev]
+          lookup_key: [experiment_id, org_materials_applic_lev]
+        select_columns:
+          org_materials_applic_yr: org_materials_applic_yr
+          org_material_applic_day: org_material_applic_day
+          org_material_applic_date: org_material_applic_date
+          organic_material: organic_material
+          org_material_applic_meth: org_material_applic_meth
+          org_material_appl_depth: org_material_appl_depth
+          org_material_incorp_perc: org_material_incorp_perc
+          org_material_applic_amnt: org_material_applic_amnt
+          org_material_applic_fresh_wt: org_material_applic_fresh_wt
+          org_material_cover: org_material_cover
+          org_matter_moisture_conc: org_matter_moisture_conc
+          org_matter_carbon_conc: org_matter_carbon_conc
+          organic_material_N_conc: organic_material_N_conc
+          organic_material_P_conc: organic_material_P_conc
+          organic_material_K_conc: organic_material_K_conc
+          org_material_lignin_conc: org_material_lignin_conc
+          org_material_c_to_n: org_material_c_to_n
+          org_matter_comment: org_matter_comment
+      - type: map_values
+        input_map: { x: organic_material }
+        output_header: organic_material
+        map: *organic_fertilizer_material_map
+      - type: map_values
+        input_map: { x: org_material_applic_meth }
+        output_header: org_material_applic_meth
+        map: *application_method_map
+        default_value: *application_method_default
+      - type: format_column
+        formats:
+          org_material_applic_date: "%Y-%m-%d"
+
+## --- SECTION: FERTILIZERS
+
+  # TODO: add rules to compute summary variables?
+  - mapping_uid: '25'
+    order: 1
+    notes: "Creates FERTILIZERS table from contact information in the FERTILIZERS and FERTILIZER_APPLICS template sections."
+    source:
+      section: FERTILIZERS
+    target:
+      section: FERTILIZERS
+    actions:
+      # Join management events
+      - type: lookup_and_add
+        lookup_data_source: { section: FERTILIZER_APPLICS }
+        on_key:
+          source_key: [experiment_id, fertilizer_level]
+          lookup_key: [experiment_id, fertilizer_level]
+        select_columns:
+          fertiliz_app_name: fertiliz_app_name
+          fertilizer_applic_year: fertilizer_applic_year
+          fertilizer_applic_day: fertilizer_applic_day
+          fertilization_date: fertilization_date
+          fertilizer_material: fertilizer_material
+          fertilizer_applic_method: fertilizer_applic_method
+          application_depth_fert: application_depth_fert
+          fertilizer_total_amount: fertilizer_total_amount
+          fertilizer_growth_stage: fertilizer_growth_stage
+          fertiliz_growth_stg_sys: fertiliz_growth_stg_sys
+          N_in_applied_fertilizer: N_in_applied_fertilizer
+          NO3_applied_fertilizer: NO3_applied_fertilizer
+          NH4_applied_fertilizer: NH4_applied_fertilizer
+          Urea_applied_fertilizer: Urea_applied_fertilizer
+          phosphorus_applied_fert: phosphorus_applied_fert
+          fertilizer_K_applied: fertilizer_K_applied
+          S_in_applied_fertilizer: S_in_applied_fertilizer
+          Ca_in_applied_fertilizer: Ca_in_applied_fertilizer
+          Mg_in_applied_fertilizer: Mg_in_applied_fertilizer
+          B_in_applied_fertilizer: B_in_applied_fertilizer
+          Zn_in_applied_fertilizer: Zn_in_applied_fertilizer
+          Mn_in_applied_fertilizer: Mn_in_applied_fertilizer
+          Fe_in_applied_fertilizer: Fe_in_applied_fertilizer
+          other_elements_appl_fert: other_elements_appl_fert
+          fertiliz_code_other_elem: fertiliz_code_other_elem
+          fertiliz_applic_comment: fertiliz_applic_comment
+      - type: map_values
+        input_map: { x: fert_applied }
+        output_header: fert_applied
+        map: *logical_code_map
+      - type: map_values
+        input_map: { x: fertilizer_material_season }
+        output_header: fertilizer_material_season
+        map: *inorganic_fertilizer_material_map
+      - type: map_values
+        input_map: { x: fertilizer_material }
+        output_header: fertilizer_material
+        map: *inorganic_fertilizer_material_map
+      - type: map_values
+        input_map: { x: fertilizer_applic_method }
+        output_header: fertilizer_applic_method
+        map: *application_method_map
+        default_value: *application_method_default
+      - type: map_values
+        input_map: { x: fertiliz_code_other_elem }
+        output_header: fertiliz_code_other_elem
+        map: *element_map
+      - type: format_column
+        formats:
+          fertilization_date: "%Y-%m-%d"
+
+## --- SECTION: IRRIGATIONS ---
+
+  - mapping_uid: '26'
+    order: 1
+    notes: "Creates IRRIGATIONS table from contact information in the IRRIGATIONS and IRRIGATION_APPLICATIONS template sections."
+    source:
+      section: IRRIGATIONS
+    target:
+      section: IRRIGATIONS
+    actions:
+      # Join management events
+      - type: lookup_and_add
+        lookup_data_source: { section: IRRIGATION_APPLICATIONS }
+        on_key:
+          source_key: [experiment_id, irrigation_level]  #!!
+          lookup_key: [experiment_id, irrigation_level]
+        select_columns:
+          irrigation_operation_name: irrigation_operation_name
+          irrigation_year: irrigation_year
+          irrigation_day: irrigation_day
+          irrigation_date: irrigation_date
+          irrigation_operation: irrigation_operation
+          irrig_amount_depth: irrig_amount_depth
+          irrigation_applic_depth: irrigation_applic_depth
+          irrigation_H2O_N_conc: irrigation_H2O_N_conc
+          bund_height: bund_height
+          irrig_applic_comment: irrig_applic_comment
+      - type: map_values
+        input_map: { x: irrig_applied }
+        output_header: irrig_applied
+        map: *logical_code_map
+      - type: map_values
+        input_map: { x: irrigation_operation }
+        output_header: irrigation_operation
+        map: *irrigation_operation_map
+        default_value: *irrigation_operation_default
+      - type: format_column
+        formats:
+          irrigation_date: "%Y-%m-%d"
+
+## --- SECTION: CHEMICALS ---
+
+  - mapping_uid: '27'
+    order: 1
+    notes: "Creates CHEMICALS table from contact information in the CHEMICALS and CHEMICAL_APPLICS template sections."
+    source:
+      section: CHEMICALS
+    target:
+      section: CHEMICAL_APPLICS
+    actions:
+      # Join management events
+      - type: lookup_and_add
+        lookup_data_source: { section: CHEMICAL_APPLICS }
+        on_key:
+          source_key: [experiment_id, chemical_applic_level]
+          lookup_key: [experiment_id, chemical_applic_level]
+        select_columns:
+          chemical_applic_year: chemical_applic_year
+          chemical_applic_day: chemical_applic_day
+          chemical_applic_date: chemical_applic_date
+          chemical_applic_material: chemical_applic_material
+          chemical_applic_method: chemical_applic_method
+          application_depth_chem: application_depth_chem
+          chemical_applic_amount: chemical_applic_amount
+          chemical_applic_target: chemical_applic_target
+          chemical_applic_comment: chemical_applic_comment
+      - type: map_values
+        input_map: { x: chemical_applic_material }
+        output_header: chemical_applic_material
+        map: *pesticide_material_map
+      - type: map_values
+        input_map: { x: chemical_applic_method }
+        output_header: chemical_applic_method
+        map: *application_method_map
+        default_value: *application_method_default
+      - type: format_column
+        formats:
+          chemical_applic_date: "%Y-%m-%d"
+
+## --- SECTION: MULCHES ---
+
+  - mapping_uid: '28'
+    order: 1
+    notes: "Creates MULCHES table from contact information in the MULCHES template section."
+    source:
+      section: MULCHES
+    target:
+      section: MULCHES
+    actions:
+      - type: map_values
+        input_map: { x: mulch_type }
+        output_header: mulch_type
+        map: *mulch_type_map
+        default_value: *mulch_type_default
+      - type: map_values
+        input_map: { x: mulch_type_remove }
+        output_header: mulch_type_remove
+        map: *mulch_type_map
+        default_value: *mulch_type_default
+      - type: map_values
+        input_map: { x: mulch_color }
+        output_header: mulch_color
+        map: *mulch_color_map
+      - type: format_column
+        formats:
+          mulch_applic_date: "%Y-%m-%d"
+          mulch_removal_date: "%Y-%m-%d"
+
+## --- SECTION: HARVESTS ---
+
+  - mapping_uid: '29'
+    order: 1
+    notes: "Creates HARVESTS table from contact information in the HARVESTS and HARVEST_EVENTS template sections."
+    source:
+      section: HARVESTS
+    target:
+      section: HARVEST_EVENTS
+    actions:
+      # Join management events
+      - type: lookup_and_add
+        lookup_data_source: { section: HARVEST_EVENTS }
+        on_key:
+          source_key: [experiment_id, harvest_operations_level]
+          lookup_key: [experiment_id, harvest_operations_level]
+        select_columns:
+          harvest_operations_year: harvest_operations_year
+          harvest_operations_day: harvest_operations_day
+          harvest_operations_date: harvest_operations_date
+          harvest_stage: harvest_stage
+          harvested_crop: harvested_crop
+          harvest_operat_component: harvest_operat_component
+          harvest_method: harvest_method
+          harvest_area: harvest_area
+          harvest_amount: harvest_amount
+          harv_operat_main_product: harv_operat_main_product
+          harv_operation_byproduct: harv_operation_byproduct
+          harv_operat_size_categor: harv_operat_size_categor
+          harvest_cut_height: harvest_cut_height
+          harvest_op_comments: harvest_op_comments
+      - type: map_values
+        input_map: { x: harvest_stage }
+        output_header: harvest_stage
+        map: *harvest_stage_map
+        default_value: *harvest_stage_default
+      - type: map_values
+        input_map: { x: harvested_crop }
+        output_header: harvested_crop
+        map: *crop_name_map
+      - type: map_values
+        input_map: { x: harvest_operat_component }
+        output_header: harvest_operat_component
+        map: *harvest_component_map
+      - type: map_values
+        input_map: { x: harvest_method }
+        output_header: harvest_method
+        map: *harvest_method_map
+        default_value: *harvest_method_default
+      - type: map_values
+        input_map: { x: harv_operat_size_categor }
+        output_header: harv_operat_size_categor
+        map: *harvest_size_map
+      - type: format_column
+        formats:
+          harvest_operations_date: "%Y-%m-%d"
+
+## --- SECTION: ENVIRONMENTAL MODIFICATIONS ---
+
+##!! rule 30 to make
+
+
+#### ------ MANAGEMENT MATRIX ------------------------------------
+
+  - mapping_uid: '31'
+    order: 2
+    notes: "xxx."
+    source:
+      section: PLOT_SETUP
+    target:
+      section: PLOT_SETUP
+    actions:
+      - type: lookup_and_add
+        lookup_data_source: { section: PLOTS }
+        on_key:
+          source_key: [experiment_id, field_level, plot_layout_id, plot_id] 
+          lookup_key: [experiment_id, field_level, plot_layout_id, plot_id]
+        select_columns:
+          plot_name: plot_name
+          plot_row_number: plot_row_number
+          plot_column_number: plot_column_number
+          plot_row_m: plot_row_m
+          plot_column_m: plot_column_m
+          plot_geocoord_x: plot_geocoord_x
+          plot_geocoord_y: plot_geocoord_y
+          plot_geocoord_system: plot_geocoord_system
+
+  - mapping_uid: '32'
+    order: 3  # Integrate soil analyses
+    notes: "xxx."
+    source:
+      section: MANAGEMENTS
+    target:
+      section: TREATMENTS
+    actions:
+      - type: lookup_and_add
+        lookup_data_source: { section: CROP_SEASON }
+        on_key:
+          source_key: [experiment_id, crop_season_id] 
+          lookup_key: [experiment_id, crop_season_id]
+        select_columns:
+          experiment_year: experiment_year
+          crop_id: crop_id
+      - type: map_values
+        input_map: { x: crop_id }
+        output_header: crop_id
+        map: *crop_name_map
+      - type: lookup_and_add
+        lookup_data_source: { section: PLOT_SETUP }
+        on_key:
+          source_key: [experiment_id, field_level, crop_season_id, treatment_number]
+          lookup_key: [experiment_id, field_level, crop_season_id, treatment_number]
+        select_columns:
+          plot_name: plot_name
+          plot_row_number: plot_row_number
+          plot_column_number: plot_column_number
+          plot_row_m: plot_row_m
+          plot_column_m: plot_column_m
+          plot_geocoord_x: plot_geocoord_x
+          plot_geocoord_y: plot_geocoord_y
+          plot_geocoord_system: plot_geocoord_system
+      - type: lookup_and_add
+        lookup_data_source: { section: TREATMENTS }
+        on_key:
+          source_key: [experiment_id, treatment_number]
+          lookup_key: [experiment_id, treatment_number]
+        select_columns:
+          treatment_name: treatment_name
+          treatment_comments: treatment_comments
+      - type: lookup_and_add
+        lookup_data_source: { section: PLANTINGS }
+        on_key:
+          source_key: [experiment_id, planting_level]
+          lookup_key: [experiment_id, planting_level]
+        select_columns:
+          genotype_level: genotype_level
+      - type: lookup_and_add
+        lookup_data_source: { section: SOIL_ANALYSES }
+        on_key:
+          source_key: [experiment_id]
+          lookup_key: [experiment_id]
+        select_columns:
+          soil_analysis_level: soil_analysis_level
+
+
+#### ------ SOIL DATA SECTIONS ------------------------------------
+
+## --- SECTION: SOIL_GENERAL ---
+
+  - mapping_uid: '33'
+  # NOTE: need to determine how this could be organized, and cascade down to other mapping
+    notes: "Creates SOIL_GENERAL table from contact information in the SOILS and ### template sections."
+    source:
+      section: SOILS
+    target:
+      section: SOIL_GENERAL
+    actions:
+      - type: format_column
+        formats:
+          revision_date_first_sl: "%Y-%m-%d"
+          revision_date_latest_sl: "%Y-%m-%d"
+
+## --- SECTION: PROFILE_METADATA ---
+
+  - mapping_uid: '34'
+    notes: "Creates PROFILE_METADATA table from contact information in the SOILS template sections."
+    source:
+      section: SOILS
+    target:
+      section: PROFILE_METADATA
+    actions:
+      - type: lookup_and_add
+        lookup_data_source: { section: EXPERIMENTAL_DESIGN }
+        on_key:
+          source_key: [experiment_id, field_level]
+          lookup_key: [experiment_id, field_level]
+        select_columns:
+          crop_season_id: crop_season_id
+          experiment_year: experiment_year
+          crop_id: crop_id
+      - type: lookup_and_add
+        lookup_data_source: { section: SOIL_DATA }
+        on_key:
+          source_key: [experiment_id, crop_season_id]
+          lookup_key: [experiment_id, crop_season_id]
+        filter_lookup:
+          column: obs_unit_type
+          equals: "Field"
+        select_columns:
+          soil_data_type: soil_data_type
+          date_of_measurement: date_of_measurement  #!! test!
+      - type: filter_rows
+        on_column_values:
+          - column: { header: soil_data_type }
+            values: 
+              - "Site characterization"
+
+## --- INTERMEDIATE TABLE: SOIL DATA ---
+
+  - mapping_uid: '35'
+    notes: "xxx."
+    source:
+      section: SOIL_DATA
+    target:
+      section: SOIL_DATA_INTERMEDIATE
+    actions:
+      - type: lookup_and_add
+        join_type: full
+        lookup_data_source: { section: SOIL_LYR_PHYSICAL }
+        on_key:
+          source_key: [soil_data_id_long]
+          lookup_key: [soil_data_id_long]
+        select_columns:
+          soil_bulk_dens_moist: soil_bulk_dens_moist
+          soil_compac_fact_by_lyr: soil_compac_fact_by_lyr
+          soil_layer_comment: soil_layer_comment
+          soil_color_moist_Munsell: soil_color_moist_Munsell
+          soil_clay_fraction: soil_clay_fraction
+          soil_silt_fraction: soil_silt_fraction
+          soil_sand_fraction: soil_sand_fraction
+          soil_coarse_fraction: soil_coarse_fraction
+          soil_bulk_density_moist: soil_bulk_density_moist
+          soil_adsorption_coef: soil_adsorption_coef
+          CaCO3_content: CaCO3_content
+      - type: lookup_and_add
+        join_type: full
+        lookup_data_source: { section: SOIL_LYR_CHEMICAL }
+        on_key:
+          source_key: [soil_data_id_long]
+          lookup_key: [soil_data_id_long]
+        select_columns:
+          soil_pH_in_buffer: soil_pH_in_buffer
+          soil_pH_in_water: soil_pH_in_water
+          electric_conductivity: electric_conductivity
+          soil_analys_meth_pH_buff: soil_analys_meth_pH_buff
+      - type: lookup_and_add
+        join_type: full
+        lookup_data_source: { section: SOIL_LYR_ORGMATTER }
+        on_key:
+          source_key: [soil_data_id_long]
+          lookup_key: [soil_data_id_long]
+        select_columns:
+          sediment_loss: sediment_loss
+          soil_CO2_emission: soil_CO2_emission
+          CO2_accumulated_surface: CO2_accumulated_surface
+          CO2_soil_accumulated: CO2_soil_accumulated
+          available_P_kg/ha: available_P_kg/ha
+          P_mineralized_cum: P_mineralized_cum
+          org_matter_added_cumul: org_matter_added_cumul
+          org_matter_N_added_cum: org_matter_N_added_cum
+          org_matter_P_added_cum: org_matter_P_added_cum
+          organic_C_active_surface: organic_C_active_surface
+          organic_C_active_tot: organic_C_active_tot
+          organic_N_active_surface: organic_N_active_surface
+          org_N_active_soil_total: org_N_active_soil_total
+          organic_C_intermed_tot: organic_C_intermed_tot
+          organic_N_intermed_tot: organic_N_intermed_tot
+          soil_org_C_passive_tot: soil_org_C_passive_tot
+          org_N_passive_soil_tot: org_N_passive_soil_tot
+          org_C_stable_user_depth: org_C_stable_user_depth
+          organic_carbon_soil_tot: organic_carbon_soil_tot
+          org_N_stable_user_depth: org_N_stable_user_depth
+          senesced_N_to_surface: senesced_N_to_surface
+          senesced_N_to_soil: senesced_N_to_soil
+          P_senesce_surf: P_senesce_surf
+          P_senesce_soil: P_senesce_soil
+          org_nitrogen_soil_total: org_nitrogen_soil_total
+          senesced_dry_mat_to_surf: senesced_dry_mat_to_surf
+          senesced_dry_mat_to_soil: senesced_dry_mat_to_soil
+          litter_C_struct_surface: litter_C_struct_surface
+          litter_Cstructural: litter_Cstructural
+          litter_N_struct_surf: litter_N_struct_surf
+          litter_Nstructural: litter_Nstructural
+          senesced_C_added_litter: senesced_C_added_litter
+          senesced_C_added_to_soil: senesced_C_added_to_soil
+          senesced_lignin_to_lit: senesced_lignin_to_lit
+          senesced_lignin_to_soil: senesced_lignin_to_soil
+          senesced_N_added_litter: senesced_N_added_litter
+          senesced_N_added_to_soil: senesced_N_added_to_soil
+          senesced_N_add_lit_soil: senesced_N_add_lit_soil
+          senesced_wt_to_soil: senesced_wt_to_soil
+          N_stress_photosyn_leaf: N_stress_photosyn_leaf
+          N_stress_photosyn_daily: N_stress_photosyn_daily
+          N_to_P_ratio: N_to_P_ratio
+          P_stress_veg: P_stress_veg
+          P_stress_photo: P_stress_photo
+          reserves_factor_photosyn: reserves_factor_photosyn
+          soil_organic_carbon: soil_organic_carbon
+      - type: lookup_and_add
+        join_type: full
+        lookup_data_source: { section: SOIL_LYR_CARBON }
+        on_key:
+          source_key: [soil_data_id_long]
+          lookup_key: [soil_data_id_long]
+        select_columns:
+          soil_organic_matter_layer: soil_organic_matter_layer
+          soil_carbon_by_layer: soil_carbon_by_layer
+          soil_organic_C_perc_layr: soil_organic_C_perc_layr
+          organic_C_soil_by_layer: organic_C_soil_by_layer
+          soil_stable_C_fraction: soil_stable_C_fraction
+          soil_stable_C: soil_stable_C
+          soil_active_C: soil_active_C
+          organic_C_active_by_lyr: organic_C_active_by_lyr
+          soil_active_C_fraction: soil_active_C_fraction
+          soil_intermediate_C: soil_intermediate_C
+          organic_C_intermed_lyr: organic_C_intermed_lyr
+          soil_intermediate_C_fraction: soil_intermediate_C_fraction
+          soil_inert_C: soil_inert_C
+          org_C_passive_by_layer: org_C_passive_by_layer
+          soil_inert_C_fraction: soil_inert_C_fraction
+          litter_C_soil_by_layer: litter_C_soil_by_layer
+          litter_C_metabol_by_lyr: litter_C_metabol_by_lyr
+          litter_C_struct__by_lyr: litter_C_struct__by_lyr
+      - type: lookup_and_add
+        join_type: full
+        lookup_data_source: { section: SOIL_LYR_NPK }
+        on_key:
+          source_key: [soil_data_id_long]
+          lookup_key: [soil_data_id_long]
+        select_columns:
+          initial_Ntot_layer: initial_Ntot_layer
+          initial_NH4_concen_layer: initial_NH4_concen_layer
+          initial_NH4_mass_layer: initial_NH4_mass_layer
+          initial_NO3_concen_layer: initial_NO3_concen_layer
+          soil_N_conc_total: soil_N_conc_total
+          initial_NO3_mass_layer: initial_NO3_mass_layer
+          soil_nitrogen_by_layer: soil_nitrogen_by_layer
+          NO3_soil_by_layer: NO3_soil_by_layer
+          NH4_soil_by_layer: NH4_soil_by_layer
+          soil_organic_N_conc: soil_organic_N_conc
+          active_P_by_layer: active_P_by_layer
+          labile_P_by_layer: labile_P_by_layer
+          stabile_P_by_layer: stabile_P_by_layer
+          NH4soil_kCl: NH4soil_kCl
+          nitrate_KCl: nitrate_KCl
+          phosphorus_extractable: phosphorus_extractable
+          phosphorus_total: phosphorus_total
+          phosphorus_organic: phosphorus_organic
+          phosphorus_isotherm_A: phosphorus_isotherm_A
+          phosphorus_iostherm_B: phosphorus_iostherm_B
+          potassium_exchangeable: potassium_exchangeable
+          org_N_active_by_layer: org_N_active_by_layer
+          organic_N_soil_by_layer: organic_N_soil_by_layer
+          organic_N_intermed_lyr: organic_N_intermed_lyr
+          soil_N_total_conc: soil_N_total_conc
+          organic_N_passive_by_lyr: organic_N_passive_by_lyr
+          org_P_active_by_layer: org_P_active_by_layer
+          litter_N_soil_by_layer: litter_N_soil_by_layer
+          litter_N_metabol_by_lyr: litter_N_metabol_by_lyr
+          litter_N_struct_by_layer: litter_N_struct_by_layer
+          litter_P_soil_by_layer: litter_P_soil_by_layer
+          litter_P_metabol_by_lyr: litter_P_metabol_by_lyr
+          inorganic_N_by_layer: inorganic_N_by_layer
+          soil_anal_meth_P_extract: soil_anal_meth_P_extract
+          soil_anal_meth_exch_K: soil_anal_meth_exch_K
+      - type: lookup_and_add
+        join_type: full
+        lookup_data_source: { section: SOIL_LYR_NUTRIENTS }
+        on_key:
+          source_key: [soil_data_id_long]
+          lookup_key: [soil_data_id_long]
+        select_columns:
+          Calcium_exchangeable: Calcium_exchangeable
+          Magnesium_exchangeable: Magnesium_exchangeable
+          Boron_extractable: Boron_extractable
+          Sulfur_extractable: Sulfur_extractable
+          Zinc_extractable: Zinc_extractable
+          cation_exchange_capacity: cation_exchange_capacity
+          soil_calcium_conc: soil_calcium_conc
+          soil_aluminum_conc: soil_aluminum_conc
+          soil_iron_conc: soil_iron_conc
+          soil_magnesium_conc: soil_magnesium_conc
+          soil_manganese_conc: soil_manganese_conc
+          soil_sodium_conc: soil_sodium_conc
+          soil_sulfur_conc: soil_sulfur_conc
+          soil_base_saturation: soil_base_saturation
+      - type: lookup_and_add
+        join_type: full
+        lookup_data_source: { section: SOIL_LYR_NITROGEN }
+        on_key:
+          source_key: [soil_data_id_long]
+          lookup_key: [soil_data_id_long]
+        select_columns:
+          NH3_volatilization_cum: NH3_volatilization_cum
+          litter_N_on_surface: litter_N_on_surface
+          litter_Nal: litter_Nal
+          N_inorganic_applied: N_inorganic_applied
+          N_denitrification_cumul: N_denitrification_cumul
+          NH4_Nsoil_total: NH4_Nsoil_total
+          NO3_NH4_Nsoil_total: NO3_NH4_Nsoil_total
+          N_immobilization_cumul: N_immobilization_cumul
+          N_nitrification_cumul: N_nitrification_cumul
+          NO3_Nsoil_total: NO3_Nsoil_total
+          N_leached: N_leached
+          N_leached_day: N_leached_day
+          NO3_leachate_conc: NO3_leachate_conc
+          NH4_leachate_conc: NH4_leachate_conc
+          N_lost_tile_drain: N_lost_tile_drain
+          N_lost_tile_drain_day: N_lost_tile_drain_day
+          NO3_conc_tile_drain: NO3_conc_tile_drain
+          N_mineralization_cumul: N_mineralization_cumul
+          organic_N_in_soil: organic_N_in_soil
+          residue_N_remaining: residue_N_remaining
+          NH3_volatilization_rate: NH3_volatilization_rate
+          nitrificat_rate_oxid_lyr: nitrificat_rate_oxid_lyr
+      - type: lookup_and_add
+        join_type: full
+        lookup_data_source: { section: SOIL_LYR_PHOSPHORUS }
+        on_key:
+          source_key: [soil_data_id_long]
+          lookup_key: [soil_data_id_long]
+        select_columns:
+          litter_P_on_surface: litter_P_on_surface
+          litter_P_total: litter_P_total
+          total_active_P_kg/ha: total_active_P_kg/ha
+          P_immobilized_cum: P_immobilized_cum
+          total_inorganic_P_in_soil: total_inorganic_P_in_soil
+          total_labile_P_in_soil: total_labile_P_in_soil
+          P_leached: P_leached
+          organic_P_active_surface: organic_P_active_surface
+          P_conc_tile_drain: P_conc_tile_drain
+          org_P_active_soil_total: org_P_active_soil_total
+          total_soil_P: total_soil_P
+          soil_P_at_maturity: soil_P_at_maturity
+      - type: lookup_and_add
+        join_type: full
+        lookup_data_source: { section: SOIL_LYR_WATER }
+        on_key:
+          source_key: [soil_data_id_long]
+          lookup_key: [soil_data_id_long]
+        select_columns:
+          initial_watr_conc_by_lyr: initial_watr_conc_by_lyr
+          soil_water_by_layer: soil_water_by_layer
+          initial_profile_wtr_cont: initial_profile_wtr_cont
+          initial_profile_wtr_cont_%: initial_profile_wtr_cont_%
+          initial_water_tabl_depth: initial_water_tabl_depth
+          soil_water_residual: soil_water_residual
+          soil_water_lower_limit: soil_water_lower_limit
+          soil_water_air_dry: soil_water_air_dry
+          soil_water_wilting_pt: soil_water_wilting_pt
+          soil_water_field_cap_1: soil_water_field_cap_1
+          soil_water_field_cap_2: soil_water_field_cap_2
+          soil_wat_drned_upper_lim: soil_wat_drned_upper_lim
+          soil_water_saturated: soil_water_saturated
+          sat_hydraul_conductivity: sat_hydraul_conductivity
+          layer_drainage_rate_per_day: layer_drainage_rate_per_day
+          van_genuch_alpha: van_genuch_alpha
+          van_genuch_n: van_genuch_n
+      - type: lookup_and_add
+        join_type: full
+        lookup_data_source: { section: SOIL_LYR_ROOTS }
+        on_key:
+          source_key: [soil_data_id_long]
+          lookup_key: [soil_data_id_long]
+        select_columns:
+          root_length_dens_lyr: root_length_dens_lyr
+          root_mass_dens_lyr: root_mass_dens_lyr
+          root_growth_factor_soil: root_growth_factor_soil
+          soil_water_uptake_factor: soil_water_uptake_factor
+          plant_root_uptake_factor: plant_root_uptake_factor
+          specific_root_length_lyr: specific_root_length_lyr
+          root_length_dens_proj: root_length_dens_proj
+      - type: lookup_and_add
+        join_type: full
+        lookup_data_source: { section: SOIL_LYR_TEMPERATURE }
+        on_key:
+          source_key: [soil_data_id_long]
+          lookup_key: [soil_data_id_long]
+        select_columns:
+          soil_temperature_by_lyr: soil_temperature_by_lyr
+      # Resolve treatment number  
+      - type: add_column_conditional
+        output_header: plot_id
+        conditions:
+          - on_column: obs_unit_type
+            if_equals: 'Plot'
+            then_value: obs_unit_id  #! Copies value from this column
+      - type: add_column_conditional
+        output_header: temp_treatment_local
+        conditions:
+          - on_column: obs_unit_type
+            if_equals: 'Treatment'
+            then_value: obs_unit_id
+      ## Lookup plot-treatment links for plot-level observation
+      - type: lookup_and_add
+        lookup_data_source: { section: PLOT_SETUP }
+        on_key:
+          source_key: [experiment_id, plot_id]
+          lookup_key: [experiment_id, plot_id]
+        select_columns:
+          temp_treatment_lookup: treatment_number
+      ## Merge the two columns into one final 'treatment_number'
+      - type: coalesce_columns
+        output_header: treatment_number
+        input_map:
+          source_1: temp_treatment_local
+          source_2: temp_treatment_lookup
+
+## --- SECTION: INITIAL_CONDITIONS ---
+
+  - mapping_uid: '36'
+    order: 2
+    notes: "Creates INITIAL_CONDITIONS table from contact information in the CROP_RESIDUES template section and the SOIL_INITIAL_CONDITIONS intermediate table."
+    source:
+      section: CROP_RESIDUES
+    target:
+      section: INITIAL_CONDITIONS
+    actions:
+      # Join model run identifiers (year + crop)
+      - type: lookup_and_add
+        lookup_data_source: { section: EXPERIMENTAL_DESIGN }
+        on_key:
+          source_key: [experiment_id, initial_conditions_level]
+          lookup_key: [experiment_id, initial_conditions_level]
+        select_columns:
+          crop_season_id: crop_season_id
+          experiment_year: experiment_year
+          crop_id: crop_id
+          treatment_number: treatment_number
+      - type: lookup_and_add
+        lookup_data_source: { section: SOIL_DATA_INTERMEDIATE }
+        on_key:
+          source_key: [experiment_id, crop_season_id, treatment_number]
+          lookup_key: [experiment_id, crop_season_id, treatment_number]
+        filter_lookup:
+          column: soil_data_type
+          equals: "Initial conditions"
+        select_columns:
+          me_soil_layer_top_depth: me_soil_layer_top_depth
+          me_soil_layer_bot_depth: me_soil_layer_bot_depth
+          soil_stable_C: soil_stable_C
+          initial_Ntot_layer: initial_Ntot_layer
+          initial_NH4_concen_layer: initial_NH4_concen_layer
+          initial_NH4_mass_layer: initial_NH4_mass_layer
+          initial_NO3_concen_layer: initial_NO3_concen_layer
+          initial_NO3_mass_layer: initial_NO3_mass_layer
+          initial_soil_temperature: soil_temperature_by_lyr
+          initial_watr_conc_by_lyr: initial_watr_conc_by_lyr
+          soil_layer_comment: soil_layer_comment
+          initial_profile_wtr_cont: initial_profile_wtr_cont
+          initial_profile_wtr_cont_%: initial_profile_wtr_cont_%
+          initial_water_tabl_depth: initial_water_tabl_depth
+          initial_prof_inorg_N: initial_prof_inorg_N
+          initial_prof_NH4: initial_prof_NH4
+          initial_prof_NO3: initial_prof_NO3
+
+## --- SECTION: SOIL_PROFILE ---
+
+  - mapping_uid: '37'
+    order: 2
+    notes: "Creates SOIL_PROFILE table from contact information in the SOILS and ### template sections."
+    source:
+      section: SOILS
+    target:
+      section: SOIL_PROFILE
+    actions:
+      # Join soil analyses methods
+      - type: lookup_and_add
+        lookup_data_source: { section: SOIL_DATA_INTERMEDIATE }
+        on_key:
+          source_key: [soil_profile_id, field_level] 
+          lookup_key: [soil_profile_id, field_level]
+        filter_lookup:
+          column: soil_data_type
+          equals: "Site characterization"
+        select_columns:
+          soil_profile_id: soil_profile_id
+          soil_analys_meth_pH_buff: soil_analys_meth_pH_buff
+          soil_anal_meth_P_extract: soil_anal_meth_P_extract
+          soil_anal_meth_exch_K: soil_anal_meth_exch_K
+          me_soil_layer_top_depth: me_soil_layer_top_depth
+          me_soil_layer_bot_depth: me_soil_layer_bot_depth
+          master_horizon: master_horizon
+          soil_color_moist_Munsell: soil_color_moist_Munsell
+          soil_clay_fraction: soil_clay_fraction
+          soil_silt_fraction: soil_silt_fraction
+          soil_sand_fraction: soil_sand_fraction
+          soil_coarse_fraction: soil_coarse_fraction
+          soil_bulk_density_moist: soil_bulk_density_moist
+          soil_adsorption_coef: soil_adsorption_coef
+          soil_compac_fact_by_lyr: soil_compac_fact_by_lyr
+          CaCO3_content: CaCO3_content
+          soil_pH_in_buffer: soil_pH_in_buffer
+          soil_pH_in_water: soil_pH_in_water
+          electric_conductivity: electric_conductivity
+          soil_organic_matter_layer: soil_organic_matter_layer
+          soil_organic_C_perc_layr: soil_organic_C_perc_layr
+          soil_stable_C_fraction: soil_stable_C_fraction
+          soil_stable_C: soil_stable_C
+          soil_active_C: soil_active_C
+          soil_active_C_fraction: soil_active_C_fraction
+          soil_intermediate_C: soil_intermediate_C
+          soil_intermediate_C_fraction: soil_intermediate_C_fraction
+          soil_inert_C: soil_inert_C
+          soil_inert_C_fraction: soil_inert_C_fraction
+          soil_organic_N_conc: soil_organic_N_conc
+          NH4soil_kCl: NH4soil_kCl
+          nitrate_KCl: nitrate_KCl
+          phosphorus_extractable: phosphorus_extractable
+          phosphorus_total: phosphorus_total
+          phosphorus_organic: phosphorus_organic
+          phosphorus_isotherm_A: phosphorus_isotherm_A
+          phosphorus_iostherm_B: phosphorus_iostherm_B
+          potassium_exchangeable: potassium_exchangeable
+          soil_N_total_conc: soil_N_total_conc
+          cation_exchange_capacity: cation_exchange_capacity
+          soil_calcium_conc: soil_calcium_conc
+          soil_aluminum_conc: soil_aluminum_conc
+          soil_iron_conc: soil_iron_conc
+          soil_magnesium_conc: soil_magnesium_conc
+          soil_manganese_conc: soil_manganese_conc
+          soil_sodium_conc: soil_sodium_conc
+          soil_sulfur_conc: soil_sulfur_conc
+          soil_base_saturation: soil_base_saturation
+          soil_water_residual: soil_water_residual
+          soil_water_lower_limit: soil_water_lower_limit
+          soil_water_air_dry: soil_water_air_dry
+          soil_water_wilting_pt: soil_water_wilting_pt
+          soil_water_field_cap_1: soil_water_field_cap_1
+          soil_water_field_cap_2: soil_water_field_cap_2
+          soil_wat_drned_upper_lim: soil_wat_drned_upper_lim
+          soil_water_saturated: soil_water_saturated
+          sat_hydraul_conductivity: sat_hydraul_conductivity
+          layer_drainage_rate_per_day: layer_drainage_rate_per_day
+          van_genuch_alpha: van_genuch_alpha
+          van_genuch_n: van_genuch_n
+          root_growth_factor_soil: root_growth_factor_soil
+          soil_water_uptake_factor: soil_water_uptake_factor
+          plant_root_uptake_factor: plant_root_uptake_factor
+          soil_layer_comment: soil_layer_comment
+      - type: map_values
+        input_map: { x: soil_drainage_class }
+        output_header: soil_drainage_class
+        map: *soil_drainage_class_map
+      - type: map_values
+        input_map: { x: soil_texture }
+        output_header: soil_texture
+        map: *soil_texture_map
+      - type: map_values
+        input_map: { x: soil_analys_meth_pH_buff }
+        output_header: soil_analys_meth_pH_buff
+        map: *method_ph_buffer_map
+        default_value: *method_ph_buffer_default
+      - type: map_values
+        input_map: { x: soil_anal_meth_P_extract }
+        output_header: soil_anal_meth_P_extract
+        map: *method_phosphorus_map
+        default_value: *method_phosphorus_default
+      - type: map_values
+        input_map: { x: soil_anal_meth_exch_K }
+        output_header: soil_anal_meth_exch_K
+        map: *method_potassium_map
+        default_value: *method_potassium_default
+
+## --- (SUB)SECTION: SOIL_TIME_SERIES ---
+
+  - mapping_uid: '38'
+    order: 1
+    notes: "Creates SOIL_TIME_SERIES table from contact information in the SOILS and ### template sections."
+    source:
+      section: SOIL_DATA_INTERMEDIATE
+    target:
+      section: SOIL_TIME_SERIES
+    actions:
+      # Join model run identifiers (year + crop)
+      - type: lookup_and_add
+        lookup_data_source: { section: EXPERIMENTAL_DESIGN }
+        on_key:
+          source_key: [experiment_id, crop_season_id, treatment_number]
+          lookup_key: [experiment_id, crop_season_id, treatment_number]
+        select_columns:
+          experiment_year: experiment_year
+          crop_id: crop_id
+      - type: filter_rows
+        on_column_values:
+          - column: { header: soil_data_type }
+            values: 
+              - "In-season monitoring"
+
+## --- SECTION: SOIL_ANALYSES ---
+
+  - mapping_uid: '39'
+    order: 2
+    notes: "Creates SOIL_PROFILE table from contact information in the SOILS and ### template sections."
+    source:
+      section: SOIL_TIME_SERIES
+    target:
+      section: SOIL_ANALYSES
+    actions:
+      - type: map_values
+        input_map: { x: soil_analys_meth_pH_buff }
+        output_header: soil_analys_meth_pH_buff
+        map: *method_ph_buffer_map
+        default_value: *method_ph_buffer_default
+      - type: map_values
+        input_map: { x: soil_anal_meth_P_extract }
+        output_header: soil_anal_meth_P_extract
+        map: *method_phosphorus_map
+        default_value: *method_phosphorus_default
+      - type: map_values
+        input_map: { x: soil_anal_meth_exch_K }
+        output_header: soil_anal_meth_exch_K
+        map: *method_potassium_map
+        default_value: *method_potassium_default
+      - type: map_values
+        input_map: { x: soil_anal_meth_exch_Ca }
+        output_header: soil_anal_meth_exch_Ca
+        map: *method_calcium_map
+        default_value: *method_calcium_default
+      - type: map_values
+        input_map: { x: soil_anal_meth_exch_Mg }
+        output_header: soil_anal_meth_exch_Mg
+        map: *method_magnesium_map
+        default_value: *method_magnesium_default
+      - type: map_values
+        input_map: { x: soil_anal_meth_extract_B }
+        output_header: soil_anal_meth_extract_B
+        map: *method_boron_map
+        default_value: *method_boron_default
+      - type: map_values
+        input_map: { x: soil_anal_meth_extract_S }
+        output_header: soil_anal_meth_extract_S
+        map: *method_sulfur_map
+        default_value: *method_sulfur_default
+      - type: map_values
+        input_map: { x: soil_anal_meth_extract_Zn }
+        output_header: soil_anal_meth_extract_Zn
+        map: *method_zinc_map
+        default_value: *method_zinc_default
+      # Compute identifier for soil analysis
+      # TODO: replace written R formula by actions (here some ranking action with nesting options)
+      - type: rowwise_transform
+        input_map: 
+          group_key: experiment_id
+          var_year: experiment_year
+          var_crop: crop_id
+          var_trt: treatment_number
+          var_date: date_of_measurement
+        output_header: soil_analysis_id
+        formula: >-
+          ave(
+            paste(var_year, var_crop, var_trt, ifelse(is.na(var_date), "no_date", var_date), sep = "_"), 
+            group_key, 
+            FUN = function(x) as.integer(as.factor(x))
+          )
+
+#### ------ WEATHER DATA SECTIONS ----------------------------------
+
+  - mapping_uid: '40'
+    notes: "xxx."
+    source:
+      section: WEATHER
+    target:
+      section: WEATHER_GENERAL
+
+  - mapping_uid: '41'
+    notes: "xxx."
+    source:
+      section: WEATHER
+    target:
+      section: STATION_METADATA
+
+  - mapping_uid: '42'
+    notes: "xxx."
+    source:
+      section: WEATHER_DAILY
+    target:
+      section: WEATHER_DAILY
+
+  - mapping_uid: '43'
+    notes: "xxx."
+    source:
+      section: WEATHER_MONTHLY
+    target:
+      section: WEATHER_GENER_PARMS
+
+
+#### ------ PLANT DATA SECTIONS ------------------------------------
+
+  - mapping_uid: '44'
+    order: 1
+    notes: "Merge PLANT_DATA (sample) table with the different plant data sections."
+    source:
+      section: PLANT_DATA
+    target:
+      section: SUMMARY
+    actions:
+      - type: filter_rows
+        on_column_values:
+          - column: { header: plant_data_type }
+            values: 
+              - "In-season single-point measurement"
+              - "End-of-season measurement"
+              - "Derived metric"
+      - type: lookup_and_add
+        lookup_data_source: { section: PLANT_SM_GROWTH }
+        on_key:
+          source_key: [plant_data_id_long]
+          lookup_key: [plant_data_id_long]
+        select_columns:
+          plant_density_harvest: plant_density_harvest
+          tops_dry_weight_maturity: tops_dry_weight_maturity
+          harvest_yld_matur_dry_wt: harvest_yld_matur_dry_wt
+          tops_dry_weight_harvest: tops_dry_weight_harvest
+          roots_dry_weight_harvest: roots_dry_weight_harvest
+          plant_density_emergence: plant_density_emergence
+          plant_density_maturity: plant_density_maturity
+          leaf_area_index_maximum: leaf_area_index_maximum
+          grain_oil_conc_maturity: grain_oil_conc_maturity
+          grain_protein_conc_matur: grain_protein_conc_matur
+          grain_starch_conc_matur: grain_starch_conc_matur
+          grain_gluten_conc_matur: grain_gluten_conc_matur
+          purity: purity
+          threshing_%_at_maturity: threshing_%_at_maturity
+          eye_weight: eye_weight
+          lint_weight_maturity: lint_weight_maturity
+          lint_fraction_maturity: lint_fraction_maturity
+          fiber_length: fiber_length
+          fiber_uniformity: fiber_uniformity
+          fiber_strength: fiber_strength
+          fiber_micronaire: fiber_micronaire
+          fiber_color_grade_Rd: fiber_color_grade_Rd
+          fiber_color_grade_B: fiber_color_grade_B
+          fiber_HVI_trash: fiber_HVI_trash
+          fiber_elongation: fiber_elongation
+          harv_yld_grn_fr_pl_mat: harv_yld_grn_fr_pl_mat
+          grain_dry_wt_matur_plnt: grain_dry_wt_matur_plnt
+          unit_dry_wt_harv_matur: unit_dry_wt_harv_matur
+          byprod_removed_at_matur: byprod_removed_at_matur
+          tops_dead_dry_wt_anthes: tops_dead_dry_wt_anthes
+          cane_yield_harv: cane_yield_harv
+          chaff_dry_weight_harvest: chaff_dry_weight_harvest
+          tops_dry_weight_anthesis: tops_dry_weight_anthesis
+          tops_dw_mat_stdev: tops_dw_mat_stdev
+          harv_yld_grn_fresh_matur: harv_yld_grn_fresh_matur
+          grain_dry_wt_at_maturity: grain_dry_wt_at_maturity
+          harv_yield_matur_f_wt: harv_yield_matur_f_wt
+          yield_corrected: yield_corrected
+          leaf_dry_wt_at_maturity: leaf_dry_wt_at_maturity
+          pod_dry_weight_maturity: pod_dry_weight_maturity
+          tot_dry_wt_at_harvest: tot_dry_wt_at_harvest
+          tot_dry_weight_maturity: tot_dry_weight_maturity
+          tuber_dry_wt_at_harvest: tuber_dry_wt_at_harvest
+          vegetative_dry_wt_matur: vegetative_dry_wt_matur
+          test_wt_fresh_maturity: test_wt_fresh_maturity
+          grain_ethanol_yield: grain_ethanol_yield
+          canopy_height_anthesis: canopy_height_anthesis
+          canopy_height_maturity: canopy_height_maturity
+          canopy_height_harvest: canopy_height_harvest
+          canopy_height_max: canopy_height_max
+          canopy_ht_max_stdev: canopy_ht_max_stdev
+          plant_height_anthesis: plant_height_anthesis
+          plant_height_max: plant_height_max
+          plant_height_maturity: plant_height_maturity
+          ear_height_max: ear_height_max
+          ear_ht_max_stdev: ear_ht_max_stdev
+          grain_unit_dry_wt_matur: grain_unit_dry_wt_matur
+          tuber_fresh_wt_harvest: tuber_fresh_wt_harvest
+          eye_no_per_unit_maturity: eye_no_per_unit_maturity
+          harvest_no_per_grp_matur: harvest_no_per_grp_matur
+          harv_no_per_unit: harv_no_per_unit
+          leaf_no_per_stem_matur: leaf_no_per_stem_matur
+          leaf_number_per_stem_max: leaf_number_per_stem_max
+          eye_number_at_maturity: eye_number_at_maturity
+          harvest_no_at_maturity: harvest_no_at_maturity
+          pod_number_maturity: pod_number_maturity
+          panicle_number_maturity: panicle_number_maturity
+          tiller_number_maturity: tiller_number_maturity
+          fruit_fresh_wt_harvest: fruit_fresh_wt_harvest
+          harvest_index_maturity: harvest_index_maturity
+          pod_harv_index_maturity: pod_harv_index_maturity
+          grain_moisture_maturity: grain_moisture_maturity
+          grain_moisture_harvest: grain_moisture_harvest
+          harvest_moisture: harvest_moisture
+          dry_matter_content: dry_matter_content
+          harvest_moisture_stdev: harvest_moisture_stdev
+          harvest_moisture_maturity: harvest_moisture_maturity
+          harvest_moisture_maturity_stdev: harvest_moisture_maturity_stdev
+          byprod_removed_at_harv: byprod_removed_at_harv
+          harvest_yield_harvest_dw: harvest_yield_harvest_dw
+          harvest_yld_stdev: harvest_yld_stdev
+          harv_yield_harv_f_wt: harv_yield_harv_f_wt
+          harv_yield_harv_f_wt_sd: harv_yield_harv_f_wt_sd
+          # observation_note: observation_note
+      - type: lookup_and_add
+        lookup_data_source: { section: PLANT_SM_DEV }
+        on_key:
+          source_key: [plant_data_id_long]
+          lookup_key: [plant_data_id_long]
+        select_columns:
+          anthesis_date: anthesis_date
+          anthesis_day_of_year: anthesis_day_of_year
+          anthesis_dap: anthesis_dap
+          anthesis_dap_stdev: anthesis_dap_stdev
+          physiologic_maturity_dat: physiologi_maturity_dat
+          maturity_day_of_year: maturity_day_of_year
+          physiologic_maturity_dap: physiologic_maturity_dap
+          phys_mat_dap_stdev: phys_mat_dap_stdev
+          harvest_date: harvest_date
+          harvest_dap: harvest_dap
+          emergence_date: emergence_date
+          growth_stage_harvest: growth_stage_harvest
+          growth_stage_apex_1_cm: growth_stage_apex_1_cm
+          growth_stage_branch_1: growth_stage_branch_1
+          growth_stage_branch_2: growth_stage_branch_2
+          growth_stage_branch_3: growth_stage_branch_3
+          growth_stage_branch_4: growth_stage_branch_4
+          silking_date: silking_date
+          double_ridge_date: double_ridge_date
+          ear_emergence_date: ear_emergence_date
+          forcing_date: forcing_date
+          panicle_initiation_date: panicle_initiation_date
+          panicle_initiation_dap: panicle_initiation_dap
+          jointing_date: jointing_date
+          leaf_3_full_expansion: leaf_3_full_expansion
+          leaf_5_full_expansion: leaf_5_full_expansion
+          last_leaf_stage: last_leaf_stage
+          maturity_day_2: maturity_day_2
+          first_pod_set_date: first_pod_set_date
+          first_pod_set_days: first_pod_set_days
+          beginning_bloom_stage: beginning_bloom_stage
+          beginning_peg_stage: beginning_peg_stage
+          beginning_pod_stage: beginning_pod_stage
+          full_size_pod_stage: full_size_pod_stage
+          full_size_pod_date: full_size_pod_date
+          full_pod_days: full_pod_days
+          beginning_seed_stage: beginning_seed_stage
+          full_seed_stage: full_seed_stage
+          beginning_maturity_date: beginning_maturity_date
+          harvest_maturity_stage: harvest_maturity_stage
+          harvest_maturity_dap: harvest_maturity_dap
+          harvest_mat_dap_stdev: harvest_mat_dap_stdev
+          pod_over-mature_stage: pod_over-mature_stage
+          tuber_initiation_stage: tuber_initiation_stage
+          tuber_initiation_dap: tuber_initiation_dap
+          terminal_spikelet_stage: terminal_spikelet_stage
+          zadoks_21_growth_stage: zadoks_21_growth_stage
+          zadoks_30_growth_stage: zadoks_30_growth_stage
+          zadoks_31_growth_stage: zadoks_31_growth_stage
+          zadoks_37_growth_stage: zadoks_37_growth_stage
+          zadoks_39_growth_stage: zadoks_39_growth_stage
+          first_square_date: first_square_date
+          growing_season_duration: growing_season_duration
+          # observation_note: observation_note
+      - type: lookup_and_add
+        lookup_data_source: { section: PLANT_SM_NUTRIENTS }
+        on_key:
+          source_key: [plant_data_id_long]
+          lookup_key: [plant_data_id_long]
+        select_columns:
+          planting_material_dry_wt: planting_material_dry_wt
+          tillage_operations_no: tillage_operations_no
+          tops_N_at_anthesis: tops_N_at_anthesis
+          tops_N_at_maturity: tops_N_at_maturity
+          tops_C_at_maturity: tops_C_at_maturity
+          grain_N_at_maturity: grain_N_at_maturity
+          grain_C_at_maturity: grain_C_at_maturity
+          grain_N_conc_maturity: grain_N_conc_maturity
+          root_N_at_harvest: root_N_at_harvest
+          stem_N_at_maturity: stem_N_at_maturity
+          veg_N_at_maturity: veg_N_at_maturity
+          veg_C_at_maturity: veg_C_at_maturity
+          extractable_soil_wtr_mat: extractable_soil_wtr_mat
+          tuber_stem_leaf_N_harv: tuber_stem_leaf_N_harv
+          total_N_at_maturity: total_N_at_maturity
+          tuber_N_at_harvest: tuber_N_at_harvest
+          tuber_N_conc_harvest: tuber_N_conc_harvest
+          tops_P_at_anthesis: tops_P_at_anthesis
+          tops_P_at_maturity: tops_P_at_maturity
+          grain_P_at_maturity: grain_P_at_maturity
+          grain_P_conc_maturity: grain_P_conc_maturity
+          root_P_at_harvest: root_P_at_harvest
+          stem_P_at_maturity: stem_P_at_maturity
+          shoots_P_at_maturity: shoots_P_at_maturity
+          tuber_P_at_harvest: tuber_P_at_harvest
+          N_fixed_during_season: N_fixed_during_season
+          # observation_note: observation_note
+      # Resolve treatment number  
+      - type: add_column_conditional
+        output_header: plot_id
+        conditions:
+          - on_column: obs_unit_type
+            if_equals: 'Plot'
+            then_value: obs_unit_id  #! Copies value from this column
+      - type: add_column_conditional
+        output_header: temp_treatment_local
+        conditions:
+          - on_column: obs_unit_type
+            if_equals: 'Treatment'
+            then_value: obs_unit_id
+      ## Lookup plot-treatment links for plot-level observation
+      - type: lookup_and_add
+        lookup_data_source: { section: PLOT_SETUP }
+        on_key:
+          source_key: [experiment_id, plot_id]
+          lookup_key: [experiment_id, plot_id]
+        select_columns:
+          temp_treatment_lookup: treatment_number
+      ## Merge the two columns into one final 'treatment_number'
+      - type: coalesce_columns
+        output_header: treatment_number
+        input_map:
+          source_1: temp_treatment_local
+          source_2: temp_treatment_lookup
+      # Break down crop_season_id
+      - type: lookup_and_add
+        lookup_data_source: { section: EXPERIMENTAL_DESIGN }
+        on_key:
+          source_key: [experiment_id, crop_season_id, treatment_number]
+          lookup_key: [experiment_id, crop_season_id, treatment_number]
+        select_columns:
+          experiment_year: experiment_year
+          crop_id: crop_id
+
+  - mapping_uid: '45'
+    order: 1
+    notes: "xxx."
+    source:
+      section: PLANT_DATA
+    target:
+      section: TIME_SERIES
+    actions:
+      - type: filter_rows
+        on_column_values:
+          - column: { header: plant_data_type, synonyms: [type, measurement_type] }
+            values: 
+              - "In-season monitoring"
+      - type: lookup_and_add
+        lookup_data_source: { section: PLANT_TS_GROWTH_DEV }
+        on_key:
+          source_key: [plant_data_id_long]
+          lookup_key: [plant_data_id_long]
+        select_columns:
+          tops_C: tops_C
+          tops_dry_weight: tops_dry_weight
+          leaf_dry_weight: leaf_dry_weight
+          leaf_area_index: leaf_area_index
+          grain_dry_weight: grain_dry_weight
+          canopy_height: canopy_height
+          canopy_length: canopy_length
+          plant_height: plant_height
+          leaf_carbohydrate: leaf_carbohydrate
+          stem_carbohydrate_conc: stem_carbohydrate_conc
+          grain_carbohydrate_conc: grain_carbohydrate_conc
+          grain_oil_conc: grain_oil_conc
+          PAR_absorbed: PAR_absorbed
+          pods_mature: pods_mature
+          reserves_CH2O_conc: reserves_CH2O_conc
+          seed_P_conc: seed_P_conc
+          shelling_percentage: shelling_percentage
+          growth_rate_relative: growth_rate_relative
+          root_length: root_length
+          leaf_area_flag_leaf: leaf_area_flag_leaf
+          specific_leaf_area: specific_leaf_area
+          leaf_area_per_leaf: leaf_area_per_leaf
+          leaf_area_new: leaf_area_new
+          leaf_area_per_plant: leaf_area_per_plant
+          flag_time_series_data: flag_time_series_data
+          growth_stage: growth_stage
+          growth_stage_Zadoks: growth_stage_Zadoks
+          growth_stage_Haun: growth_stage_Haun
+          growth_stage_BBCH: growth_stage_BBCH
+          leaf_number_as_haun_stg: leaf_number_as_haun_stg
+          crop_age: crop_age
+          crop_age_vegetative_days: crop_age_vegetative_days
+          assimilation_reduc: assimilation_reduc
+          root_weight_length: root_weight_length
+          corm_unit_dry_weight: corm_unit_dry_weight
+          lint_weight: lint_weight
+          stem_structural_weight: stem_structural_weight
+          crop_growth_rate: crop_growth_rate
+          carbohydr_accumulation: carbohydr_accumulation
+          carbohydr_mobilization: carbohydr_mobilization
+          growth_respiration_daily: growth_respiration_daily
+          maintenance_respir_CH2O: maintenance_respir_CH2O
+          tops_dry_weight_plant: tops_dry_weight_plant
+          leaf_dry_wt_per_plant: leaf_dry_wt_per_plant
+          root_senesced_dry_weight: root_senesced_dry_weight
+          seed_wt_per_plant: seed_wt_per_plant
+          stem_dry_wt_per_plant: stem_dry_wt_per_plant
+          carbohydr_pool_reduction: carbohydr_pool_reduction
+          ear_dry_wt_per_shoot: ear_dry_wt_per_shoot
+          basal_wt: basal_wt
+          dead_canopy_dry_wt: dead_canopy_dry_wt
+          cane_yield_fresh_wt: cane_yield_fresh_wt
+          chaff_dry_weight: chaff_dry_weight
+          crown_dry_weight: crown_dry_weight
+          tops_fresh_weight: tops_fresh_weight
+          dead_material_dry_weight: dead_material_dry_weight
+          ear_plus_grain_dry_wt: ear_plus_grain_dry_wt
+          ear_grain_chaff_dry_wt: ear_grain_chaff_dry_wt
+          fruit_fresh_weight: fruit_fresh_weight
+          yield_dry_matter_content: yield_dry_matter_content
+          yield_moisture_content: yield_moisture_content
+          sucrose_commercial_d_wt: sucrose_commercial_d_wt
+          harvest_yield_at_day_dw: harvest_yield_at_day_dw
+          dead_leaf_dry_weight: dead_leaf_dry_weight
+          nodule_dry_weight: nodule_dry_weight
+          corm_dry_weight: corm_dry_weight
+          panicle_weight: panicle_weight
+          pod_dry_weight: pod_dry_weight
+          pod_detached_dry_weight: pod_detached_dry_weight
+          dead_root_dry_weight: dead_root_dry_weight
+          stem_reserves_weight: stem_reserves_weight
+          reserves_weight: reserves_weight
+          root_dry_weight: root_dry_weight
+          stem_plus_chaff: stem_plus_chaff
+          dead_stem_dry_weight: dead_stem_dry_weight
+          seed_P: seed_P
+          shell_dry_weight: shell_dry_weight
+          shoot_weight: shoot_weight
+          sucrose_dry_weight: sucrose_dry_weight
+          sucker_dry_weight: sucker_dry_weight
+          stem_dry_weight: stem_dry_weight
+          total_biomass_dry_wt: total_biomass_dry_wt
+          tot_crop_wt_w_senesced: tot_crop_wt_w_senesced
+          litter_trash_dry_wt: litter_trash_dry_wt
+          tops_roots_storage_d_wt: tops_roots_storage_d_wt
+          tuber_dry_weight: tuber_dry_weight
+          leaf_dry_wt_green_areas: leaf_dry_wt_green_areas
+          assimilate_production: assimilate_production
+          dead_mater_dry_increase: dead_mater_dry_increase
+          senescence_rate_tops: senescence_rate_tops
+          respiration_translocat: respiration_translocat
+          canopy_width: canopy_width
+          root_depth: root_depth
+          ear_area_index: ear_area_index
+          stem_area_index: stem_area_index
+          green_area_index: green_area_index
+          leaf_ar_index_live_dead: leaf_ar_index_live_dead
+          grain_unit_dry_weight: grain_unit_dry_weight
+          specif_lf_wt_shaded_noon: specif_lf_wt_shaded_noon
+          specif_lf_wt_sunlit_noon: specif_lf_wt_sunlit_noon
+          harvest_yield_fresh_wt: harvest_yield_fresh_wt
+          tuber_fresh_weight: tuber_fresh_weight
+          leaf_phot_shaded_lf_noon: leaf_phot_shaded_lf_noon
+          leaf_phot_sunlit_lf_noon: leaf_phot_sunlit_lf_noon
+          CO2_factor_photosynth: CO2_factor_photosynth
+          daylength_factor: daylength_factor
+          leaf_number_per_stem: leaf_number_per_stem
+          leaf_tip_number_per_stem: leaf_tip_number_per_stem
+          temp_fact_leaf_growth: temp_fact_leaf_growth
+          temp_fact_photosyn: temp_fact_photosyn
+          vernalization_factor: vernalization_factor
+          leaf_no_increase_rate: leaf_no_increase_rate
+          leaf_appearance_rate: leaf_appearance_rate
+          lf_appear_rate_bio_day_b: lf_appear_rate_bio_day_b
+          plant_density: plant_density
+          ear_number: ear_number
+          ear_length: ear_length
+          grain_number: grain_number
+          corm_population: corm_population
+          pod_number: pod_number
+          panicle_number: panicle_number
+          shoot_(apex)_number: shoot_(apex)_number
+          tiller_number: tiller_number
+          grain_number_per_plant: grain_number_per_plant
+          shoot_apex_num_per_plant: shoot_apex_num_per_plant
+          spikelet_number: spikelet_number
+          tiller_number_per_plant: tiller_number_per_plant
+          grain_number_per_shoot: grain_number_per_shoot
+          grain_number_per_ear: grain_number_per_ear
+          partitioning_of_wt_shoot: partitioning_of_wt_shoot
+          harvest_index: harvest_index
+          pod_harvest_index: pod_harvest_index
+          sucrose_harvest_index: sucrose_harvest_index
+          tot_wt_CH2O_equiv: tot_wt_CH2O_equiv
+          can_wt_CH2O_equiv: can_wt_CH2O_equiv
+          tot_cost_glu_eqiv: tot_cost_glu_eqiv
+          can_cost_glu_eqiv: can_cost_glu_eqiv
+          leaf_cost_glu_eqiv: leaf_cost_glu_eqiv
+          stem_cost_glu_eqiv: stem_cost_glu_eqiv
+          root_cost_glu_eqiv: root_cost_glu_eqiv
+          pod_cost_glu_eqiv: pod_cost_glu_eqiv
+          seed_cost_glu_eqiv: seed_cost_glu_eqiv
+          obs_time_series_comment: obs_time_series_comment
+      - type: lookup_and_add
+        lookup_data_source: { section: PLANT_TS_NUTRIENTS }
+        on_key:
+          source_key: [plant_data_id_long]
+          lookup_key: [plant_data_id_long]
+        select_columns:
+          chaff_N_concentration: chaff_N_concentration
+          tops_N_concentration: tops_N_concentration
+          tops_protein_concentration: tops_protein_concentration
+          grain_N_conc: grain_N_conc
+          grain_protein_concentration: grain_protein_concentration
+          leaf_N_concentration: leaf_N_concentration
+          shaded_leaf_N_conc: shaded_leaf_N_conc
+          sunlit_leaf_N_conc: sunlit_leaf_N_conc
+          root_N_concentration: root_N_concentration
+          pod_N_conc: pod_N_conc
+          shell_N_conc: shell_N_conc
+          stem_N_conc: stem_N_conc
+          tuber_N_conc: tuber_N_conc
+          veg_stem_leaf_N_conc: veg_stem_leaf_N_conc
+          specific_leaf_N: specific_leaf_N
+          reserve_N_per_plant: reserve_N_per_plant
+          tops_N: tops_N
+          N_fixed: N_fixed
+          N_uptake_cumulative: N_uptake_cumulative
+          N_uptake: N_uptake
+          reserve_N: reserve_N
+          tops_(ie_canopy)_N: tops_(ie_canopy)_N
+          tuber_stem_leaf_N: tuber_stem_leaf_N
+          tuber_N: tuber_N
+          vegetative_N_content: vegetative_N_content
+          fruit_N_content: fruit_N_content
+          chaff_N_content: chaff_N_content
+          grain_N: grain_N
+          leaf_N: leaf_N
+          green_leaf_N: green_leaf_N
+          dead_leaf_N: dead_leaf_N
+          root_N: root_N
+          stem_N: stem_N
+          dead_N_increment: dead_N_increment
+          N_fixation_rate: N_fixation_rate
+          N_uptake_rate: N_uptake_rate
+          N_factor_for_leaf_growth: N_factor_for_leaf_growth
+          N_factor_photosynthesis: N_factor_photosynthesis
+          N_factor_for_senescence: N_factor_for_senescence
+          N_factor_for_tillering: N_factor_for_tillering
+          N_uptake_to_demand_ratio: N_uptake_to_demand_ratio
+          leaf_critical_N_factor: leaf_critical_N_factor
+          roots_critical_N_factor: roots_critical_N_factor
+          stem_critical_N_factor: stem_critical_N_factor
+          N_factor_for_N_uptake: N_factor_for_N_uptake
+          nitrogen_harvest_index: nitrogen_harvest_index
+          chaff_P_concentration: chaff_P_concentration
+          tops_P_concentration: tops_P_concentration
+          grain_P_conc: grain_P_conc
+          leaf_P_concentration: leaf_P_concentration
+          plant_P_conc: plant_P_conc
+          root_P_conc: root_P_conc
+          shoot_P_conc: shoot_P_conc
+          shell_P_conc: shell_P_conc
+          stem_P_conc: stem_P_conc
+          tuber_P_conc: tuber_P_conc
+          veg_stem_leaf_P_conc: veg_stem_leaf_P_conc
+          plant_death_temperature: plant_death_temperature
+          reserve_P_per_plant: reserve_P_per_plant
+          chaff_P_content: chaff_P_content
+          tops_P: tops_P
+          grain_P: grain_P
+          leaf_P: leaf_P
+          plant_P: plant_P
+          stable_P_kg/ha: stable_P_kg/ha
+          P_uptake_cum: P_uptake_cum
+          reserve_P: reserve_P
+          root_P: root_P
+          shell_P: shell_P
+          shoot_P: shoot_P
+          stem_P: stem_P
+          tops_(ie_canopy)_P: tops_(ie_canopy)_P
+          tuber_stem_leaf_P: tuber_stem_leaf_P
+          tuber_P: tuber_P
+          vegetative_P_content: vegetative_P_content
+          dead_P_increment: dead_P_increment
+          P_uptake_day: P_uptake_day
+          phosphorus_harvest_index: phosphorus_harvest_index
+          tops_K: tops_K
+          tops_S: tops_S
+          tops_Fe: tops_Fe
+          tops_Zn: tops_Zn
+          grain_K: grain_K
+          grain_S: grain_S
+          obs_time_series_comment: obs_time_series_comment
+      - type: lookup_and_add
+        lookup_data_source: { section: PLANT_TS_PESTS_DISEASES }
+        on_key:
+          source_key: [plant_data_id_long]
+          lookup_key: [plant_data_id_long]
+        select_columns:
+          plant_pop_reduct_cum: plant_pop_reduct_cum
+          incr_disease_lf_ar_pcent: incr_disease_lf_ar_pcent
+          plant_pop_reduction_day: plant_pop_reduction_day
+          root_length_consum_cumul: root_length_consum_cumul
+          root_length_consumed: root_length_consumed
+          root_lngth_dens_cons_cum: root_lngth_dens_cons_cum
+          root_length_dens_consum: root_length_dens_consum
+          increase_disease_lf_area: increase_disease_lf_area
+          leaf_mass_consumed_cumu: leaf_mass_consumed_cumu
+          root_mass_consum_cumul: root_mass_consum_cumul
+          grain_mass_consum_cumul: grain_mass_consum_cumul
+          shell_mass_consum_cumul: shell_mass_consum_cumul
+          stem_mass_consum_cumul: stem_mass_consum_cumul
+          grain_mass_consumed: grain_mass_consumed
+          stem_mass_consumed: stem_mass_consumed
+          leaf_mass_consumed: leaf_mass_consumed
+          root_mass_consumed: root_mass_consumed
+          shell_mass_consumed: shell_mass_consumed
+          leaf_area_consumed_cumu: leaf_area_consumed_cumu
+          leaf_area_consumption: leaf_area_consumption
+          corn_earworm: corn_earworm
+          velvetbn_catrpllar_5inst: velvetbn_catrpllar_5inst
+          velvetbn_catrpllar_6inst: velvetbn_catrpllar_6inst
+          grain_numb_consum_cumul: grain_numb_consum_cumul
+          shell_numb_consum_cumul: shell_numb_consum_cumul
+          fall_armyworm: fall_armyworm
+          root_worm: root_worm
+          southern_green_stinkbug: southern_green_stinkbug
+          soybean_looper: soybean_looper
+          grain_number_consumed: grain_number_consumed
+          shell_number_consumed: shell_number_consumed
+          lodging_percent: lodging_percent
+          plant_population: plant_population
+          obs_time_series_comment: obs_time_series_comment
+      # Resolve treatment number  
+      - type: add_column_conditional
+        output_header: plot_id
+        conditions:
+          - on_column: obs_unit_type
+            if_equals: 'Plot'
+            then_value: obs_unit_id
+      - type: add_column_conditional
+        output_header: temp_treatment_local
+        conditions:
+          - on_column: obs_unit_type
+            if_equals: 'Treatment'
+            then_value: obs_unit_id
+      ## Lookup plot-treatment links for plot-level observation
+      - type: lookup_and_add
+        lookup_data_source: { section: PLOT_SETUP }
+        on_key:
+          source_key: [experiment_id, plot_id]
+          lookup_key: [experiment_id, plot_id]
+        select_columns:
+          temp_treatment_lookup: treatment_number
+      ## Merge the two columns into one final 'treatment_number'
+      - type: coalesce_columns
+        output_header: treatment_number
+        input_map:
+          source_1: temp_treatment_local
+          source_2: temp_treatment_lookup
+      # Break down crop_season_id
+      - type: lookup_and_add
+        lookup_data_source: { section: EXPERIMENTAL_DESIGN }
+        on_key:
+          source_key: [experiment_id, crop_season_id, treatment_number]
+          lookup_key: [experiment_id, crop_season_id, treatment_number]
+        select_columns:
+          experiment_year: experiment_year
+          crop_id: crop_id
+
+
+# =================================================================
+# SELECT AND RENAMING
+# =================================================================
+
+  - mapping_uid: '999'
+    notes: "Final schema application for all output tables."
+    actions:
+
+      - type: map_headers
+        target_section: GENERAL
+        rename_map:
+          experiment_id: experiment_id
+          name_of_experiment: name_of_experiment
+          exp_code_local: exp_code_local
+          experiment_name_local: experiment_name_local
+          objectives_of_study: objectives_of_study
+          experiment_narrative: experiment_narrative
+          main_experiment_factor: main_experiment_factor
+          experimental_factor_comb: experimental_factor_comb
+          number_of_replicates: number_of_replicates
+          number_of_treatments: number_of_treatments
+          experiment_type: experiment_type
+          management_type: management_type
+          experiment_duration: experiment_duration
+          exper_duration_seasons: exper_duration_seasons
+          cropping_system: cropping_system
+          constraints: constraints
+          complications: complications
+          ex_funding_source: ex_funding_source
+          ex_license: ex_license
+          distrib_restrictions: distrib_restrictions
+          anonymization: anonymization
+          revision_date_first: revision_date_first
+          revision_date_latest: revision_date_latest
+          revision_notes: revision_notes
+          metadata_notes: metadata_notes
+      
+      - type: map_headers
+        target_section: NOTES
+        rename_map:
+          experiment_id: experiment_id
+          constraints: constraints
+          complications: complications
+
+      - type: map_headers
+        target_section: EXPERIMENT_PERSONS
+        rename_map:
+          experiment_id: experiment_id
+          people_level: people_level
+          researcher_last_name: researcher_last_name
+          researcher_first_name: researcher_first_name
+          researcher_name_mi: researcher_name_mi
+          researcher_role: researcher_role
+          researcher_address: researcher_address
+          institute_id: institute_id
+          e_mail_address: e_mail_address
+          persons_notes: persons_notes
+
+      - type: map_headers
+        target_section: SOIL_PERSONS
+        rename_map:
+          soil_profile_id: soil_profile_id
+          person_level: people_level
+          researcher_last_name: researcher_last_name
+          researcher_first_name: researcher_first_name
+          researcher_name_mi: researcher_name_mi
+          researcher_role: researcher_role
+          researcher_address: researcher_address
+          institute_id_person: institute_id
+          e_mail_address: e_mail_address
+          persons_notes: persons_notes  # Note 2026-01-21: not in ICASA
+
+      - type: map_headers
+        target_section: WEATHER_PERSONS
+        rename_map:
+          weather_station_id: weather_station_id
+          people_level: people_level  # Note 2026-01-21: not in ICASA
+          researcher_last_name: researcher_last_name
+          researcher_first_name: researcher_first_name
+          researcher_name_mi: researcher_name_mi
+          researcher_role: researcher_role
+          researcher_address: researcher_address
+          institute_id_person: institute_id
+          e_mail_address: e_mail_address
+          persons_notes: persons_notes  # Note 2026-01-21: not in ICASA
+
+      # Note 2026-01-21: not in ICASA
+      - type: map_headers
+        target_section: GENOTYPES_PERSONS
+        rename_map:
+          genotype_level: genotype_level
+          people_level: people_level
+          researcher_last_name: researcher_last_name
+          researcher_first_name: researcher_first_name
+          researcher_name_mi: researcher_name_mi
+          researcher_role: researcher_role
+          researcher_address: researcher_address
+          institute_id_person: institute_id
+          e_mail_address: e_mail_address
+          persons_notes: persons_notes
+
+      - type: map_headers
+        target_section: EXPERIMENT_INSTITUTIONS
+        rename_map:
+          experiment_id: experiment_id
+          institute_id: institute_id
+          # TODO: request addition to ICASA -> needed to generate accurate DSSAT naming
+          institute_code: institute_code
+          institute_name: institute_name
+          institute_type: institute_type
+          institute_role: institute_role
+          institute_notes: institute_notes
+
+      - type: map_headers
+        target_section: SOIL_INSTITUTIONS
+        rename_map:
+          soil_profile_id: soil_profile_id
+          institute_id: institute_id
+          institute_code: institute_code
+          institute_name: institute_name
+          institute_type: institute_type
+          institute_role: institute_role
+          institute_notes: institute_notes  # Note 2026-01-21: not in ICASA
+
+      - type: map_headers
+        target_section: WEATHER_INSTITUTIONS
+        rename_map:
+          weather_station_id: weather_station_id
+          institute_id: institute_id  # Note 2026-01-21: not in ICASA
+          institute_code: institute_code
+          institute_name: institute_name
+          institute_type: institute_type
+          institute_role: institute_role
+          institute_notes: institute_notes  # Note 2026-01-21: not in ICASA
+
+      # Note 2026-01-21: not in ICASA
+      - type: map_headers
+        target_section: GENOTYPES_INSTITUTIONS
+        rename_map:
+          genotype_level: genotype_level
+          institute_id: institute_id  # Note 2026-01-21: not in ICASA
+          institute_code: institute_code
+          institute_name: institute_name
+          institute_type: institute_type
+          institute_role: institute_role
+          institute_notes: institute_notes  # Note 2026-01-21: not in ICASA
+
+      - type: map_headers
+        target_section: EXPERIMENT_DOCUMENTS
+        rename_map:
+          experiment_id: experiment_id
+          document_id: document_id
+          document_name: document_name
+          digital_object_id: digital_object_id
+          document_type: document_type
+          document_date: document_date
+          document_link: document_link
+          document_notes: document_notes
+
+      - type: map_headers
+        target_section: SOIL_DOCUMENTS
+        rename_map:
+          soil_profile_id: soil_profile_id
+          document_id_sl: document_id
+          document_name_sl: document_name
+          digital_object_id_sl: digital_object_id
+          document_type: document_type  # Note 2026-01-21: not in ICASA
+          document_date: document_date  # Note 2026-01-21: not in ICASA
+          document_link: document_link  # Note 2026-01-21: not in ICASA
+          document_notes: document_notes  # Note 2026-01-21: not in ICASA
+
+      - type: map_headers
+        target_section: WEATHER_DOCUMENTS
+        rename_map:
+          weather_station_id: weather_station_id
+          document_id_wst: document_id
+          document_name_wst: document_name
+          digital_object_id_wst: digital_object_id
+          document_type: document_type  # Note 2026-01-21: not in ICASA
+          document_date: document_date  # Note 2026-01-21: not in ICASA
+          document_link: document_link  # Note 2026-01-21: not in ICASA
+          document_notes: document_notes  # Note 2026-01-21: not in ICASA
+
+      # Note 2026-01-21: not in ICASA
+      - type: map_headers
+        target_section: GENOTYPES_DOCUMENTS
+        rename_map:
+          genotype_level: genotype_level
+          document_id: document_id
+          document_name: document_name
+          digital_object_id: digital_object_id
+          document_type: document_type
+          document_date: document_date
+          document_link: document_link
+          document_notes: document_notes
+
+      - type: map_headers
+        target_section: PLOT_DETAILS
+        rename_map:
+          experiment_id: experiment_id
+          plot_area: plot_area
+          plot_length: plot_length
+          plot_width: plot_width
+          plot_orientation: plot_orientation
+          drainage_orientation: drainage_orientation
+          plots_relative_to_drains: plots_relative_to_drains
+          plot_separation: plot_separation
+          plot_harvest_area: plot_harvest_area
+          plot_harvest_row_number: plot_harvest_row_number
+          plot_harvest_length: plot_harvest_length
+          plot_harvest_width: plot_harvest_width
+          plot_layout: plot_layout
+
+      - type: map_headers
+        target_section: FIELDS
+        rename_map:
+          experiment_id: experiment_id
+          field_id: field_id  # TODO: add to template
+          field_level: field_level
+          soil_profile_id: soil_profile_id
+          weather_station_id: weather_station_id
+          field_name: field_name
+          field_country: field_country
+          field_sub_country: field_sub_country
+          field_sub_sub_country: field_sub_sub_country
+          field_latitude: field_latitude
+          field_longitude: field_longitude
+          field_elevation: field_elevation
+          field_geocoord_original: field_geocoord_original
+          field_location_source: field_location_source
+          field_loc_anon: field_loc_anon
+          field_landscape_position: field_landscape_position
+          field_slope: field_slope
+          field_slope_length: field_slope_length
+          field_slope_aspect: field_slope_aspect
+          field_area: field_area
+          obstruction_to_sun: obstruction_to_sun
+          field_length_width_ratio: field_length_width_ratio
+          field_plow_layer_depth: field_plow_layer_depth
+          field_plow_layer_compac: field_plow_layer_compac
+          drainage_type: drainage_type
+          depth_to_drain: depth_to_drain
+          drain_spacing: drain_spacing
+          drain_radius: drain_radius
+          field_history: field_history
+          field_history_duration: field_history_duration
+          field_surface_stones: field_surface_stones
+          field_soil_texture: field_soil_texture
+          field_soil_depth: field_soil_depth
+          water_table_depth: water_table_depth
+          weather_file: weather_file
+          wsta_distance: wsta_distance
+          field_notes: field_notes
+
+      - type: map_headers
+        target_section: GENOTYPES
+        rename_map:
+          experiment_id: experiment_id
+          crop_id: crop_id
+          crop_intended_use: crop_intended_use
+          genotype_level: genotype_level
+          genotype_name: genotype_name
+          genotype_notes: genotype_notes
+          genotype_name_orig: genotype_name_orig
+          genotype_synonym: genotype_synonym
+          genotype_class: genotype_class
+          genotype_seed_weight: genotype_seed_weight
+          relative_maturity: relative_maturity
+          breeding_program: breeding_program
+          accession_id: accession_id
+          accession_location: accession_location
+          genotype_release_year: genotype_release_year
+          pedigree: pedigree
+          genotype_reference: genotype_reference
+
+      - type: map_headers
+        target_section: INITIAL_CONDITIONS
+        rename_map:
+          experiment_id: experiment_id
+          experiment_year: experiment_year
+          crop_id: crop_id
+          initial_conditions_level: initial_conditions_level  #!! How to combine??
+          # init_residue_measure_yr: init_residue_measure_yr
+          # day_year_residue_measure: day_year_residue_measure
+          init_residu_measure_date: init_residu_measure_date
+          initial_conditions_name: initial_conditions_name
+          residue_nature_prev_crop: residue_nature_prev_crop
+          residue_incorporated: residue_incorporated
+          residue_incorpor_depth: residue_incorpor_depth
+          residue_above_ground_wt: residue_above_ground_wt
+          residue_moisture_init: residue_moisture_init
+          residue_N_conc: residue_N_conc
+          residue_P_conc: residue_P_conc
+          residue_K_conc: residue_K_conc
+          residue_lignin_conc: residue_lignin_conc
+          root_wt_previous_crop: root_wt_previous_crop
+          nodule_wt_previous_crop: nodule_wt_previous_crop
+          rhizobia_number: rhizobia_number
+          rhizobia_effectiveness: rhizobia_effectiveness
+          rhizobia_nitrogen_amount: rhizobia_nitrogen_amount
+          initial_conditions_notes: initial_conditions_notes
+          initial_soil_layer_top_depth: me_soil_layer_top_depth
+          initial_soil_layer_base_depth: me_soil_layer_bot_depth
+          initial_conditions_date: date_of_measurement  #!!
+          initial_soil_stable_C: soil_stable_C
+          initial_Ntot_layer: initial_Ntot_layer
+          initial_NH4_concen_layer: initial_NH4_concen_layer
+          initial_NH4_mass_layer: initial_NH4_mass_layer
+          initial_NO3_concen_layer: initial_NO3_concen_layer
+          initial_NO3_mass_layer: initial_NO3_mass_layer
+          initial_soil_temperature: soil_temperature_by_lyr
+          initial_watr_conc_by_lyr: initial_watr_conc_by_lyr
+          initial_soil_comment: soil_layer_comment
+          initial_profile_wtr_cont: initial_profile_wtr_cont
+          initial_profile_wtr_cont_%: initial_profile_wtr_cont_%
+          initial_water_tabl_depth: initial_water_tabl_depth
+          initial_prof_inorg_N: initial_prof_inorg_N
+          initial_prof_NH4: initial_prof_NH4
+          initial_prof_NO3: initial_prof_NO3
+
+      - type: map_headers
+        target_section: TILLAGE
+        rename_map:
+          experiment_id: experiment_id
+          tillage_level: tillage_level
+          tillage_practice: tillage_practice
+          tillage_treatment_name: tillage_treatment_name
+          tillage_event_tot: tillage_event_tot
+          tillage_treatment_notes: tillage_treatment_notes
+          # tillage_operations_year: tillage_operations_year
+          # tillage_operations_day: tillage_operations_day
+          tillage_date: tillage_date
+          tillage_operation_name: tillage_operation_name
+          tillage_order: tillage_order
+          tillage_implement: tillage_implement
+          tillage_operations_depth: tillage_operations_depth
+          till_disturb_ratio: till_disturb_ratio
+          till_mix_effectiveness: till_mix_effectiveness
+          till_op_comment: till_op_comment
+
+      - type: map_headers
+        target_section: PLANTNGS
+        rename_map:
+          experiment_id: experiment_id
+          planting_level: planting_level
+          planting_level_name: planting_level_name
+          local_season_name: local_season_name
+          # planting_year: planting_year
+          # planting_day: planting_day
+          planting_date: planting_date
+          transplant_date: transplant_date
+          plant_pop_at_planting: plant_pop_at_planting
+          fertile_tiller_num: fertile_tiller_num
+          # emergence_year: emergence_year
+          # emergence_day: emergence_day
+          emergence_date: emergence_date
+          plant_pop_at_emergence: plant_pop_at_emergence
+          planting_material: planting_material
+          planting_method: planting_method
+          planting_distribution: planting_distribution
+          row_spacing: row_spacing
+          plant_spacing: plant_spacing
+          row_direction: row_direction
+          plants_per_hill: plants_per_hill
+          planting_depth: planting_depth
+          planting_material_weight: planting_material_weight
+          planting_material_age: planting_material_age
+          transplant_age: transplant_age
+          nursery_env_pl_material: nursery_env_pl_material
+          length_sprout_material: length_sprout_material
+          seedbed_density: seedbed_density
+          germination: germination
+          planting_material_source: planting_material_source
+          planting_notes: planting_notes
+
+      - type: map_headers
+        target_section: SOIL_ANALYSES
+        rename_map:
+          experiment_id: experiment_id
+          experiment_year: experiment_year
+          crop_id: crop_id
+          soil_analysis_level: soil_analysis_level
+          soil_analysis_name: soil_analysis_name
+          soil_analysis_date: date_of_measurement
+          soil_analys_meth_pH_buff: soil_analys_meth_pH_buff
+          soil_anal_meth_P_extract: soil_anal_meth_P_extract
+          soil_anal_meth_exch_K: soil_anal_meth_exch_K
+          soil_anal_meth_exch_Ca: soil_anal_meth_exch_Ca
+          soil_anal_meth_exch_Mg: soil_anal_meth_exch_Mg
+          soil_anal_meth_extract_S: soil_anal_meth_extract_S
+          soil_anal_meth_extract_Zn: soil_anal_meth_extract_Zn
+          soil_anal_meth_extract_B: soil_anal_meth_extract_B
+          drainage_rate_per_day: drainage_rate_per_day
+          runoff_curve_no_SCS: runoff_curve_no_SCS
+          soil_analysis_layer_top_depth: me_soil_layer_top_depth
+          soil_analysis_layer_base_depth: me_soil_layer_bot_depth
+          organic_carbon_conc: soil_organic_C_perc_layr
+          soil_stable_C: soil_stable_C 
+          pH_in_buffer: soil_pH_in_buffer
+          pH_in_water: soil_pH_in_water
+          soil_N_conc_total: soil_N_conc_total
+          phosphorus_extractable: phosphorus_extractable
+          potassium_exchangeable: potassium_exchangeable
+          Calcium_exchangeable: Calcium_exchangeable
+          Magnesium_exchangeable: Magnesium_exchangeable
+          Boron_extractable: Boron_extractable
+          Sulfur_extractable: Sulfur_extractable
+          Zinc_extractable: Zinc_extractable
+          soil_bulk_dens_moist: soil_bulk_dens_moist
+          soil_compac_fact_by_lyr: soil_compac_fact_by_lyr
+
+      - type: map_headers
+        target_section: ORGANIC_MATERIALS
+        rename_map:
+          experiment_id: experiment_id
+          org_materials_applic_lev: org_materials_applic_lev
+          org_material_applic_name: org_material_applic_name
+          org_material_applic_tot: org_material_applic_tot
+          org_material_notes: org_material_notes
+          # org_materials_applic_yr: org_materials_applic_yr
+          # org_material_applic_day: org_material_applic_day
+          org_material_applic_date: org_material_applic_date
+          organic_material: organic_material
+          org_material_applic_meth: org_material_applic_meth
+          org_material_appl_depth: org_material_appl_depth
+          org_material_incorp_perc: org_material_incorp_perc
+          org_material_applic_amnt: org_material_applic_amnt
+          org_material_applic_fresh_wt: org_material_applic_fresh_wt
+          org_material_cover: org_material_cover
+          org_matter_moisture_conc: org_matter_moisture_conc
+          org_matter_carbon_conc: org_matter_carbon_conc
+          organic_material_N_conc: organic_material_N_conc
+          organic_material_P_conc: organic_material_P_conc
+          organic_material_K_conc: organic_material_K_conc
+          org_material_lignin_conc: org_material_lignin_conc
+          org_material_c_to_n: org_material_c_to_n
+          org_matter_comment: org_matter_comment
+
+      - type: map_headers
+        target_section: FERTILIZERS
+        rename_map:
+          experiment_id: experiment_id
+          fertilizer_level: fertilizer_level
+          fertilizer_level_name: fertilizer_level_name
+          fert_applied: fert_applied
+          fertilizer_season: fertilizer_season
+          fertilizer_material_season: fertilizer_material_season
+          nitrogen_season: nitrogen_season
+          phosphorus_season: phosphorus_season
+          potassium_season: potassium_season
+          sulfur_season: sulfur_season
+          calcium_season: calcium_season
+          magnesium_season: magnesium_season
+          boron_season: boron_season
+          zinc_season: zinc_season
+          manganese_season: manganese_season
+          iron_season: iron_season
+          fertilizer_other_season: fertilizer_other_season
+          fertiliz_code_other_elem_season: fertiliz_code_other_elem  # Note 2026-01-21: in ICASA duplicate name 'fertiliz_code_other_elem'
+          fert_#_tot: fert_#_tot
+          nitrogen_applics_season: nitrogen_applics_season
+          phosphorus_applics_season: phosphorus_applics_season
+          potassium_applics_season: potassium_applics_season
+          fertilizer_notes: fertilizer_notes
+          fertiliz_app_name: fertiliz_app_name
+          # fertilizer_applic_year: fertilizer_applic_year
+          # fertilizer_applic_day: fertilizer_applic_day
+          fertilization_date: fertilization_date
+          fertilizer_material: fertilizer_material
+          fertilizer_applic_method: fertilizer_applic_method
+          application_depth_fert: application_depth_fert
+          fertilizer_total_amount: fertilizer_total_amount
+          fertilizer_growth_stage: fertilizer_growth_stage
+          fertiliz_growth_stg_sys: fertiliz_growth_stg_sys
+          N_in_applied_fertilizer: N_in_applied_fertilizer
+          NO3_applied_fertilizer: NO3_applied_fertilizer
+          NH4_applied_fertilizer: NH4_applied_fertilizer
+          Urea_applied_fertilizer: Urea_applied_fertilizer
+          phosphorus_applied_fert: phosphorus_applied_fert
+          fertilizer_K_applied: fertilizer_K_applied
+          S_in_applied_fertilizer: S_in_applied_fertilizer
+          Ca_in_applied_fertilizer: Ca_in_applied_fertilizer
+          Mg_in_applied_fertilizer: Mg_in_applied_fertilizer
+          B_in_applied_fertilizer: B_in_applied_fertilizer
+          Zn_in_applied_fertilizer: Zn_in_applied_fertilizer
+          Mn_in_applied_fertilizer: Mn_in_applied_fertilizer
+          Fe_in_applied_fertilizer: Fe_in_applied_fertilizer
+          other_elements_appl_fert: other_elements_appl_fert
+          fertiliz_code_other_elem: fertiliz_code_other_elem
+          fertiliz_applic_comment: fertiliz_applic_comment
+
+      - type: map_headers
+        target_section: IRRIGATIONS
+        rename_map:
+          experiment_id: experiment_id
+          irrigation_level: irrigation_level
+          irrigation_level_name: irrigation_level_name
+          irrig_applied: irrig_applied
+          irrigation_applics_season: irrigation_applics_season
+          irrigation_season: irrigation_season
+          irrigation_notes: irrigation_notes
+          irrigation_operation_name: irrigation_operation_name
+          # irrigation_year: irrigation_year
+          # irrigation_day: irrigation_day
+          irrigation_date: irrigation_date
+          irrigation_operation: irrigation_operation
+          irrig_amount_depth: irrig_amount_depth
+          irrigation_applic_depth: irrigation_applic_depth
+          irrigation_H2O_N_conc: irrigation_H2O_N_conc
+          bund_height: bund_height
+          irrig_applic_comment: irrig_applic_comment
+
+      - type: map_headers
+        target_section: CHEMICALS
+        rename_map:
+          experiment_id: experiment_id
+          chemical_applic_level: chemical_applic_level
+          chemical_applic_name: chemical_applic_name
+          chemical_applic_notes: chemical_applic_notes
+          # chemical_applic_year: chemical_applic_year
+          # chemical_applic_day: chemical_applic_day
+          chemical_applic_date: chemical_applic_date
+          chemical_applic_material: chemical_applic_material
+          chemical_applic_method: chemical_applic_method
+          application_depth_chem: application_depth_chem
+          chemical_applic_amount: chemical_applic_amount
+          chemical_applic_target: chemical_applic_target
+          chemical_applic_comment: chemical_applic_comment
+
+      - type: map_headers
+        target_section: MULCHES
+        rename_map:
+          experiment_id: experiment_id
+          mulch_level: mulch_level
+          mulch_level_name: mulch_level_name
+          mulch_level_notes: mulch_level_notes
+          # mulch_applic_year: mulch_applic_year
+          # mulch_applic_day: mulch_applic_day
+          mulch_applic_date: mulch_applic_date
+          mulch_type: mulch_type
+          mulch_thickness: mulch_thickness
+          mulch_cover_fraction: mulch_cover_fraction
+          mulch_applic_comment: mulch_applic_comment
+          mulch_color: mulch_color
+          # mulch_removal_year: mulch_removal_year
+          # mulch_removal_day: mulch_removal_day
+          mulch_removal_date: mulch_removal_date
+          mulch_type_remove: mulch_type_remove
+          mulch_removal_comment: mulch_removal_comment
+
+      - type: map_headers
+        target_section: HARVESTS
+        rename_map:
+          experiment_id: experiment_id
+          harvest_operations_level: harvest_operations_level
+          harvest_ops_level_name: harvest_ops_level_name
+          harvest_notes: harvest_notes
+          # harvest_operations_year: harvest_operations_year
+          # harvest_operations_day: harvest_operations_day
+          harvest_operations_date: harvest_operations_date
+          harvest_stage: harvest_stage
+          harvested_crop: harvested_crop
+          harvest_operat_component: harvest_operat_component
+          harvest_method: harvest_method
+          harvest_area: harvest_area
+          harvest_amount: harvest_amount
+          harv_operat_main_product: harv_operat_main_product
+          harv_operation_byproduct: harv_operation_byproduct
+          harv_operat_size_categor: harv_operat_size_categor
+          harvest_cut_height: harvest_cut_height
+          harvest_op_comments: harvest_op_comments
+
+      - type: map_headers
+        target_section: TREATMENTS
+        rename_map:
+          experiment_id: experiment_id
+          experiment_year: experiment_year
+          crop_id: crop_id
+          treatment_number: treatment_number
+          treatment_name: treatment_name
+          plot_id: plot_id
+          plot_name: plot_name
+          plot_row_number: plot_row_number
+          plot_column_number: plot_column_number
+          plot_row_m: plot_row_m
+          plot_column_m: plot_column_m
+          plot_geocoord_x: plot_geocoord_x
+          plot_geocoord_y: plot_geocoord_y
+          plot_geocoord_system: plot_geocoord_system
+          genotype_level: genotype_level
+          field_level: field_level
+          soil_analysis_level: soil_analysis_level
+          initial_conditions_level: initial_conditions_level
+          planting_level: planting_level
+          irrigation_level: irrigation_level
+          fertilizer_level: fertilizer_level
+          org_materials_applic_lev: org_materials_applic_lev
+          mulch_level: mulch_level          
+          chemical_applic_level: chemical_applic_level
+          tillage_level: tillage_level
+          environmental_modif_lev: environmental_modif_lev
+          harvest_operations_level: harvest_operations_level
+          # simulation_control_level: simulation_control_level
+
+      - type: map_headers
+        target_section: SOIL_GENERAL
+        rename_map:
+          soil_profile_id: soil_profile_id
+          soil_profile_methods: soil_profile_methods
+          soil_notes: soil_notes
+          file_version_sl: file_version_sl
+          soil_citation: soil_citation
+          soil_license: soil_license
+          distrib_restrictions: distrib_restrictions
+          revision_date_first_sl: revision_date_first_sl
+          revision_date_latest_sl: revision_date_latest_sl
+          revision_notes_sl: revision_notes_sl
+
+      - type: map_headers
+        target_section: PROFILE_METADATA
+        rename_map:
+          soil_profile_id: soil_profile_id
+          name_of_soil_profile: name_of_soil_profile
+          soil_site: soil_site
+          soil_location_country: soil_location_country
+          soil_loc_2nd_level: soil_loc_2nd_level
+          soil_loc_3rd_level: soil_loc_3rd_level
+          latitude_soil_profile: latitude_soil_profile
+          longitude_soil_profile: longitude_soil_profile
+          soil_site_elevation: soil_site_elevation
+          soil_sampling_date: date_of_measurement
+          soil_profile_slope: soil_profile_slope
+          soil_depth: soil_depth
+          soil_source: soil_source
+          soil_profile_notes: soil_profile_notes
+          anonymize_soil_loc: anonymize_soil_loc
+
+      - type: map_headers
+        target_section: SOIL_PROFILE
+        rename_map:
+          # Metadata/summary data
+          soil_profile_id: soil_profile_id
+          soil_classific_system: soil_classific_system
+          soil_classification: soil_classification
+          soil_albedo: soil_albedo
+          soil_albedo_moist: soil_albedo_moist
+          soil_surface_color: soil_surface_color
+          surface_stones_(cover): surface_stones_(cover)
+          soil_texture: soil_texture
+          soil_evaporation_limit: soil_evaporation_limit
+          summer_u: summer_u
+          winter_u: winter_u
+          soil_drainage_class: soil_drainage_class
+          drainage_rate_per_day: drainage_rate_per_day
+          runoff_curve_no_SCS: runoff_curve_no_SCS
+          depth_of_topsoil: depth_of_topsoil
+          mineralization_factor: mineralization_factor
+          soil_denitrification_fac: soil_denitrification_fac
+          soil_fertility_on_photo: soil_fertility_on_photo
+          cona: cona
+          diffus_const: diffus_const
+          diffus_slope: diffus_slope
+          pH_buffer_determin_meth: soil_analys_meth_pH_buff
+          phosphorus_determ_method: soil_anal_meth_P_extract
+          potassium_determ_method: soil_anal_meth_exch_K
+          # Layer data
+          soil_layer_top_depth: me_soil_layer_top_depth
+          soil_layer_base_depth: me_soil_layer_bot_depth
+          master_horizon: master_horizon
+          soil_color_moist_Munsell: soil_color_moist_Munsell
+          soil_clay_fraction: soil_clay_fraction
+          soil_silt_fraction: soil_silt_fraction
+          soil_sand_fraction: soil_sand_fraction
+          soil_coarse_fraction: soil_coarse_fraction
+          soil_bulk_density_moist: soil_bulk_density_moist
+          soil_adsorption_coef: soil_adsorption_coef
+          soil_compac_fact_by_lyr: soil_compac_fact_by_lyr
+          CaCO3_content: CaCO3_content
+          soil_pH_in_buffer: soil_pH_in_buffer
+          soil_pH_in_water: soil_pH_in_water
+          electric_conductivity: electric_conductivity
+          soil_organic_matter_layer: soil_organic_matter_layer
+          soil_organic_C_perc_layr: soil_organic_C_perc_layr
+          soil_stable_C_fraction: soil_stable_C_fraction
+          soil_stable_C: soil_stable_C
+          soil_active_C: soil_active_C
+          soil_active_C_fraction: soil_active_C_fraction
+          soil_intermediate_C: soil_intermediate_C
+          soil_intermediate_C_fraction: soil_intermediate_C_fraction
+          soil_inert_C: soil_inert_C
+          soil_inert_C_fraction: soil_inert_C_fraction
+          soil_organic_N_conc: soil_organic_N_conc
+          NH4soil_kCl: NH4soil_kCl
+          nitrate_KCl: nitrate_KCl
+          phosphorus_extractable: phosphorus_extractable
+          phosphorus_total: phosphorus_total
+          phosphorus_organic: phosphorus_organic
+          phosphorus_isotherm_A: phosphorus_isotherm_A
+          phosphorus_iostherm_B: phosphorus_iostherm_B
+          potassium_exchangeable: potassium_exchangeable
+          soil_N_total_conc: soil_N_total_conc
+          cation_exchange_capacity: cation_exchange_capacity
+          soil_calcium_conc: soil_calcium_conc
+          soil_aluminum_conc: soil_aluminum_conc
+          soil_iron_conc: soil_iron_conc
+          soil_magnesium_conc: soil_magnesium_conc
+          soil_manganese_conc: soil_manganese_conc
+          soil_sodium_conc: soil_sodium_conc
+          soil_sulfur_conc: soil_sulfur_conc
+          soil_base_saturation: soil_base_saturation
+          soil_water_residual: soil_water_residual
+          soil_water_lower_limit: soil_water_lower_limit
+          soil_water_air_dry: soil_water_air_dry
+          soil_water_wilting_pt: soil_water_wilting_pt
+          soil_water_field_cap_1: soil_water_field_cap_1
+          soil_water_field_cap_2: soil_water_field_cap_2
+          soil_wat_drned_upper_lim: soil_wat_drned_upper_lim
+          soil_water_saturated: soil_water_saturated
+          sat_hydraul_conductivity: sat_hydraul_conductivity
+          layer_drainage_rate_per_day: layer_drainage_rate_per_day
+          van_genuch_alpha: van_genuch_alpha
+          van_genuch_n: van_genuch_n
+          root_growth_factor_soil: root_growth_factor_soil
+          soil_water_uptake_factor: soil_water_uptake_factor
+          plant_root_uptake_factor: plant_root_uptake_factor
+          soil_layer_comment: soil_layer_comment
+
+      - type: map_headers
+        target_section: SOIL_TIME_SERIES
+        rename_map:
+          experiment_id: experiment_id
+          crop_season_id: crop_season_id
+          experiment_year: experiment_year
+          crop_id: crop_id
+          treatment_number: treatment_number
+          date_of_measurement: date_of_measurement
+          me_soil_layer_top_depth: me_soil_layer_top_depth
+          me_soil_layer_bot_depth: me_soil_layer_bot_depth
+          # Organic matter
+          sediment_loss: sediment_loss
+          soil_CO2_emission: soil_CO2_emission
+          CO2_accumulated_surface: CO2_accumulated_surface
+          CO2_soil_accumulated: CO2_soil_accumulated
+          available_P_kg/ha: available_P_kg/ha
+          P_mineralized_cum: P_mineralized_cum
+          org_matter_added_cumul: org_matter_added_cumul
+          org_matter_N_added_cum: org_matter_N_added_cum
+          org_matter_P_added_cum: org_matter_P_added_cum
+          organic_C_active_surface: organic_C_active_surface
+          organic_C_active_tot: organic_C_active_tot
+          organic_N_active_surface: organic_N_active_surface
+          org_N_active_soil_total: org_N_active_soil_total
+          organic_C_intermed_tot: organic_C_intermed_tot
+          organic_N_intermed_tot: organic_N_intermed_tot
+          soil_org_C_passive_tot: soil_org_C_passive_tot
+          org_N_passive_soil_tot: org_N_passive_soil_tot
+          org_C_stable_user_depth: org_C_stable_user_depth
+          organic_carbon_soil_tot: organic_carbon_soil_tot
+          org_N_stable_user_depth: org_N_stable_user_depth
+          senesced_N_to_surface: senesced_N_to_surface
+          senesced_N_to_soil: senesced_N_to_soil
+          P_senesce_surf: P_senesce_surf
+          P_senesce_soil: P_senesce_soil
+          org_nitrogen_soil_total: org_nitrogen_soil_total
+          senesced_dry_mat_to_surf: senesced_dry_mat_to_surf
+          senesced_dry_mat_to_soil: senesced_dry_mat_to_soil
+          litter_C_struct_surface: litter_C_struct_surface
+          litter_Cstructural: litter_Cstructural
+          litter_N_struct_surf: litter_N_struct_surf
+          litter_Nstructural: litter_Nstructural
+          senesced_C_added_litter: senesced_C_added_litter
+          senesced_C_added_to_soil: senesced_C_added_to_soil
+          senesced_lignin_to_lit: senesced_lignin_to_lit
+          senesced_lignin_to_soil: senesced_lignin_to_soil
+          senesced_N_added_litter: senesced_N_added_litter
+          senesced_N_added_to_soil: senesced_N_added_to_soil
+          senesced_N_add_lit_soil: senesced_N_add_lit_soil
+          senesced_wt_to_soil: senesced_wt_to_soil
+          N_stress_photosyn_leaf: N_stress_photosyn_leaf
+          N_stress_photosyn_daily: N_stress_photosyn_daily
+          N_to_P_ratio: N_to_P_ratio
+          P_stress_veg: P_stress_veg
+          P_stress_photo: P_stress_photo
+          reserves_factor_photosyn: reserves_factor_photosyn
+          soil_organic_carbon: soil_organic_carbon
+          # Carbon pools
+          soil_carbon_by_layer: soil_carbon_by_layer
+          organic_C_soil_by_layer: organic_C_soil_by_layer
+          organic_C_active_by_lyr: organic_C_active_by_lyr
+          organic_C_intermed_lyr: organic_C_intermed_lyr
+          org_C_passive_by_layer: org_C_passive_by_layer
+          litter_C_soil_by_layer: litter_C_soil_by_layer
+          litter_C_metabol_by_lyr: litter_C_metabol_by_lyr
+          litter_C_struct__by_lyr: litter_C_struct__by_lyr
+          # NPK
+          soil_nitrogen_by_layer: soil_nitrogen_by_layer
+          NO3_soil_by_layer: NO3_soil_by_layer
+          NH4_soil_by_layer: NH4_soil_by_layer
+          active_P_by_layer: active_P_by_layer
+          labile_P_by_layer: labile_P_by_layer
+          stabile_P_by_layer: stabile_P_by_layer
+          org_N_active_by_layer: org_N_active_by_layer
+          organic_N_soil_by_layer: organic_N_soil_by_layer
+          organic_N_intermed_lyr: organic_N_intermed_lyr
+          organic_N_passive_by_lyr: organic_N_passive_by_lyr
+          org_P_active_by_layer: org_P_active_by_layer
+          litter_N_soil_by_layer: litter_N_soil_by_layer
+          litter_N_metabol_by_lyr: litter_N_metabol_by_lyr
+          litter_N_struct_by_layer: litter_N_struct_by_layer
+          litter_P_soil_by_layer: litter_P_soil_by_layer
+          litter_P_metabol_by_lyr: litter_P_metabol_by_lyr
+          inorganic_N_by_layer: inorganic_N_by_layer
+          # Nitrogen dynamics
+          NH3_volatilization_cum: NH3_volatilization_cum
+          litter_N_on_surface: litter_N_on_surface
+          litter_Nal: litter_Nal
+          N_inorganic_applied: N_inorganic_applied
+          N_denitrification_cumul: N_denitrification_cumul
+          NH4_Nsoil_total: NH4_Nsoil_total
+          NO3_NH4_Nsoil_total: NO3_NH4_Nsoil_total
+          N_immobilization_cumul: N_immobilization_cumul
+          N_nitrification_cumul: N_nitrification_cumul
+          NO3_Nsoil_total: NO3_Nsoil_total
+          N_leached: N_leached
+          N_leached_day: N_leached_day
+          NO3_leachate_conc: NO3_leachate_conc
+          NH4_leachate_conc: NH4_leachate_conc
+          N_lost_tile_drain: N_lost_tile_drain
+          N_lost_tile_drain_day: N_lost_tile_drain_day
+          NO3_conc_tile_drain: NO3_conc_tile_drain
+          N_mineralization_cumul: N_mineralization_cumul
+          organic_N_in_soil: organic_N_in_soil
+          residue_N_remaining: residue_N_remaining
+          NH3_volatilization_rate: NH3_volatilization_rate
+          nitrificat_rate_oxid_lyr: nitrificat_rate_oxid_lyr
+          # Phosphorus dynamics
+          litter_P_on_surface: litter_P_on_surface
+          litter_P_total: litter_P_total
+          total_active_P_kg/ha: total_active_P_kg/ha
+          P_immobilized_cum: P_immobilized_cum
+          total_inorganic_P_in_soil: total_inorganic_P_in_soil
+          total_labile_P_in_soil: total_labile_P_in_soil
+          P_leached: P_leached
+          organic_P_active_surface: organic_P_active_surface
+          P_conc_tile_drain: P_conc_tile_drain
+          org_P_active_soil_total: org_P_active_soil_total
+          total_soil_P: total_soil_P
+          soil_P_at_maturity: soil_P_at_maturity
+          # Water
+          soil_water_by_layer: soil_water_by_layer
+          # Roots
+          root_length_dens_lyr: root_length_dens_lyr
+          root_mass_dens_lyr: root_mass_dens_lyr
+          specific_root_length_lyr: specific_root_length_lyr
+          root_length_dens_proj: root_length_dens_proj
+          # Temperature
+          soil_temperature_by_lyr: soil_temperature_by_lyr
+
+      - type: map_headers
+        target_section: WEATHER_GENERAL
+        rename_map:
+          weather_station_id: weather_station_id
+          weather_notes: weather_notes
+          distrib_restrictions_wst: distrib_restrictions_wst
+          file_version_wst: file_version_wst
+          revision_date_first_wst: revision_date_first_wst
+          revision_date_latest_wst: revision_date_latest_wst
+          revision_notes_wst: revision_notes_wst
+          weather_citation: weather_citation
+          weather_license: weather_license
+          weather_sta_reference: weather_sta_reference
+          # weather_file: weather_file
+
+      - type: map_headers
+        target_section: STATION_METADATA
+        rename_map:
+          # TODO: add summary pataneters absent from template??
+          weather_station_id: weather_station_id
+          weather_station_name: weather_station_name
+          weather_station_site: weather_station_site
+          wsta_location_country: wsta_location_country
+          wsta_loc_2nd_level: wsta_loc_2nd_level
+          wsta_loc_3rd_level: wsta_loc_3rd_level
+          weather_sta_latitude: weather_sta_latitude
+          weather_sta_longitude: weather_sta_longitude
+          weather_sta_elevation: weather_sta_elevation
+          temperature_sensor_ht: temperature_sensor_ht
+          ref_height_windsp_meas: ref_height_windsp_meas
+          ref_height_weather_meas: ref_height_weather_meas
+          angstrom_coef_a_year: angstrom_coef_a_year
+          angstrom_coef_b_year: angstrom_coef_b_year
+          psychrometric_constant: psychrometric_constant
+          psychrometer_ventilation: psychrometer_ventilation
+          source_daily_weather: source_daily_weather
+          anonymize_sta_location: anonymize_sta_location
+
+      - type: map_headers
+        target_section: WEATHER_DAILY
+        rename_map:
+          weather_station_id: weather_station_id
+          weather_date: weather_date
+          solar_radiation: solar_radiation
+          radiation_shortwave: radiation_shortwave
+          PAR_photon_flux_density: PAR_photon_flux_density
+          cloudiness_factor: cloudiness_factor
+          daylength_sunrise_sunset: daylength_sunrise_sunset
+          daylength_3_deg: daylength_3_deg
+          daylength_twilight_basis: daylength_twilight_basis
+          maximum_temperature: maximum_temperature
+          minimum_temperature: minimum_temperature
+          temp_average_daily: temp_average_daily
+          temp_avg_daylight: temp_avg_daylight
+          temp_avg_daily_air: temp_avg_daily_air
+          temperature_dewpoint: temperature_dewpoint
+          dry_bulb_temper_avg_day: dry_bulb_temper_avg_day
+          temperature_wet-bulb: temperature_wet-bulb
+          precipitation: precipitation
+          relative_humidity_min: relative_humidity_min
+          relative_humidity_max: relative_humidity_max
+          realtive_humidity_avg: realtive_humidity_avg
+          evaporation_pan: evaporation_pan
+          evapotranspiration_reference: evapotranspiration_reference
+          vapor_pressure: vapor_pressure
+          wind_speed_daily: wind_speed_daily
+          CO2_conc_atmosphere_daily: CO2_conc_atmosphere_daily
+          ambient_CO2_conc: ambient_CO2_conc
+          ozone_daily_max: ozone_daily_max
+          sunshine_duration: sunshine_duration
+          flag_for_weather_data: flag_for_weather_data
+          weather_daily_comments: weather_daily_comments
+
+      - type: map_headers
+        target_section: WEATHER_GENER_PARMS
+        rename_map:
+          weather_station_id: weather_station_id
+          month: month
+          solar_rad_all_day_mon_av: solar_rad_all_day_mon_av
+          solar_rad_dry_d_mon_sd: solar_rad_dry_d_mon_sd
+          solar_rad_dry_day_mon_av: solar_rad_dry_day_mon_av
+          solar_rad_wet_d_mon_avg: solar_rad_wet_d_mon_avg
+          solar_rad_wet_d_mon_sd: solar_rad_wet_d_mon_sd
+          sunshine_duration_month: sunshine_duration_month
+          temp_max_all_days_mon_av: temp_max_all_days_mon_av
+          temp_max_dry_days_mon_av: temp_max_dry_days_mon_av
+          temp_max_dry_days_st_dev: temp_max_dry_days_st_dev
+          temp_max_wet_days_mon_av: temp_max_wet_days_mon_av
+          temp_max_wet_days_st_dev: temp_max_wet_days_st_dev
+          temp_min_all_days_mon_av: temp_min_all_days_mon_av
+          temp_min_all_days_mon_sd: temp_min_all_days_mon_sd
+          angstrom_coef_a_month: angstrom_coef_a_month
+          angstrom_coef_b_month: angstrom_coef_b_month
+          rainfall_parm_alpha: rainfall_parm_alpha
+          rainfall_total: rainfall_total
+          prob_dry-wet_sequence: prob_dry-wet_sequence
+          rainy_days: rainy_days
+          weather_gen_notes: weather_gen_notes
+
+      - type: map_headers
+        target_section: SUMMARY
+        rename_map:
+          experiment_id: experiment_id
+          experiment_year: experiment_year
+          crop_id: crop_id
+          treatment_number: treatment_number
+          # Growth
+          plant_density_harvest: plant_density_harvest
+          tops_dry_weight_maturity: tops_dry_weight_maturity
+          harvest_yld_matur_dry_wt: harvest_yld_matur_dry_wt
+          tops_dry_weight_harvest: tops_dry_weight_harvest
+          roots_dry_weight_harvest: roots_dry_weight_harvest
+          plant_density_emergence: plant_density_emergence
+          plant_density_maturity: plant_density_maturity
+          leaf_area_index_maximum: leaf_area_index_maximum
+          grain_oil_conc_maturity: grain_oil_conc_maturity
+          grain_protein_conc_matur: grain_protein_conc_matur
+          grain_starch_conc_matur: grain_starch_conc_matur
+          grain_gluten_conc_matur: grain_gluten_conc_matur
+          purity: purity
+          threshing_%_at_maturity: threshing_%_at_maturity
+          eye_weight: eye_weight
+          lint_weight_maturity: lint_weight_maturity
+          lint_fraction_maturity: lint_fraction_maturity
+          fiber_length: fiber_length
+          fiber_uniformity: fiber_uniformity
+          fiber_strength: fiber_strength
+          fiber_micronaire: fiber_micronaire
+          fiber_color_grade_Rd: fiber_color_grade_Rd
+          fiber_color_grade_B: fiber_color_grade_B
+          fiber_HVI_trash: fiber_HVI_trash
+          fiber_elongation: fiber_elongation
+          harv_yld_grn_fr_pl_mat: harv_yld_grn_fr_pl_mat
+          grain_dry_wt_matur_plnt: grain_dry_wt_matur_plnt
+          unit_dry_wt_harv_matur: unit_dry_wt_harv_matur
+          byprod_removed_at_matur: byprod_removed_at_matur
+          tops_dead_dry_wt_anthes: tops_dead_dry_wt_anthes
+          cane_yield_harv: cane_yield_harv
+          chaff_dry_weight_harvest: chaff_dry_weight_harvest
+          tops_dry_weight_anthesis: tops_dry_weight_anthesis
+          tops_dw_mat_stdev: tops_dw_mat_stdev
+          harv_yld_grn_fresh_matur: harv_yld_grn_fresh_matur
+          grain_dry_wt_at_maturity: grain_dry_wt_at_maturity
+          harv_yield_matur_f_wt: harv_yield_matur_f_wt
+          yield_corrected: yield_corrected
+          leaf_dry_wt_at_maturity: leaf_dry_wt_at_maturity
+          pod_dry_weight_maturity: pod_dry_weight_maturity
+          tot_dry_wt_at_harvest: tot_dry_wt_at_harvest
+          tot_dry_weight_maturity: tot_dry_weight_maturity
+          tuber_dry_wt_at_harvest: tuber_dry_wt_at_harvest
+          vegetative_dry_wt_matur: vegetative_dry_wt_matur
+          test_wt_fresh_maturity: test_wt_fresh_maturity
+          grain_ethanol_yield: grain_ethanol_yield
+          canopy_height_anthesis: canopy_height_anthesis
+          canopy_height_maturity: canopy_height_maturity
+          canopy_height_harvest: canopy_height_harvest
+          canopy_height_max: canopy_height_max
+          canopy_ht_max_stdev: canopy_ht_max_stdev
+          plant_height_anthesis: plant_height_anthesis
+          plant_height_max: plant_height_max
+          plant_height_maturity: plant_height_maturity
+          ear_height_max: ear_height_max
+          ear_ht_max_stdev: ear_ht_max_stdev
+          grain_unit_dry_wt_matur: grain_unit_dry_wt_matur
+          tuber_fresh_wt_harvest: tuber_fresh_wt_harvest
+          eye_no_per_unit_maturity: eye_no_per_unit_maturity
+          harvest_no_per_grp_matur: harvest_no_per_grp_matur
+          harv_no_per_unit: harv_no_per_unit
+          leaf_no_per_stem_matur: leaf_no_per_stem_matur
+          leaf_number_per_stem_max: leaf_number_per_stem_max
+          eye_number_at_maturity: eye_number_at_maturity
+          harvest_no_at_maturity: harvest_no_at_maturity
+          pod_number_maturity: pod_number_maturity
+          panicle_number_maturity: panicle_number_maturity
+          tiller_number_maturity: tiller_number_maturity
+          fruit_fresh_wt_harvest: fruit_fresh_wt_harvest
+          harvest_index_maturity: harvest_index_maturity
+          pod_harv_index_maturity: pod_harv_index_maturity
+          grain_moisture_maturity: grain_moisture_maturity
+          grain_moisture_harvest: grain_moisture_harvest
+          harvest_moisture: harvest_moisture
+          dry_matter_content: dry_matter_content
+          harvest_moisture_stdev: harvest_moisture_stdev
+          harvest_moisture_maturity: harvest_moisture_maturity
+          harvest_moisture_maturity_stdev: harvest_moisture_maturity_stdev
+          byprod_removed_at_harv: byprod_removed_at_harv
+          harvest_yield_harvest_dw: harvest_yield_harvest_dw
+          harvest_yld_stdev: harvest_yld_stdev
+          harv_yield_harv_f_wt: harv_yield_harv_f_wt
+          harv_yield_harv_f_wt_sd: harv_yield_harv_f_wt_sd
+          # observation_note: observation_note
+          # Development
+          anthesis_date: anthesis_date
+          anthesis_day_of_year: anthesis_day_of_year
+          anthesis_dap: anthesis_dap
+          anthesis_dap_stdev: anthesis_dap_stdev
+          physiologic_maturity_dat: physiologi_maturity_dat
+          maturity_day_of_year: maturity_day_of_year
+          physiologic_maturity_dap: physiologic_maturity_dap
+          phys_mat_dap_stdev: phys_mat_dap_stdev
+          harvest_date: harvest_date
+          harvest_dap: harvest_dap
+          emergence_date: emergence_date
+          growth_stage_harvest: growth_stage_harvest
+          growth_stage_apex_1_cm: growth_stage_apex_1_cm
+          growth_stage_branch_1: growth_stage_branch_1
+          growth_stage_branch_2: growth_stage_branch_2
+          growth_stage_branch_3: growth_stage_branch_3
+          growth_stage_branch_4: growth_stage_branch_4
+          silking_date: silking_date
+          double_ridge_date: double_ridge_date
+          ear_emergence_date: ear_emergence_date
+          forcing_date: forcing_date
+          panicle_initiation_date: panicle_initiation_date
+          panicle_initiation_dap: panicle_initiation_dap
+          jointing_date: jointing_date
+          leaf_3_full_expansion: leaf_3_full_expansion
+          leaf_5_full_expansion: leaf_5_full_expansion
+          last_leaf_stage: last_leaf_stage
+          maturity_day_2: maturity_day_2
+          first_pod_set_date: first_pod_set_date
+          first_pod_set_days: first_pod_set_days
+          beginning_bloom_stage: beginning_bloom_stage
+          beginning_peg_stage: beginning_peg_stage
+          beginning_pod_stage: beginning_pod_stage
+          full_size_pod_stage: full_size_pod_stage
+          full_size_pod_date: full_size_pod_date
+          full_pod_days: full_pod_days
+          beginning_seed_stage: beginning_seed_stage
+          full_seed_stage: full_seed_stage
+          beginning_maturity_date: beginning_maturity_date
+          harvest_maturity_stage: harvest_maturity_stage
+          harvest_maturity_dap: harvest_maturity_dap
+          harvest_mat_dap_stdev: harvest_mat_dap_stdev
+          pod_over-mature_stage: pod_over-mature_stage
+          tuber_initiation_stage: tuber_initiation_stage
+          tuber_initiation_dap: tuber_initiation_dap
+          terminal_spikelet_stage: terminal_spikelet_stage
+          zadoks_21_growth_stage: zadoks_21_growth_stage
+          zadoks_30_growth_stage: zadoks_30_growth_stage
+          zadoks_31_growth_stage: zadoks_31_growth_stage
+          zadoks_37_growth_stage: zadoks_37_growth_stage
+          zadoks_39_growth_stage: zadoks_39_growth_stage
+          first_square_date: first_square_date
+          growing_season_duration: growing_season_duration
+          # Nutrients
+          planting_material_dry_wt: planting_material_dry_wt
+          tillage_operations_no: tillage_operations_no
+          tops_N_at_anthesis: tops_N_at_anthesis
+          tops_N_at_maturity: tops_N_at_maturity
+          tops_C_at_maturity: tops_C_at_maturity
+          grain_N_at_maturity: grain_N_at_maturity
+          grain_C_at_maturity: grain_C_at_maturity
+          grain_N_conc_maturity: grain_N_conc_maturity
+          root_N_at_harvest: root_N_at_harvest
+          stem_N_at_maturity: stem_N_at_maturity
+          veg_N_at_maturity: veg_N_at_maturity
+          veg_C_at_maturity: veg_C_at_maturity
+          extractable_soil_wtr_mat: extractable_soil_wtr_mat
+          tuber_stem_leaf_N_harv: tuber_stem_leaf_N_harv
+          total_N_at_maturity: total_N_at_maturity
+          tuber_N_at_harvest: tuber_N_at_harvest
+          tuber_N_conc_harvest: tuber_N_conc_harvest
+          tops_P_at_anthesis: tops_P_at_anthesis
+          tops_P_at_maturity: tops_P_at_maturity
+          grain_P_at_maturity: grain_P_at_maturity
+          grain_P_conc_maturity: grain_P_conc_maturity
+          root_P_at_harvest: root_P_at_harvest
+          stem_P_at_maturity: stem_P_at_maturity
+          shoots_P_at_maturity: shoots_P_at_maturity
+          tuber_P_at_harvest: tuber_P_at_harvest
+          N_fixed_during_season: N_fixed_during_season
+          # Comments
+          # TODO: coalesce notes from different subsets OR add to parent instead
+          # observation_note: observation_note
+
+      - type: map_headers
+        target_section: TIME_SERIES
+        rename_map:
+          experiment_id: experiment_id
+          experiment_year: experiment_year
+          crop_id: crop_id
+          treatment_number: treatment_number
+          date_of_measurement: date_of_measurement
+          # Plant growth and development
+          tops_C: tops_C
+          tops_dry_weight: tops_dry_weight
+          leaf_dry_weight: leaf_dry_weight
+          leaf_area_index: leaf_area_index
+          grain_dry_weight: grain_dry_weight
+          canopy_height: canopy_height
+          canopy_length: canopy_length
+          plant_height: plant_height
+          leaf_carbohydrate: leaf_carbohydrate
+          stem_carbohydrate_conc: stem_carbohydrate_conc
+          grain_carbohydrate_conc: grain_carbohydrate_conc
+          grain_oil_conc: grain_oil_conc
+          PAR_absorbed: PAR_absorbed
+          pods_mature: pods_mature
+          reserves_CH2O_conc: reserves_CH2O_conc
+          seed_P_conc: seed_P_conc
+          shelling_percentage: shelling_percentage
+          growth_rate_relative: growth_rate_relative
+          root_length: root_length
+          leaf_area_flag_leaf: leaf_area_flag_leaf
+          specific_leaf_area: specific_leaf_area
+          leaf_area_per_leaf: leaf_area_per_leaf
+          leaf_area_new: leaf_area_new
+          leaf_area_per_plant: leaf_area_per_plant
+          flag_time_series_data: flag_time_series_data
+          growth_stage: growth_stage
+          growth_stage_Zadoks: growth_stage_Zadoks
+          growth_stage_Haun: growth_stage_Haun
+          growth_stage_BBCH: growth_stage_BBCH
+          leaf_number_as_haun_stg: leaf_number_as_haun_stg
+          crop_age: crop_age
+          crop_age_vegetative_days: crop_age_vegetative_days
+          assimilation_reduc: assimilation_reduc
+          root_weight_length: root_weight_length
+          corm_unit_dry_weight: corm_unit_dry_weight
+          lint_weight: lint_weight
+          stem_structural_weight: stem_structural_weight
+          crop_growth_rate: crop_growth_rate
+          carbohydr_accumulation: carbohydr_accumulation
+          carbohydr_mobilization: carbohydr_mobilization
+          growth_respiration_daily: growth_respiration_daily
+          maintenance_respir_CH2O: maintenance_respir_CH2O
+          tops_dry_weight_plant: tops_dry_weight_plant
+          leaf_dry_wt_per_plant: leaf_dry_wt_per_plant
+          root_senesced_dry_weight: root_senesced_dry_weight
+          seed_wt_per_plant: seed_wt_per_plant
+          stem_dry_wt_per_plant: stem_dry_wt_per_plant
+          carbohydr_pool_reduction: carbohydr_pool_reduction
+          ear_dry_wt_per_shoot: ear_dry_wt_per_shoot
+          basal_wt: basal_wt
+          dead_canopy_dry_wt: dead_canopy_dry_wt
+          cane_yield_fresh_wt: cane_yield_fresh_wt
+          chaff_dry_weight: chaff_dry_weight
+          crown_dry_weight: crown_dry_weight
+          tops_fresh_weight: tops_fresh_weight
+          dead_material_dry_weight: dead_material_dry_weight
+          ear_plus_grain_dry_wt: ear_plus_grain_dry_wt
+          ear_grain_chaff_dry_wt: ear_grain_chaff_dry_wt
+          fruit_fresh_weight: fruit_fresh_weight
+          yield_dry_matter_content: yield_dry_matter_content
+          yield_moisture_content: yield_moisture_content
+          sucrose_commercial_d_wt: sucrose_commercial_d_wt
+          harvest_yield_at_day_dw: harvest_yield_at_day_dw
+          dead_leaf_dry_weight: dead_leaf_dry_weight
+          nodule_dry_weight: nodule_dry_weight
+          corm_dry_weight: corm_dry_weight
+          panicle_weight: panicle_weight
+          pod_dry_weight: pod_dry_weight
+          pod_detached_dry_weight: pod_detached_dry_weight
+          dead_root_dry_weight: dead_root_dry_weight
+          stem_reserves_weight: stem_reserves_weight
+          reserves_weight: reserves_weight
+          root_dry_weight: root_dry_weight
+          stem_plus_chaff: stem_plus_chaff
+          dead_stem_dry_weight: dead_stem_dry_weight
+          seed_P: seed_P
+          shell_dry_weight: shell_dry_weight
+          shoot_weight: shoot_weight
+          sucrose_dry_weight: sucrose_dry_weight
+          sucker_dry_weight: sucker_dry_weight
+          stem_dry_weight: stem_dry_weight
+          total_biomass_dry_wt: total_biomass_dry_wt
+          tot_crop_wt_w_senesced: tot_crop_wt_w_senesced
+          litter_trash_dry_wt: litter_trash_dry_wt
+          tops_roots_storage_d_wt: tops_roots_storage_d_wt
+          tuber_dry_weight: tuber_dry_weight
+          leaf_dry_wt_green_areas: leaf_dry_wt_green_areas
+          assimilate_production: assimilate_production
+          dead_mater_dry_increase: dead_mater_dry_increase
+          senescence_rate_tops: senescence_rate_tops
+          respiration_translocat: respiration_translocat
+          canopy_width: canopy_width
+          root_depth: root_depth
+          ear_area_index: ear_area_index
+          stem_area_index: stem_area_index
+          green_area_index: green_area_index
+          leaf_ar_index_live_dead: leaf_ar_index_live_dead
+          grain_unit_dry_weight: grain_unit_dry_weight
+          specif_lf_wt_shaded_noon: specif_lf_wt_shaded_noon
+          specif_lf_wt_sunlit_noon: specif_lf_wt_sunlit_noon
+          harvest_yield_fresh_wt: harvest_yield_fresh_wt
+          tuber_fresh_weight: tuber_fresh_weight
+          leaf_phot_shaded_lf_noon: leaf_phot_shaded_lf_noon
+          leaf_phot_sunlit_lf_noon: leaf_phot_sunlit_lf_noon
+          CO2_factor_photosynth: CO2_factor_photosynth
+          daylength_factor: daylength_factor
+          leaf_number_per_stem: leaf_number_per_stem
+          leaf_tip_number_per_stem: leaf_tip_number_per_stem
+          temp_fact_leaf_growth: temp_fact_leaf_growth
+          temp_fact_photosyn: temp_fact_photosyn
+          vernalization_factor: vernalization_factor
+          leaf_no_increase_rate: leaf_no_increase_rate
+          leaf_appearance_rate: leaf_appearance_rate
+          lf_appear_rate_bio_day_b: lf_appear_rate_bio_day_b
+          plant_density: plant_density
+          ear_number: ear_number
+          ear_length: ear_length
+          grain_number: grain_number
+          corm_population: corm_population
+          pod_number: pod_number
+          panicle_number: panicle_number
+          shoot_(apex)_number: shoot_(apex)_number
+          tiller_number: tiller_number
+          grain_number_per_plant: grain_number_per_plant
+          shoot_apex_num_per_plant: shoot_apex_num_per_plant
+          spikelet_number: spikelet_number
+          tiller_number_per_plant: tiller_number_per_plant
+          grain_number_per_shoot: grain_number_per_shoot
+          grain_number_per_ear: grain_number_per_ear
+          partitioning_of_wt_shoot: partitioning_of_wt_shoot
+          harvest_index: harvest_index
+          pod_harvest_index: pod_harvest_index
+          sucrose_harvest_index: sucrose_harvest_index
+          tot_wt_CH2O_equiv: tot_wt_CH2O_equiv
+          can_wt_CH2O_equiv: can_wt_CH2O_equiv
+          tot_cost_glu_eqiv: tot_cost_glu_eqiv
+          can_cost_glu_eqiv: can_cost_glu_eqiv
+          leaf_cost_glu_eqiv: leaf_cost_glu_eqiv
+          stem_cost_glu_eqiv: stem_cost_glu_eqiv
+          root_cost_glu_eqiv: root_cost_glu_eqiv
+          pod_cost_glu_eqiv: pod_cost_glu_eqiv
+          seed_cost_glu_eqiv: seed_cost_glu_eqiv
+          # Plant nutrients
+          chaff_N_concentration: chaff_N_concentration
+          tops_N_concentration: tops_N_concentration
+          tops_protein_concentration: tops_protein_concentration
+          grain_N_conc: grain_N_conc
+          grain_protein_concentration: grain_protein_concentration
+          leaf_N_concentration: leaf_N_concentration
+          shaded_leaf_N_conc: shaded_leaf_N_conc
+          sunlit_leaf_N_conc: sunlit_leaf_N_conc
+          root_N_concentration: root_N_concentration
+          pod_N_conc: pod_N_conc
+          shell_N_conc: shell_N_conc
+          stem_N_conc: stem_N_conc
+          tuber_N_conc: tuber_N_conc
+          veg_stem_leaf_N_conc: veg_stem_leaf_N_conc
+          specific_leaf_N: specific_leaf_N
+          reserve_N_per_plant: reserve_N_per_plant
+          tops_N: tops_N
+          N_fixed: N_fixed
+          N_uptake_cumulative: N_uptake_cumulative
+          N_uptake: N_uptake
+          reserve_N: reserve_N
+          tops_(ie_canopy)_N: tops_(ie_canopy)_N
+          tuber_stem_leaf_N: tuber_stem_leaf_N
+          tuber_N: tuber_N
+          vegetative_N_content: vegetative_N_content
+          fruit_N_content: fruit_N_content
+          chaff_N_content: chaff_N_content
+          grain_N: grain_N
+          leaf_N: leaf_N
+          green_leaf_N: green_leaf_N
+          dead_leaf_N: dead_leaf_N
+          root_N: root_N
+          stem_N: stem_N
+          dead_N_increment: dead_N_increment
+          N_fixation_rate: N_fixation_rate
+          N_uptake_rate: N_uptake_rate
+          N_factor_for_leaf_growth: N_factor_for_leaf_growth
+          N_factor_photosynthesis: N_factor_photosynthesis
+          N_factor_for_senescence: N_factor_for_senescence
+          N_factor_for_tillering: N_factor_for_tillering
+          N_uptake_to_demand_ratio: N_uptake_to_demand_ratio
+          leaf_critical_N_factor: leaf_critical_N_factor
+          roots_critical_N_factor: roots_critical_N_factor
+          stem_critical_N_factor: stem_critical_N_factor
+          N_factor_for_N_uptake: N_factor_for_N_uptake
+          nitrogen_harvest_index: nitrogen_harvest_index
+          chaff_P_concentration: chaff_P_concentration
+          tops_P_concentration: tops_P_concentration
+          grain_P_conc: grain_P_conc
+          leaf_P_concentration: leaf_P_concentration
+          plant_P_conc: plant_P_conc
+          root_P_conc: root_P_conc
+          shoot_P_conc: shoot_P_conc
+          shell_P_conc: shell_P_conc
+          stem_P_conc: stem_P_conc
+          tuber_P_conc: tuber_P_conc
+          veg_stem_leaf_P_conc: veg_stem_leaf_P_conc
+          plant_death_temperature: plant_death_temperature
+          reserve_P_per_plant: reserve_P_per_plant
+          chaff_P_content: chaff_P_content
+          tops_P: tops_P
+          grain_P: grain_P
+          leaf_P: leaf_P
+          plant_P: plant_P
+          stable_P_kg/ha: stable_P_kg/ha
+          P_uptake_cum: P_uptake_cum
+          reserve_P: reserve_P
+          root_P: root_P
+          shell_P: shell_P
+          shoot_P: shoot_P
+          stem_P: stem_P
+          tops_(ie_canopy)_P: tops_(ie_canopy)_P
+          tuber_stem_leaf_P: tuber_stem_leaf_P
+          tuber_P: tuber_P
+          vegetative_P_content: vegetative_P_content
+          dead_P_increment: dead_P_increment
+          P_uptake_day: P_uptake_day
+          phosphorus_harvest_index: phosphorus_harvest_index
+          tops_K: tops_K
+          tops_S: tops_S
+          tops_Fe: tops_Fe
+          tops_Zn: tops_Zn
+          grain_K: grain_K
+          grain_S: grain_S
+          # Plant pests and diseases
+          plant_pop_reduct_cum: plant_pop_reduct_cum
+          incr_disease_lf_ar_pcent: incr_disease_lf_ar_pcent
+          plant_pop_reduction_day: plant_pop_reduction_day
+          root_length_consum_cumul: root_length_consum_cumul
+          root_length_consumed: root_length_consumed
+          root_lngth_dens_cons_cum: root_lngth_dens_cons_cum
+          root_length_dens_consum: root_length_dens_consum
+          increase_disease_lf_area: increase_disease_lf_area
+          leaf_mass_consumed_cumu: leaf_mass_consumed_cumu
+          root_mass_consum_cumul: root_mass_consum_cumul
+          grain_mass_consum_cumul: grain_mass_consum_cumul
+          shell_mass_consum_cumul: shell_mass_consum_cumul
+          stem_mass_consum_cumul: stem_mass_consum_cumul
+          grain_mass_consumed: grain_mass_consumed
+          stem_mass_consumed: stem_mass_consumed
+          leaf_mass_consumed: leaf_mass_consumed
+          root_mass_consumed: root_mass_consumed
+          shell_mass_consumed: shell_mass_consumed
+          leaf_area_consumed_cumu: leaf_area_consumed_cumu
+          leaf_area_consumption: leaf_area_consumption
+          corn_earworm: corn_earworm
+          velvetbn_catrpllar_5inst: velvetbn_catrpllar_5inst
+          velvetbn_catrpllar_6inst: velvetbn_catrpllar_6inst
+          grain_numb_consum_cumul: grain_numb_consum_cumul
+          shell_numb_consum_cumul: shell_numb_consum_cumul
+          fall_armyworm: fall_armyworm
+          root_worm: root_worm
+          southern_green_stinkbug: southern_green_stinkbug
+          soybean_looper: soybean_looper
+          grain_number_consumed: grain_number_consumed
+          shell_number_consumed: shell_number_consumed
+          lodging_percent: lodging_percent
+          plant_population: plant_population
+          ## Comments
+          # TODO: coalesce notes from different subsets OR add to parent instead
+          obs_time_series_comment: obs_time_series_comment
+

@@ -112,7 +112,7 @@ Max Mustermann
 @N MANAGEMENT  PLANT IRRIG FERTI RESID HARVS
  1 MA              R     N     R     N     M
 @N OUTPUTS     FNAME OVVEW SUMRY FROPT GROUT CAOUT WAOUT NIOUT MIOUT DIOUT VBOSE CHOUT OPOUT FMOPT
- 1 OU              N     Y     Y     1     Y     N     N     N     N     N     Y     N     N     A
+ 1 OU              N     Y     Y     1     Y     N     N     Y     N     N     Y     N     N     A
 @N PLANTING    PFRST PLAST PH2OL PH2OU PH2OD PSTMX PSTMN
  1 PL            -99   -99   -99   -99   -99   -99   -99
 @N IRRIGATION  IMDEP ITHRL ITHRU IROFF IMETH IRAMT IREFF

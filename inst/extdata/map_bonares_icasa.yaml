@@ -90,14 +90,26 @@ rules:
     target:
       section: PERSONS
     actions:
-      - type: split_column
-        input_map:
-          x: Contact_persons
-        output_map:
-          - {output_header: First_name, component: first}
-          - {output_header: Last_name, component: last}
-          - {output_header: Middle_name, component: middle}
-        delimiter: " "
+      # Split name components
+      # TODO: add to select rule
+      - type: extract_string
+        input_map: 
+          - { header: Contact_persons }
+        output_col: researcher_first_name
+        # Regex to capture the first word
+        pattern: '^(\S+)'
+      - type: extract_string
+        input_map: 
+          - { header: Contact_persons }
+        output_col: researcher_last_name
+        # Regex to capture the last word
+        pattern: '(\S+)$'
+      - type: extract_string
+        input_map: 
+          - { header: raw_name }
+        output_col: researcher_name_mi
+        # Logic: start-word-space (capture-middle) space-word-end
+        pattern: '^\S+\s+(.*)\s+\S+$'
 
   - mapping_uid: '3'
     notes: "Selects and renames columns from METADATA for the INSTITUTIONS section."
@@ -105,8 +117,6 @@ rules:
       section: INSTITUTIONS
     target:
       section: INSTITUTIONS
-    select_final_columns:
-      institute_name: Institutions
 
   - mapping_uid: '4'
     notes: "Selects and renames columns from METADATA for the DOCUMENTS section."

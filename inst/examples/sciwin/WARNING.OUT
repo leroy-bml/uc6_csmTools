@@ -2,7 +2,7 @@
 
 ******************************************************************************
 
-*DSSAT Cropping System Model Ver. 4.8.2.000 -release  JAN 12, 2026 12:42:39
+*DSSAT Cropping System Model Ver. 4.8.2.000 -release  JAN 19, 2026 13:40:14
 
 *RUN   1        : No N                      WHAPS048 HWOC2501    1
  MODEL          : WHAPS048 - Wheat
@@ -31,25 +31,25 @@
 
  SOLORG  YEAR DOY = 2024 296
  The initialized C:N ratio of the soil organic                                 
- matter (humus) in layer   3 is unlikely:      9.5                             
+ matter (humus) in layer   3 is unlikely:      9.8                             
  A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
  Please check your SOIL.SOL file.                                              
 
  SOLORG  YEAR DOY = 2024 296
  The initialized C:N ratio of the soil organic                                 
- matter (humus) in layer   4 is unlikely:      9.7                             
+ matter (humus) in layer   4 is unlikely:      9.4                             
  A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
  Please check your SOIL.SOL file.                                              
 
  SOLORG  YEAR DOY = 2024 296
  The initialized C:N ratio of the soil organic                                 
- matter (humus) in layer   5 is unlikely:      9.7                             
+ matter (humus) in layer   6 is unlikely:      9.7                             
  A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
  Please check your SOIL.SOL file.                                              
 
  SOLORG  YEAR DOY = 2024 296
  The initialized C:N ratio of the soil organic                                 
- matter (humus) in layer   7 is unlikely:      8.7                             
+ matter (humus) in layer   7 is unlikely:      9.7                             
  A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
  Please check your SOIL.SOL file.                                              
 
@@ -329,6 +329,9 @@
  File: LL912501.WTH                                                            
  Record will be ignored.                                                       
 
+ NWGRNI  YEAR DOY = 2025 167
+ pnout bound check >navl error                                                 
+
  IPWTH   YEAR DOY = 2025 168
  Duplicate record found in weather file.                                       
  Year 2025 DOY 167                                                             
@@ -340,6 +343,9 @@
  Year 2025 DOY 168                                                             
  File: LL912501.WTH                                                            
  Record will be ignored.                                                       
+
+ NWGRNI  YEAR DOY = 2025 169
+ pnout bound check >navl error                                                 
 
  IPWTH   YEAR DOY = 2025 170
  Duplicate record found in weather file.                                       
@@ -364,6 +370,9 @@
  Year 2025 DOY 172                                                             
  File: LL912501.WTH                                                            
  Record will be ignored.                                                       
+
+ NWGRNI  YEAR DOY = 2025 173
+ pnout bound check >navl error                                                 
 
  IPWTH   YEAR DOY = 2025 174
  Duplicate record found in weather file.                                       
@@ -401,6 +410,9 @@
  File: LL912501.WTH                                                            
  Record will be ignored.                                                       
 
+ NWGRNI  YEAR DOY = 2025 179
+ pnout bound check >navl error                                                 
+
  IPWTH   YEAR DOY = 2025 180
  Duplicate record found in weather file.                                       
  Year 2025 DOY 179                                                             
@@ -425,11 +437,17 @@
  File: LL912501.WTH                                                            
  Record will be ignored.                                                       
 
+ NWGRNI  YEAR DOY = 2025 183
+ pnout bound check >navl error                                                 
+
  IPWTH   YEAR DOY = 2025 184
  Duplicate record found in weather file.                                       
  Year 2025 DOY 183                                                             
  File: LL912501.WTH                                                            
  Record will be ignored.                                                       
+
+ NWGRNI  YEAR DOY = 2025 184
+ pnout bound check >navl error                                                 
 
  IPWTH   YEAR DOY = 2025 185
  Duplicate record found in weather file.                                       
@@ -476,17 +494,11 @@
  File: LL912501.WTH                                                            
  Record will be ignored.                                                       
 
- NWGRNI  YEAR DOY = 2025 191
- pnout bound check >navl error                                                 
-
  IPWTH   YEAR DOY = 2025 192
  Duplicate record found in weather file.                                       
  Year 2025 DOY 191                                                             
  File: LL912501.WTH                                                            
  Record will be ignored.                                                       
-
- NWGRNI  YEAR DOY = 2025 192
- pnout bound check >navl error                                                 
 
  IPWTH   YEAR DOY = 2025 193
  Duplicate record found in weather file.                                       
@@ -532,7 +544,7 @@
 
 ******************************************************************************
 
-*DSSAT Cropping System Model Ver. 4.8.2.000 -release  JAN 12, 2026 12:42:40
+*DSSAT Cropping System Model Ver. 4.8.2.000 -release  JAN 19, 2026 13:40:14
 
 *RUN   2        : 147 kg[N]/ha - broadcast  WHAPS048 HWOC2501    3
  MODEL          : WHAPS048 - Wheat
@@ -561,25 +573,25 @@
 
  SOLORG  YEAR DOY = 2024 296
  The initialized C:N ratio of the soil organic                                 
- matter (humus) in layer   3 is unlikely:      9.5                             
+ matter (humus) in layer   3 is unlikely:      9.8                             
  A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
  Please check your SOIL.SOL file.                                              
 
  SOLORG  YEAR DOY = 2024 296
  The initialized C:N ratio of the soil organic                                 
- matter (humus) in layer   4 is unlikely:      9.7                             
+ matter (humus) in layer   4 is unlikely:      9.4                             
  A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
  Please check your SOIL.SOL file.                                              
 
  SOLORG  YEAR DOY = 2024 296
  The initialized C:N ratio of the soil organic                                 
- matter (humus) in layer   5 is unlikely:      9.7                             
+ matter (humus) in layer   6 is unlikely:      9.7                             
  A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
  Please check your SOIL.SOL file.                                              
 
  SOLORG  YEAR DOY = 2024 296
  The initialized C:N ratio of the soil organic                                 
- matter (humus) in layer   7 is unlikely:      8.7                             
+ matter (humus) in layer   7 is unlikely:      9.7                             
  A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
  Please check your SOIL.SOL file.                                              
 
@@ -1053,7 +1065,7 @@
 
 ******************************************************************************
 
-*DSSAT Cropping System Model Ver. 4.8.2.000 -release  JAN 12, 2026 12:42:40
+*DSSAT Cropping System Model Ver. 4.8.2.000 -release  JAN 19, 2026 13:40:14
 
 *RUN   3        : 180 kg[N]/ha - broadcast  WHAPS048 HWOC2501    7
  MODEL          : WHAPS048 - Wheat
@@ -1082,25 +1094,25 @@
 
  SOLORG  YEAR DOY = 2024 296
  The initialized C:N ratio of the soil organic                                 
- matter (humus) in layer   3 is unlikely:      9.5                             
+ matter (humus) in layer   3 is unlikely:      9.8                             
  A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
  Please check your SOIL.SOL file.                                              
 
  SOLORG  YEAR DOY = 2024 296
  The initialized C:N ratio of the soil organic                                 
- matter (humus) in layer   4 is unlikely:      9.7                             
+ matter (humus) in layer   4 is unlikely:      9.4                             
  A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
  Please check your SOIL.SOL file.                                              
 
  SOLORG  YEAR DOY = 2024 296
  The initialized C:N ratio of the soil organic                                 
- matter (humus) in layer   5 is unlikely:      9.7                             
+ matter (humus) in layer   6 is unlikely:      9.7                             
  A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
  Please check your SOIL.SOL file.                                              
 
  SOLORG  YEAR DOY = 2024 296
  The initialized C:N ratio of the soil organic                                 
- matter (humus) in layer   7 is unlikely:      8.7                             
+ matter (humus) in layer   7 is unlikely:      9.7                             
  A C:N ratio of 10.0 will be used to calculate initial soil organic N.         
  Please check your SOIL.SOL file.                                              
 
