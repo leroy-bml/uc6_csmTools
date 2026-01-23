@@ -75,12 +75,14 @@ convert_dataset <- function(dataset, input_model, output_model, output_path = NU
   # Applies model-specific logic like aggregations and calculations.
   message("Step 2: Standardizing output format...")
   
+  # --- Drop empty data frames ---
+  mapped_data <- lapply(mapped_data, function(df) unique(df))
+  
+  # --- Apply post-processing logic, if applicable ---
+  dataset_std <- standardize_data(dataset = mapped_data, data_model = output_model)
+  
   # --- Deduplicate and drop NAs ---
   mapped_data_clean <- lapply(mapped_data, remove_all_na_cols)  # TODO: fix deleting exp_year if empty
-  mapped_data_clean <- lapply(mapped_data, function(df) unique(df))
-
-  # --- Apply post-processing logic, if applicable ---
-  dataset_std <- standardize_data(dataset = mapped_data_clean, data_model = output_model)
   
   # --- Return output ---
   out <- export_output(dataset_std, output_path)
