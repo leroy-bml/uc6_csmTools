@@ -18,15 +18,12 @@
   # Note: rules without an 'order' key are assumed to be independent and run first (order = 0).
   
   if (length(transformation_rules) == 0) {
-    # If no transformation rules, the output is just the input
     output_data <- input_data
   } else {
     for (rule in transformation_rules) {
-      
       # If source exists in intermediate output data, use as input (= chained rules)
       if (!is.null(rule$source$section) && rule$source$section %in% names(output_data)) {
         input_df <- output_data[[rule$source$section]]
-        # message(paste0("Rule '", rule$mapping_uid, "' is using intermediate data from section '", rule$source$section, "'."))
       } else {
         input_df <- input_data[[rule$source$section]]
       }
@@ -34,14 +31,14 @@
       if (is.null(input_df)) next
       
       # Merge input and output datasets
-      # Necesary for chained rules involving lookups
+      # Note: necessary for chained rules involving lookups
       merged_data <- c(output_data, input_data)
-      # Remove duplicate names, keeping the one from output_data
+      # Remove duplicate names
       merged_data <- merged_data[!duplicated(names(merged_data))]
       
-      # Execute data wrangling actions
+      # Execute data mapping actions
       transformed_df <- process_actions(
-        # mapping_uid = rule$mapping_uid
+        mapping_uid = rule$mapping_uid,
         actions = rule$actions,
         input_df = input_df,
         dataset = merged_data,
@@ -66,7 +63,7 @@
   schema_rule <- rules[[which(sapply(rules, function(r) r$mapping_uid == schema_rule_uid))]]
   
   if (!is.null(schema_rule)) {
-    final_output_data <- list() # Create a new list for the final, clean output
+    final_output_data <- list()
     
     for (action in schema_rule$actions) {
       if (action$type == "map_headers") {
@@ -86,14 +83,12 @@
             final_cols_list[[new_name]] <- df_to_map[[found_col_name]]
           }
         }
-        # Only the selected and renamed columns form the final data frame
+        
         final_df <- tibble::as_tibble(final_cols_list)
         final_output_data[[target_section]] <- final_df %>%
           dplyr::distinct()
       }
     }
-    # Here you could add logic to handle tables that didn't have a schema mapping
-    # For now, we only keep tables that were explicitly mapped.
     return(final_output_data)
   }
   

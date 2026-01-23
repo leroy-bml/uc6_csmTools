@@ -4,56 +4,57 @@
 #' 
 
 .action_lookup_and_add <- function(action, df, dataset) {
-  
+
   lookup_section <- action$lookup_data_source$section
   cols_to_select <- action$select_columns
-  
+
   # Identify join keys
   if (is.null(action$on_key)) {
-    stop("In 'lookup_and_add', the 'on_key' section defining source and lookup keys must be specified.", call. = FALSE)
+    # warning("In 'lookup_and_add', the 'on_key' section defining source and lookup keys must be specified.", call. = FALSE)
+    stop()
   }
   source_keys <- unlist(action$on_key$source_key)
   lookup_keys <- unlist(action$on_key$lookup_key)
-  
+
   if (all(source_keys %in% names(df))) {
-    
+
     lookup_table <- dataset[[lookup_section]]
     if (is.null(lookup_table)) {
-      warning(paste0("Lookup section '", lookup_section,
-                     "' not found in the dataset. Creating NA columns and proceeding."),
-              call. = FALSE)
+      # warning(paste0("Lookup section '", lookup_section,
+      #                "' not found in the dataset. Creating NA columns and proceeding."),
+      #         call. = FALSE)
       if (!is.null(cols_to_select)) {
         for (new_name in names(cols_to_select)) {
           df[[new_name]] <- NA
         }
       }
     } else {
-      
+
       # Filter lookup
       if (!is.null(action$filter_lookup)) {
         filter_params <- action$filter_lookup
         col_to_filter <- filter_params$column
-        
+
         if (!is.null(col_to_filter) && col_to_filter %in% names(lookup_table)) {
-          
+
           # TODO: add more conditions!
           if (!is.null(filter_params$equals)) {
             lookup_table <- dplyr::filter(lookup_table, .data[[col_to_filter]] == filter_params$equals)
           }
-          
+
         } else {
-          warning(paste0("In filter_lookup, column '", col_to_filter, "' not found in lookup section '",
-                         lookup_section, "'. Filter not applied."),
-                  call. = FALSE)
+          # warning(paste0("In filter_lookup, column '", col_to_filter, "' not found in lookup section '",
+          #                lookup_section, "'. Filter not applied."),
+          #         call. = FALSE)
         }
       }
-      
+
       # Apply filters to lookup tables
       if (!is.null(action$filter)) {
         if (!is.null(action$filter$on_presence_of_columns)) {
           resolved_cols <- sapply(action$filter$on_presence_of_columns, .resolve_column_name, names(lookup_table))
           cols_to_check <- unlist(resolved_cols[!sapply(resolved_cols, is.null)])
-          
+
           if (length(cols_to_check) > 0) {
             lookup_table <- dplyr::filter(lookup_table, dplyr::if_any(tidyr::all_of(cols_to_check), ~ !is.na(.)))
           } else {
@@ -62,33 +63,34 @@
         }
         # Other filter types to add here...
       }
-      
-      
+
+
       available_lookup_cols <- names(lookup_table)
-      
+
       # Critical check: stop if join key missing from lookup table
       missing_keys <- setdiff(lookup_keys, available_lookup_cols)
       if (length(missing_keys) > 0) {
-        stop(paste0("The join key(s) '", paste(missing_keys, collapse = ", "),
-                    "' were not found in lookup section '", lookup_section, "'. Cannot proceed."), 
-             call. = FALSE)
+        # warning(paste0("The join key(s) '", paste(missing_keys, collapse = ", "),
+        #                "' were not found in lookup section '", lookup_section, "'. Cannot proceed."),
+        #         call. = FALSE)
+        stop()
       }
-      
+
       # Non-critical check: warn if requested data columns are missing
       values_to_get <- unique(unlist(cols_to_select))
       missing_select_cols <- setdiff(values_to_get, available_lookup_cols)
-      
-      if (length(missing_select_cols) > 0) {
-        warning(paste0("In 'lookup_and_add', the following columns were not found in lookup section '", 
-                       lookup_section, "' and will be skipped: ", 
-                       paste(missing_select_cols, collapse = ", ")), 
-                call. = FALSE)
-      }
-      
+
+      # if (length(missing_select_cols) > 0) {
+      #   warning(paste0("In 'lookup_and_add', the following columns were not found in lookup section '",
+      #                  lookup_section, "' and will be skipped: ",
+      #                  paste(missing_select_cols, collapse = ", ")),
+      #           call. = FALSE)
+      # }
+
       # Create a "safe" list of columns that are confirmed to exist
       safe_values_to_get <- intersect(values_to_get, available_lookup_cols)
       safe_cols_to_keep <- unique(c(lookup_keys, safe_values_to_get))
-      
+
       lookup_table <- lookup_table %>%
         dplyr::select(tidyr::all_of(safe_cols_to_keep)) %>%
         dplyr::distinct(dplyr::across(tidyr::all_of(lookup_keys)), .keep_all = TRUE)
@@ -99,66 +101,66 @@
         lookup_table,
         by = stats::setNames(lookup_keys, source_keys)
       )
-      
+
       # Create new column based on 'select_columns' param
       mutated_df <- joined_df
       if (!is.null(cols_to_select)) {
         for (new_name in names(cols_to_select)) {
           col_def <- cols_to_select[[new_name]]
-          
+
           if (is.character(col_def)) {
             if (col_def %in% names(mutated_df)) {
               mutated_df <- dplyr::mutate(mutated_df, !!new_name := .data[[col_def]])
-              
+
               # Remove original column after renaming to prevent name collisions in subsequent joins
               is_a_key <- col_def %in% source_keys || col_def %in% lookup_keys
               if (new_name != col_def && !is_a_key) {
                 mutated_df <- dplyr::select(mutated_df, -tidyr::all_of(col_def))
               }
-              
+
             } else {
               mutated_df <- dplyr::mutate(mutated_df, !!new_name := NA)
             }
-            
+
           } else if (is.list(col_def) && !is.null(col_def$type)) {
-            
+
             if (col_def$type == "static") {
               # Case B: Static value
               mutated_df <- dplyr::mutate(mutated_df, !!new_name := col_def$value)
-              
+
             } else if (col_def$type == "coalesce_map") {
               # Case C: Prioritized mapping
               coalesced_vector <- rep(NA_character_, nrow(mutated_df))
-              
+
               for (map_item in col_def$maps) {
                 source_col_name <- map_item$from
                 map_vector <- unlist(map_item$map)
-                
+
                 if (source_col_name %in% names(mutated_df)) {
                   source_vector <- as.character(mutated_df[[source_col_name]])
-                  
+
                   mapped_values <- unname(map_vector[source_vector])
                   coalesced_vector <- dplyr::coalesce(coalesced_vector, mapped_values)
                 }
               }
               mutated_df <- dplyr::mutate(mutated_df, !!new_name := coalesced_vector)
-              
+
             } else if (col_def$type == "map_values") {
-              
+
               # Case D: Nested value mapping
               inputs <- .resolve_input_map(col_def$input_map, mutated_df)
               if (!is.null(inputs)) {
                 source_vector <- inputs[[1]]
                 final_map_vector <- unlist(col_def$map %||% list())
-                
+
                 data_to_map <- as.character(source_vector)
                 mapped_vector <- unname(final_map_vector[data_to_map])
-                
+
                 unmapped_indices <- which(!is.na(source_vector) & is.na(mapped_vector))
                 if (length(unmapped_indices) > 0 && !is.null(col_def$default_value)) {
                   mapped_vector[unmapped_indices] <- col_def$default_value
                 }
-                
+
                 mutated_df <- dplyr::mutate(mutated_df, !!new_name := mapped_vector)
               } else {
                 mutated_df <- dplyr::mutate(mutated_df, !!new_name := NA)
@@ -167,13 +169,13 @@
           }
         }
       }
-      
+
       # Select final columns and update the working data frame.
       df <- mutated_df
     }
-    
+
   } else {
-    
+
     # If a key is missing, create NA columns for all expected outputs of this action
     if (!is.null(cols_to_select)) {
       for (new_name in names(cols_to_select)) {
@@ -181,9 +183,10 @@
       }
     }
   }
-  
+
   return(df)
 }
+
 
 #'
 #'
@@ -213,7 +216,7 @@
     final_map_list <- c(final_map_list, action$map)
   }
   if (length(final_map_list) == 0) {
-    warning("map_values action has no map or identity keys. Skipping.", call. = FALSE)
+    # warning("map_values action has no map or identity keys. Skipping.", call. = FALSE)
     return(df)
   }
   
@@ -357,8 +360,6 @@
   
   if (action$input_name %in% names(df)) {
     df <- rename(df, !!action$output_name := !!action$input_name)
-  } else {
-    warning(paste0("Column '", action$input_name, "' not found for renaming. Skipping action."), call. = FALSE)
   }
   
   return(df)
@@ -481,7 +482,7 @@
   }
   
   if (length(inputs) < 1) {
-    warning(paste0("For '", output_name, "', no valid input columns for coalesce were found. Skipping."), call. = FALSE)
+    # warning(paste0("For '", output_name, "', no valid input columns for coalesce were found. Skipping."), call. = FALSE)
     return(df)
   }
   
@@ -497,54 +498,48 @@
 #' @noRd
 #'
 
-# TODO: generalize
-.action_split_column <- function(action, df) {
+.action_extract_string <- function(action, df) {
   
+  # 1. Resolve Input
   inputs <- .resolve_input_map(action$input_map, df)
-  if (is.null(inputs)) {
-    return(df)
-  }
-  source_vector <- inputs[[1]] # Vector of names to be split
+  if (is.null(inputs)) return(df)
+  source_vector <- inputs[[1]]
   
-  # Core logic to split the names into component vectors
-  output_cols <- list()
-  delimiter <- action$delimiter %||% " "
+  # 2. Setup Regex
+  pattern <- action$pattern
+  # Default to extracting Group 1 (the part in parentheses), 
+  # or Group 0 (full match) if specified.
+  group_idx <- action$group_index %||% 1 
   
-  for (map_item in action$output_map) {
-    output_header_name <- map_item$output_header
-    component_type <- map_item$component
+  # 3. Perform Extraction (Base R)
+  # regexec finds the positions of the match AND the capture groups
+  match_data <- regexec(pattern, source_vector, perl = TRUE)
+  
+  # regmatches extracts the strings based on those positions
+  extracted_list <- regmatches(source_vector, match_data)
+  
+  # 4. Flatten Result
+  # If a match is found, extract the specific group index. If not, NA.
+  result_vector <- sapply(seq_along(source_vector), function(i) {
+    matches <- extracted_list[[i]]
+    if (length(matches) == 0) return(NA_character_) # No match found
     
-    component_vector <- sapply(source_vector, function(full_name) {
-      if (is.na(full_name)) return(NA_character_)
-      
-      words <- unlist(strsplit(full_name, delimiter))
-      num_words <- length(words)
-      if (num_words == 0) return(NA_character_)
-      
-      switch(component_type,
-             "first" = return(words[1]),
-             "last" = return(words[num_words]),
-             "middle" = {
-               if (num_words > 2) {
-                 return(paste(words[2:(num_words - 1)], collapse = " "))
-               } else {
-                 return(NA_character_)
-               }
-             },
-             return(NA_character_)
-      )
-    }, USE.NAMES = FALSE)
+    # Matches is a vector: [Full_Match, Group_1, Group_2, ...]
+    # R uses 1-based indexing, so Group 0 is index 1, Group 1 is index 2.
+    target_index <- group_idx + 1 
     
-    output_cols[[output_header_name]] <- component_vector
-  }
+    if (target_index > length(matches)) return(NA_character_)
+    return(matches[target_index])
+  })
   
-  # Add the new columns to the working data frame
-  if (length(output_cols) > 0) {
-    df <- dplyr::bind_cols(df, tibble::as_tibble(output_cols))
-  }
+  # 5. Assign to Output
+  output_col <- action$output_col
+  df[[output_col]] <- result_vector
   
   return(df)
 }
+
+
 
 
 #'
@@ -573,6 +568,7 @@
 
 .action_filter_rows <- function(action, df) {
   
+  # --- On presence of columns ---
   if (!is.null(action$on_presence_of_columns)) {
     
     # Resolve all column names to handle synonyms
@@ -585,6 +581,22 @@
     } else {
       # Filter out all rows if column does not exist or contains only NA
       df <- df[0, ]
+    }
+  }
+  
+  # --- On column values ---
+  if (!is.null(action$on_column_values)) {
+    
+    for (filter_item in action$on_column_values) {
+      
+      col_name <- .resolve_column_name(filter_item$column, names(df))
+      
+      if (!is.null(col_name)) {
+        df <- dplyr::filter(df, .data[[col_name]] %in% filter_item$values)
+      } else {
+        # If a required column for value filtering is missing, return empty df
+        df <- df[0, ]
+      }
     }
   }
   
