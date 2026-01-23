@@ -80,8 +80,8 @@ process_actions <- function(actions, input_df, dataset, ...) {
              .action_coalesce_columns(action, output_df)
            },
            
-           "split_column" = {
-             .action_split_column(action, output_df)
+           "extract_string" = {
+             .action_extract_string(action, output_df)
            },
            
            "sort_rows" = {
@@ -172,7 +172,7 @@ process_actions <- function(actions, input_df, dataset, ...) {
     if (is.null(found_col_name)) {
       # Safely get the column name for the warning message
       display_name <- if (is.list(col_spec)) col_spec$header else col_spec
-      warning(paste0("Input column '", display_name, "' not found. Skipping action."), call. = FALSE)
+      # warning(paste0("Input column '", display_name, "' not found. Skipping action."), call. = FALSE)
       return(NULL)
     }
     resolved_inputs[[local_name]] <- df[[found_col_name]]

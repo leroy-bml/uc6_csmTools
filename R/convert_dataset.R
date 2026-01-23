@@ -75,9 +75,9 @@ convert_dataset <- function(dataset, input_model, output_model, output_path = NU
   # Applies model-specific logic like aggregations and calculations.
   message("Step 2: Standardizing output format...")
   
-  # --- Deduplicate and drop NAs (CHECK: redundancy in format_to_model??)
+  # --- Deduplicate and drop NAs ---
   mapped_data_clean <- lapply(mapped_data, remove_all_na_cols)
-  mapped_data_clean <- lapply(mapped_data, function(df) unique(df))
+  mapped_data_clean <- lapply(mapped_data_clean, function(df) unique(df))
 
   # --- Apply post-processing logic, if applicable ---
   dataset_std <- standardize_data(dataset = mapped_data_clean, data_model = output_model)
@@ -156,7 +156,6 @@ convert_dataset <- function(dataset, input_model, output_model, output_path = NU
   unique_keys <- unique(na.omit(dataset[[key_source_table]][[key_name_actual]]))
   
   if (length(unique_keys) == 0) {
-    # This warning is expected if the key is missing in the data
     return(dataset)
   }
   
@@ -164,6 +163,7 @@ convert_dataset <- function(dataset, input_model, output_model, output_path = NU
   
   # Propagate the master key to other tables
   for (table_name in names(dataset)) {
+
     if (table_name == key_source_table) next
     
     df <- dataset[[table_name]]
@@ -173,9 +173,9 @@ convert_dataset <- function(dataset, input_model, output_model, output_path = NU
     if (is_single_experiment && !has_key) {
       df[[key_name_actual]] <- unique_keys[1]
     } else if (!is_single_experiment && !has_key && is_shared) {
-      key_df <- data.frame(!!key_name_actual := unique_keys)
+      key_df <- tibble::tibble(!!key_name_actual := unique_keys)
       df <- dplyr::cross_join(df, key_df)
-    } # Add other cases here...
+    }
     
     dataset[[table_name]] <- df
   }

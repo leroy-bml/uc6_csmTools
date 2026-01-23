@@ -54,7 +54,7 @@ normalize_soil_profile <- function(data,
   headers <- data[, 1:depth_col]
   profile <- data[, depth_col:ncol(data)]  # profile table starting with depth col in standard DSSAT format
   profile_nas <- profile[, colSums(is.na(profile)) == nrow(profile)]  # stored only NAs
-  profile_fct <- profile[, sapply(profile, is.character)]  #
+  profile_fct <- profile[, sapply(profile, is.character) & (colSums(is.na(profile)) < nrow(profile))]  # stored character variables
   profile <- profile[, colSums(is.na(profile)) < nrow(profile)]  # remove missing variables (only NAs)
   profile <- profile[, sapply(profile, is.numeric)]  # remove categorical variables
   
