@@ -13,6 +13,15 @@
 ## 
 ## -----------------------------------------------------------------------------------
 
+###----- Install/load package --------------------------------------------------------
+
+# Install devtools if you haven't already
+install.packages("devtools")
+# Install the package
+devtools::install_github("leroy-bml/csmTools")
+# Load the package
+library(csmTools)
+
 ###----- Crop management/manually input data (template) ------------------------------
 ## -----------------------------------------------------------------------------------
 ## This section demonstrates the import of ICASA-compliant field (meta)data via the
@@ -20,13 +29,15 @@
 ##
 ## -----------------------------------------------------------------------------------
 
+template_path <-
+  "C:/Users/bmlle/Documents/0_DATA/TUM/HEF/FAIRagro/2-UseCases/UC6_IntegratedModeling/Workflows/csmTools/inst/extdata/template_icasa_vba.xlsm"
+
 # Extract template data
 mngt_obs_icasa <- get_field_data(
-  path = "./inst/extdata/template_icasa_vba.xlsm",
+  path = template_path,
   exp_id = "HWOC2501",
   headers = "long",
-  keep_null_events = FALSE,
-  output_path = "./archive/tmp_expdata_icasa.json"
+  keep_null_events = FALSE
 )
 
 # Retrieve cultivation season temporal coverage to identify weather requirements
