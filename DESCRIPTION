@@ -19,7 +19,6 @@ SystemRequirements:
 Depends: 
     R (>= 4.4.3)
 Imports:
-    DSSAT,
     countrycode,
     cropCalendars,
     dataverse,
